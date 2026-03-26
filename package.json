@@ -1,0 +1,17 @@
+{
+  "name": "sp1200",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "vite": "^8.0.3",
+    "vitest": "^4.1.2"
+  }
+}
