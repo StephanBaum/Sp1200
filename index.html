@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SP-1200 – E-mu Systems</title>
+  <title>SP-1200 – Rossum Electro-Music</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,12 +12,14 @@
 <body>
   <div id="sp1200" class="sp1200">
 
-    <!-- Wooden side panels -->
-    <div class="wood-panel wood-left"></div>
-    <div class="wood-panel wood-right"></div>
-
     <!-- Main faceplate -->
     <div class="faceplate">
+
+      <!-- ═══ GOLD TOP STRIP ═══ -->
+      <div class="gold-strip gold-strip--top">
+        <span class="gold-strip__title">SP-1200</span>
+        <span class="gold-strip__sub">SAMPLING PERCUSSION</span>
+      </div>
 
       <!-- ═══ ZONE 1: Set-up / Disk / Sync / Sample / Master Control ═══ -->
       <div class="zone zone-1">
@@ -28,7 +30,7 @@
           <div class="module module-setup">
             <div class="module-header"><span class="section-title">Set-up</span></div>
             <div class="module-body">
-              <div class="led-indicator led-cyan"></div>
+              <div class="led-indicator led-amber"></div>
               <button class="cream-btn" id="btn-sample-edit">SELECT</button>
               <div class="fn-list">
                 <span>1 Tune</span><span>2 Decay</span><span>3 Filter</span>
@@ -84,24 +86,18 @@
           <div class="module-header"><span class="section-title">Master Control</span></div>
           <div class="master-inner">
 
-            <!-- Rotary knobs -->
-            <div class="knobs-row">
-              <div class="knob-group">
-                <div class="rotary-knob"><div class="knob-indicator"></div></div>
-                <span class="knob-label">VOLUME</span>
-              </div>
-              <div class="knob-group">
-                <div class="rotary-knob"><div class="knob-indicator"></div></div>
-                <span class="knob-label">TEMPO</span>
-              </div>
+            <!-- Top knob: Gain -->
+            <div class="knob-group knob-group--top">
+              <div class="rotary-knob"><div class="knob-indicator"></div></div>
+              <span class="knob-label">Gain</span>
             </div>
 
-            <!-- LCD Display -->
+            <!-- LCD Display (amber) -->
             <div class="lcd-bezel">
               <div class="lcd-screen">
                 <div class="lcd-row">
                   <span class="lcd-field"><span class="lcd-label">MODE</span><span class="lcd-val" id="display-mode">PAT</span></span>
-                  <span class="lcd-field"><span class="lcd-label">BPM</span><span class="lcd-val" id="display-bpm">090</span></span>
+                  <span class="lcd-field"><span class="lcd-label">BPM</span><span class="lcd-val" id="display-bpm">120.0</span></span>
                   <span class="lcd-field"><span class="lcd-label">PAT</span><span class="lcd-val" id="display-pattern">01</span></span>
                 </div>
                 <div class="lcd-row">
@@ -109,6 +105,26 @@
                   <span class="lcd-field"><span class="lcd-label">BANK</span><span class="lcd-val" id="display-bank">A</span></span>
                   <span class="lcd-field"><span class="lcd-label">MEM</span><span class="lcd-val" id="display-memory">10.0s</span></span>
                 </div>
+              </div>
+            </div>
+
+            <!-- Below LCD: Tempo / nav / enter row -->
+            <div class="lcd-buttons-row">
+              <button class="cream-btn lcd-nav-btn" id="btn-tap-tempo">Tempo</button>
+              <button class="cream-btn lcd-nav-btn">&#9668;</button>
+              <button class="cream-btn lcd-nav-btn">&#9658;</button>
+              <button class="cream-btn lcd-nav-btn">Enter</button>
+            </div>
+
+            <!-- Two bottom knobs -->
+            <div class="knobs-row">
+              <div class="knob-group">
+                <div class="rotary-knob"><div class="knob-indicator"></div></div>
+                <span class="knob-label">Mix Volume</span>
+              </div>
+              <div class="knob-group">
+                <div class="rotary-knob"><div class="knob-indicator"></div></div>
+                <span class="knob-label">Metronome Vol</span>
               </div>
             </div>
 
@@ -124,12 +140,9 @@
                 <button class="cream-btn key-btn">7</button>
                 <button class="cream-btn key-btn">8</button>
                 <button class="cream-btn key-btn">9</button>
-                <button class="cream-btn key-btn">&#9668;</button>
-                <button class="cream-btn key-btn">&#9658;</button>
-                <button class="cream-btn key-btn">ENTER</button>
-                <button class="cream-btn key-btn">YES</button>
+                <button class="cream-btn key-btn">No</button>
                 <button class="cream-btn key-btn">0</button>
-                <button class="cream-btn key-btn">NO</button>
+                <button class="cream-btn key-btn">Yes</button>
               </div>
             </div>
 
@@ -155,17 +168,22 @@
       <!-- ═══ ZONE 2: Programming ═══ -->
       <div class="zone zone-2">
         <div class="zone-header">
+          <div class="prog-leds">
+            <div class="prog-led-group"><div class="led-indicator led-amber"></div><span class="prog-led-label">Song</span></div>
+            <div class="prog-led-group"><div class="led-indicator led-amber"></div><span class="prog-led-label">Segment</span></div>
+          </div>
           <span class="section-title">Programming</span>
           <div class="section-line"></div>
         </div>
         <div class="prog-rows">
+          <!-- Row 1 -->
           <div class="prog-row">
             <div class="prog-btn-col">
-              <button class="cream-btn prog-btn" id="btn-pattern">SELECT</button>
-              <span class="prog-label">Segment</span>
+              <button class="cream-btn prog-btn" id="btn-song">SELECT</button>
+              <span class="prog-label">Song</span>
             </div>
             <div class="prog-btn-col">
-              <button class="cream-btn prog-btn" id="btn-tap-tempo">SELECT</button>
+              <button class="cream-btn prog-btn">SELECT</button>
               <span class="prog-label">Trigger</span>
             </div>
             <div class="prog-btn-col">
@@ -177,7 +195,7 @@
               <span class="prog-label">Record</span>
             </div>
             <div class="prog-btn-col">
-              <button class="cream-btn prog-btn" id="btn-song">SELECT</button>
+              <button class="cream-btn prog-btn" id="btn-pattern">SELECT</button>
               <span class="prog-label">Subseq</span>
             </div>
             <div class="prog-btn-col">
@@ -201,6 +219,7 @@
               <span class="prog-label">Mix Chg</span>
             </div>
           </div>
+          <!-- Row 2 -->
           <div class="prog-row">
             <div class="prog-btn-col">
               <button class="cream-btn prog-btn">SELECT</button>
@@ -258,12 +277,12 @@
           <!-- Left column: mode selectors + bank buttons -->
           <div class="perf-left">
             <div class="fader-mode-switch">
-              <button class="cream-btn mode-btn active" data-mode="volume">Tune/<br>Decay</button>
-              <button class="cream-btn mode-btn" data-mode="pitch">Mix</button>
-              <button class="cream-btn mode-btn">Multi<br>Mode</button>
+              <div class="mode-row"><div class="led-indicator led-amber"></div><button class="cream-btn mode-btn active" data-mode="volume">Tune/<br>Decay</button></div>
+              <div class="mode-row"><div class="led-indicator led-amber"></div><button class="cream-btn mode-btn" data-mode="pitch">Mix</button></div>
+              <div class="mode-row"><div class="led-indicator led-amber"></div><button class="cream-btn mode-btn">Multi<br>Mode</button></div>
             </div>
+            <button class="cream-btn select-btn">Select</button>
             <div class="bank-group">
-              <div class="bank-label">BANK</div>
               <button class="cream-btn bank-btn active" data-bank="0"><span class="bank-led"></span>A</button>
               <button class="cream-btn bank-btn" data-bank="1"><span class="bank-led"></span>B</button>
               <button class="cream-btn bank-btn" data-bank="2"><span class="bank-led"></span>C</button>
@@ -273,33 +292,59 @@
 
           <!-- Center: Faders + Pads -->
           <div class="perf-center">
-            <div class="channels-row">
-              <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><div class="channel-num">1</div><button class="pad" data-pad="0"></button></div>
-              <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><div class="channel-num">2</div><button class="pad" data-pad="1"></button></div>
-              <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><div class="channel-num">3</div><button class="pad" data-pad="2"></button></div>
-              <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><div class="channel-num">4</div><button class="pad" data-pad="3"></button></div>
-              <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><div class="channel-num">5</div><button class="pad" data-pad="4"></button></div>
-              <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><div class="channel-num">6</div><button class="pad" data-pad="5"></button></div>
-              <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><div class="channel-num">7</div><button class="pad" data-pad="6"></button></div>
-              <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><div class="channel-num">8</div><button class="pad" data-pad="7"></button></div>
+            <!-- Fader area with white gridlines -->
+            <div class="fader-area">
+              <div class="fader-gridlines"></div>
+              <div class="faders-row">
+                <div class="fader-col"><div class="fader-track"><div class="fader-thumb"></div></div></div>
+                <div class="fader-col"><div class="fader-track"><div class="fader-thumb"></div></div></div>
+                <div class="fader-col"><div class="fader-track"><div class="fader-thumb"></div></div></div>
+                <div class="fader-col"><div class="fader-track"><div class="fader-thumb"></div></div></div>
+                <div class="fader-col"><div class="fader-track"><div class="fader-thumb"></div></div></div>
+                <div class="fader-col"><div class="fader-track"><div class="fader-thumb"></div></div></div>
+                <div class="fader-col"><div class="fader-track"><div class="fader-thumb"></div></div></div>
+                <div class="fader-col"><div class="fader-track"><div class="fader-thumb"></div></div></div>
+              </div>
+            </div>
+            <!-- Channel numbers -->
+            <div class="channel-nums">
+              <span>1</span><span>2</span><span>3</span><span>4</span>
+              <span>5</span><span>6</span><span>7</span><span>8</span>
+            </div>
+            <!-- Pads row -->
+            <div class="pads-row">
+              <button class="pad" data-pad="0"></button>
+              <button class="pad" data-pad="1"></button>
+              <button class="pad" data-pad="2"></button>
+              <button class="pad" data-pad="3"></button>
+              <button class="pad" data-pad="4"></button>
+              <button class="pad" data-pad="5"></button>
+              <button class="pad" data-pad="6"></button>
+              <button class="pad" data-pad="7"></button>
+            </div>
+            <!-- Pad numbers -->
+            <div class="channel-nums">
+              <span>1</span><span>2</span><span>3</span><span>4</span>
+              <span>5</span><span>6</span><span>7</span><span>8</span>
             </div>
           </div>
 
           <!-- Right: Transport buttons -->
           <div class="perf-right">
-            <button class="cream-btn transport-btn fn-btn--play" id="btn-play">&#9654; RUN</button>
-            <button class="cream-btn transport-btn fn-btn--stop" id="btn-stop">&#9632; STOP</button>
-            <button class="red-btn transport-btn">&#9679; REC</button>
+            <div class="transport-group">
+              <div class="transport-row"><div class="led-indicator led-amber"></div><button class="cream-btn transport-btn" id="btn-play">Run/Stop</button></div>
+              <div class="transport-row"><div class="led-indicator led-amber"></div><button class="cream-btn transport-btn">Tap/<br>Repeat</button></div>
+              <div class="transport-row"><div class="led-indicator led-amber"></div><button class="red-btn transport-btn" id="btn-stop">Record/<br>Edit</button></div>
+            </div>
           </div>
 
         </div>
       </div><!-- /zone-3 -->
 
-      <!-- Bottom strip -->
-      <div class="bottom-strip">
-        <span class="brand-text">E-mu Systems, Inc.</span>
-        <span class="model-text">SP-1200</span>
-        <span class="brand-sub">Sampling Percussion Machine</span>
+      <!-- ═══ GOLD BOTTOM STRIP ═══ -->
+      <div class="gold-strip gold-strip--bottom">
+        <span class="gold-strip__brand">Rossum Electro-Music</span>
+        <span class="gold-strip__model">SP-1200</span>
       </div>
 
     </div><!-- /faceplate -->

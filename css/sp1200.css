@@ -1,7 +1,7 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   SP-1200 Skeuomorphic UI — Authentic E-mu SP-1200 Layout
-   Dark blue-grey faceplate, lighter grey chassis, wooden side panels
-   Three horizontal zones: Set-up/Disk/Sync/Sample/Master, Programming, Performance
+   SP-1200 Skeuomorphic UI — Rossum Electro-Music SP-1200
+   Pure black faceplate, gold top/bottom strips, dark blue-grey chassis
+   Amber LEDs, amber LCD, gold section headers
    ───────────────────────────────────────────────────────────────────────── */
 
 *, *::before, *::after {
@@ -20,20 +20,20 @@ body {
   font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
 }
 
-/* ── Outer chassis ──────────────────────────────────────────────────────── */
+/* ── Outer chassis (dark blue-grey) ───────────────────────────────────── */
 .sp1200 {
   position: relative;
   width: 1100px;
-  height: 720px;
-  background: #7a7a74;
+  height: 740px;
+  background: #2a3040;
   border-radius: 6px;
   box-shadow:
-    0 0 0 3px #6a6a64,
-    0 0 0 5px #555550,
+    0 0 0 3px #222a36,
+    0 0 0 5px #1a2028,
     0 12px 60px rgba(0,0,0,.8);
   transform-origin: center center;
   transform: perspective(2400px) rotateX(1.5deg) scale(var(--sp-scale, 1));
-  --sp-scale: min(1, calc(100vw / 1130), calc(100vh / 750));
+  --sp-scale: min(1, calc(100vw / 1130), calc(100vh / 770));
   user-select: none;
   display: flex;
   overflow: hidden;
@@ -56,50 +56,80 @@ body {
   z-index: 100;
 }
 
-/* ── Wooden side panels ─────────────────────────────────────────────────── */
-.wood-panel {
-  width: 28px;
-  flex-shrink: 0;
-  background:
-    repeating-linear-gradient(
-      180deg,
-      rgba(0,0,0,0.05) 0px, transparent 2px,
-      transparent 4px, rgba(0,0,0,0.03) 6px
-    ),
-    linear-gradient(90deg, #6b4226, #8b5e3c 30%, #7a4f30 50%, #8b5e3c 70%, #6b4226);
-  border-radius: 6px 0 0 6px;
-}
-.wood-right {
-  border-radius: 0 6px 6px 0;
-}
-
-/* ── Faceplate (dark blue-grey) ─────────────────────────────────────────── */
+/* ── Faceplate (PURE BLACK) ───────────────────────────────────────────── */
 .faceplate {
   flex: 1;
-  background:
-    repeating-linear-gradient(
-      90deg,
-      rgba(255,255,255,0.008) 0px, transparent 1px,
-      transparent 3px
-    ),
-    linear-gradient(175deg, #3e4d5c 0%, #3a4858 25%, #2e3a4a 60%, #2a3544 100%);
+  background: #141414;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   padding: 0;
 }
 
-/* ── Zone shared ────────────────────────────────────────────────────────── */
+/* ── Gold strips (top and bottom) ─────────────────────────────────────── */
+.gold-strip {
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #d4b85a 0%, #c4a54a 30%, #b89840 60%, #a88a38 100%);
+  color: #2a2000;
+}
+
+.gold-strip--top {
+  height: 44px;
+  gap: 18px;
+  border-bottom: 2px solid #8a7030;
+}
+
+.gold-strip--bottom {
+  height: 48px;
+  gap: 18px;
+  border-top: 2px solid #8a7030;
+  justify-content: center;
+}
+
+.gold-strip__title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  color: #1a1400;
+}
+
+.gold-strip__sub {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: #3a2a00;
+}
+
+.gold-strip__brand {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .15em;
+  color: #2a1a00;
+}
+
+.gold-strip__model {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .2em;
+  color: #3a2a00;
+  text-transform: uppercase;
+}
+
+/* ── Zone shared ──────────────────────────────────────────────────────── */
 .zone {
   padding: 6px 18px;
 }
 
-/* ── Section titles (blue italic) ───────────────────────────────────────── */
+/* ── Section titles (GOLD italic) ─────────────────────────────────────── */
 .section-title {
-  font-size: 11px;
+  font-size: 12px;
   font-style: italic;
   font-weight: 700;
-  color: #5b8ec2;
+  color: #c4a55a;
   letter-spacing: .04em;
 }
 
@@ -117,16 +147,16 @@ body {
 .section-line {
   flex: 1;
   height: 1px;
-  background: #4a7aaa;
+  background: #c4a55a;
 }
 
-/* ── Blue separator lines between zones ─────────────────────────────────── */
+/* ── Gold separator lines between zones ───────────────────────────────── */
 .zone-1 {
-  border-bottom: 1px solid #4a7aaa;
+  border-bottom: 1px solid rgba(196,165,90,0.4);
   padding-bottom: 8px;
 }
 .zone-2 {
-  border-bottom: 1px solid #4a7aaa;
+  border-bottom: 1px solid rgba(196,165,90,0.4);
   padding-top: 6px;
   padding-bottom: 8px;
 }
@@ -154,8 +184,8 @@ body {
 .module {
   display: flex;
   flex-direction: column;
-  padding: 0 8px;
-  border-right: 1px solid rgba(74,122,170,0.3);
+  padding: 0 10px;
+  border-right: 1px solid rgba(196,165,90,0.2);
 }
 .module:last-child {
   border-right: none;
@@ -168,23 +198,31 @@ body {
   gap: 4px;
 }
 
-/* LED indicators */
+/* ── LED indicators ───────────────────────────────────────────────────── */
 .led-indicator {
-  width: 6px;
-  height: 6px;
-  border-radius: 1px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
-.led-cyan {
-  background: #1a3a3a;
-  box-shadow: inset 0 0 2px rgba(0,200,200,.3);
+
+/* Amber/yellow LEDs (dominant style) */
+.led-amber {
+  background: #3a2a1a;
+  box-shadow: inset 0 0 2px rgba(200,160,0,.3);
 }
-.led-cyan.active {
-  background: #00cccc;
-  box-shadow: 0 0 4px #00cccc, 0 0 8px rgba(0,204,204,.5);
+.led-amber.active {
+  background: #ffaa22;
+  box-shadow: 0 0 4px #ffaa22, 0 0 10px rgba(255,170,34,.6);
 }
+
+/* Red LED */
 .led-red {
   background: #3a1a1a;
   box-shadow: inset 0 0 2px rgba(200,0,0,.3);
+  border-radius: 2px;
+  width: 7px;
+  height: 7px;
 }
 .led-red.active {
   background: #ff2222;
@@ -198,23 +236,23 @@ body {
   gap: 1px;
 }
 .fn-list span {
-  font-size: 6.5px;
+  font-size: 7px;
   color: rgba(220,220,220,0.8);
   letter-spacing: .02em;
   white-space: nowrap;
   line-height: 1.3;
 }
 
-/* ── Cream/off-white buttons (dominant button style) ────────────────────── */
+/* ── Cream/off-white buttons (dominant button style) ──────────────────── */
 .cream-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  min-height: 20px;
+  min-width: 22px;
+  min-height: 22px;
   padding: 2px 5px;
   font-family: inherit;
-  font-size: 6.5px;
+  font-size: 7px;
   font-weight: 700;
   letter-spacing: .04em;
   text-align: center;
@@ -244,11 +282,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  min-height: 20px;
+  min-width: 22px;
+  min-height: 22px;
   padding: 2px 5px;
   font-family: inherit;
-  font-size: 6.5px;
+  font-size: 7px;
   font-weight: 700;
   letter-spacing: .04em;
   text-align: center;
@@ -270,11 +308,11 @@ body {
   box-shadow: 0 1px 0 rgba(0,0,0,.15), inset 0 1px 2px rgba(0,0,0,.2);
 }
 
-/* ── Master Control ─────────────────────────────────────────────────────── */
+/* ── Master Control ───────────────────────────────────────────────────── */
 .master-control {
   width: 280px;
   flex-shrink: 0;
-  border-left: 1px solid #4a7aaa;
+  border-left: 1px solid rgba(196,165,90,0.3);
   padding-left: 12px;
   display: flex;
   flex-direction: column;
@@ -287,7 +325,7 @@ body {
   gap: 6px;
 }
 
-/* ── Rotary knobs ───────────────────────────────────────────────────────── */
+/* ── Rotary knobs ─────────────────────────────────────────────────────── */
 .knobs-row {
   display: flex;
   gap: 18px;
@@ -301,15 +339,19 @@ body {
   gap: 3px;
 }
 
+.knob-group--top {
+  align-self: flex-start;
+}
+
 .rotary-knob {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 35% 35%, #444, #1a1a1a 60%, #111);
+    radial-gradient(circle at 35% 35%, #444, #1a1a1a 60%, #0a0a0a);
   border: 2px solid #555;
   box-shadow:
-    0 2px 6px rgba(0,0,0,.5),
+    0 2px 6px rgba(0,0,0,.6),
     inset 0 1px 2px rgba(255,255,255,.08);
   position: relative;
   cursor: pointer;
@@ -320,33 +362,33 @@ body {
   left: 50%;
   transform: translateX(-50%);
   width: 2px;
-  height: 8px;
+  height: 9px;
   background: #ccc;
   border-radius: 1px;
 }
 .knob-label {
-  font-size: 6px;
+  font-size: 7px;
   color: rgba(200,200,200,.7);
-  letter-spacing: .12em;
+  letter-spacing: .08em;
   text-transform: uppercase;
   font-weight: 700;
 }
 
-/* ── LCD Display ────────────────────────────────────────────────────────── */
+/* ── LCD Display (AMBER) ──────────────────────────────────────────────── */
 .lcd-bezel {
   background: #1a1a18;
   border-radius: 3px;
   padding: 4px 6px;
   border: 2px solid #333;
   box-shadow: inset 0 2px 8px rgba(0,0,0,.7), 0 1px 0 rgba(255,255,255,.05);
-  max-width: 200px;
+  max-width: 220px;
 }
 
 .lcd-screen {
-  background: #0a2a16;
+  background: #1a1200;
   background-image: repeating-linear-gradient(
     0deg, transparent 0px, transparent 2px,
-    rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px
+    rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px
   );
   border-radius: 2px;
   padding: 5px 8px;
@@ -372,7 +414,7 @@ body {
 
 .lcd-label {
   font-size: 5px;
-  color: #2a7a4a;
+  color: #7a5a22;
   letter-spacing: .12em;
   text-transform: uppercase;
 }
@@ -380,16 +422,30 @@ body {
 .lcd-val {
   font-family: 'Share Tech Mono', monospace;
   font-size: 14px;
-  color: #33dd66;
-  text-shadow: 0 0 6px rgba(51,221,102,.5), 0 0 14px rgba(51,221,102,.2);
+  color: #ff9922;
+  text-shadow: 0 0 6px rgba(255,153,34,.5), 0 0 14px rgba(255,153,34,.2);
   line-height: 1.1;
   min-width: 2ch;
   text-align: center;
 }
 
-/* ── Numeric keypad ─────────────────────────────────────────────────────── */
+/* LCD buttons row (below display) */
+.lcd-buttons-row {
+  display: flex;
+  gap: 4px;
+  max-width: 220px;
+}
+
+.lcd-nav-btn {
+  flex: 1;
+  height: 20px;
+  font-size: 6.5px;
+  padding: 0 2px;
+}
+
+/* ── Numeric keypad ───────────────────────────────────────────────────── */
 .keypad {
-  max-width: 140px;
+  max-width: 160px;
 }
 
 .keypad-grid {
@@ -399,10 +455,10 @@ body {
 }
 
 .key-btn {
-  width: 22px;
-  height: 20px;
-  min-width: 22px;
-  min-height: 20px;
+  width: 28px;
+  height: 22px;
+  min-width: 28px;
+  min-height: 22px;
   padding: 0;
   font-size: 8px;
 }
@@ -418,6 +474,27 @@ body {
 /* ═══════════════════════════════════════════════════════════════════════════
    ZONE 2: Programming
    ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Programming LEDs */
+.prog-leds {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prog-led-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.prog-led-label {
+  font-size: 6px;
+  color: rgba(200,200,200,.6);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
 .prog-rows {
   display: flex;
   flex-direction: column;
@@ -438,16 +515,16 @@ body {
 }
 
 .prog-btn {
-  width: 22px;
-  height: 20px;
-  min-width: 22px;
-  min-height: 20px;
+  width: 24px;
+  height: 22px;
+  min-width: 24px;
+  min-height: 22px;
   padding: 0;
   font-size: 5px;
 }
 
 .prog-label {
-  font-size: 6px;
+  font-size: 6.5px;
   color: rgba(220,220,220,0.75);
   letter-spacing: .02em;
   text-align: center;
@@ -455,7 +532,7 @@ body {
   line-height: 1;
 }
 
-/* Record button special styling */
+/* Record button special styling (RED) */
 .fn-btn--record {
   background: linear-gradient(to bottom, #cc3333, #991a1a) !important;
   color: #ffdada !important;
@@ -490,8 +567,8 @@ body {
 .perf-left {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  width: 52px;
+  gap: 8px;
+  width: 62px;
   flex-shrink: 0;
 }
 
@@ -501,17 +578,30 @@ body {
   gap: 3px;
 }
 
+.mode-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .mode-btn {
-  width: 48px;
+  width: 50px;
   height: 26px;
-  font-size: 6px;
+  font-size: 6.5px;
   line-height: 1.15;
   padding: 2px;
 }
 .mode-btn.active {
-  background: linear-gradient(to bottom, #b8d8b0, #90b888);
-  color: #1a3a1a;
-  border-color: #7a9a72;
+  background: linear-gradient(to bottom, #d4c090, #b8a878);
+  color: #2a2000;
+  border-color: #a09060;
+}
+
+.select-btn {
+  width: 50px;
+  height: 22px;
+  font-size: 7px;
+  align-self: flex-end;
 }
 
 .bank-group {
@@ -519,71 +609,81 @@ body {
   flex-direction: column;
   gap: 3px;
 }
-.bank-label {
-  font-size: 6px;
-  color: rgba(200,200,200,.7);
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  font-weight: 700;
-  text-align: center;
-}
 
 .bank-btn {
-  width: 48px;
+  width: 50px;
   height: 22px;
   font-size: 8px;
   position: relative;
 }
 .bank-btn.active {
-  background: linear-gradient(to bottom, #b8d8b0, #90b888);
-  color: #1a3a1a;
-  border-color: #7a9a72;
+  background: linear-gradient(to bottom, #d4c090, #b8a878);
+  color: #2a2000;
+  border-color: #a09060;
 }
 .bank-led {
   display: inline-block;
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: #333;
+  background: #3a2a1a;
   margin-right: 3px;
   vertical-align: middle;
 }
 .bank-btn.active .bank-led {
-  background: #ff3333;
-  box-shadow: 0 0 4px rgba(255,51,51,.8);
+  background: #ffaa22;
+  box-shadow: 0 0 4px rgba(255,170,34,.8);
 }
 
-/* Center: channels (faders + pads) */
+/* ── Center: faders + pads ────────────────────────────────────────────── */
 .perf-center {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  gap: 4px;
 }
 
-.channels-row {
+/* Fader area with prominent white gridlines */
+.fader-area {
+  position: relative;
+  flex: 1;
+  min-height: 140px;
+  display: flex;
+}
+
+/* White horizontal gridlines spanning all faders */
+.fader-gridlines {
+  position: absolute;
+  inset: 4px 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px, transparent 11px,
+    rgba(255,255,255,0.12) 11px, rgba(255,255,255,0.12) 12px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.faders-row {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 12px;
+  gap: 10px;
   flex: 1;
-  min-height: 0;
   padding: 0 10px;
+  z-index: 1;
 }
 
-.channel {
+.fader-col {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  min-height: 0;
+  justify-content: center;
 }
 
-/* ── Fader tracks (tall vertical sliders) ───────────────────────────────── */
+/* ── Fader tracks (tall vertical sliders) ─────────────────────────────── */
 .fader-track {
   position: relative;
   width: 8px;
-  flex: 1;
-  min-height: 100px;
+  height: 100%;
   background: linear-gradient(to right, #555, #3a3a3a, #555);
   border-radius: 4px;
   border: 1px solid #666;
@@ -591,28 +691,12 @@ body {
   cursor: pointer;
 }
 
-/* Scale markings on fader track */
-.fader-track::before {
-  content: '';
-  position: absolute;
-  left: -5px;
-  right: -5px;
-  top: 8%;
-  bottom: 8%;
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent 0px, transparent 8px,
-    rgba(255,255,255,.08) 8px, rgba(255,255,255,.08) 9px
-  );
-  pointer-events: none;
-}
-
 .fader-thumb {
   position: absolute;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 22px;
-  height: 12px;
+  width: 24px;
+  height: 14px;
   background: linear-gradient(to bottom, #333, #111, #222, #111, #333);
   border-radius: 2px;
   border: 1px solid #555;
@@ -633,21 +717,38 @@ body {
   background: #bbb;
 }
 
-/* Channel number */
-.channel-num {
+/* Channel numbers */
+.channel-nums {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 10px;
+  padding: 0 10px;
+  flex-shrink: 0;
+}
+
+.channel-nums span {
   font-size: 9px;
   color: rgba(220,220,220,.7);
   font-weight: 700;
+  text-align: center;
   line-height: 1;
 }
 
-/* ── Pads: small hard black plastic buttons ─────────────────────────────── */
+/* ── Pads row: small dark black plastic buttons ───────────────────────── */
+.pads-row {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 10px;
+  padding: 0 10px;
+  flex-shrink: 0;
+}
+
 .pad {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 25px;
+  width: 100%;
+  height: 28px;
   background: linear-gradient(to bottom, #2a2a2a, #181818);
   border: 1px solid #444;
   border-bottom-color: #111;
@@ -672,63 +773,44 @@ body {
 }
 
 .pad.triggered {
-  background: linear-gradient(to bottom, #1e3a2a, #142a1e);
+  background: linear-gradient(to bottom, #3a2a1a, #2a1e10);
   box-shadow:
-    0 0 0 1px #33dd66,
-    0 0 10px rgba(51,221,102,.4),
+    0 0 0 1px #ffaa22,
+    0 0 10px rgba(255,170,34,.4),
     inset 0 1px 3px rgba(0,0,0,.4);
   transform: translateY(2px);
 }
 
-/* Right: transport buttons */
+/* ── Right: transport buttons ─────────────────────────────────────────── */
 .perf-right {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  width: 52px;
+  width: 68px;
   flex-shrink: 0;
   justify-content: flex-end;
   padding-bottom: 10px;
 }
 
-.transport-btn {
-  width: 48px;
-  height: 28px;
-  font-size: 6px;
-}
-
-/* ── Bottom strip ───────────────────────────────────────────────────────── */
-.bottom-strip {
+.transport-group {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 4px 18px 6px;
-  border-top: 1px solid #4a7aaa;
-  flex-shrink: 0;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.brand-text {
-  font-size: 9px;
-  color: rgba(200,200,200,.5);
-  letter-spacing: .15em;
-  font-weight: 600;
+.transport-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.model-text {
-  font-size: 14px;
-  font-weight: 800;
-  color: rgba(220,220,220,.7);
-  letter-spacing: .08em;
+.transport-btn {
+  width: 52px;
+  height: 28px;
+  font-size: 6.5px;
+  line-height: 1.15;
 }
 
-.brand-sub {
-  font-size: 7px;
-  color: rgba(200,200,200,.4);
-  letter-spacing: .2em;
-  text-transform: uppercase;
-}
-
-/* ── Scrollbar ──────────────────────────────────────────────────────────── */
+/* ── Scrollbar ────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: #2e3a4a; }
-::-webkit-scrollbar-thumb { background: #5a6a7a; border-radius: 3px; }
+::-webkit-scrollbar-track { background: #141414; }
+::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 3px; }
