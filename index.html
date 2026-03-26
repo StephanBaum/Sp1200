@@ -6,159 +6,44 @@
   <title>SP-1200 – E-mu Systems</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/sp1200.css">
 </head>
 <body>
   <div id="sp1200" class="sp1200">
 
-    <!-- ── TOP LABEL ─────────────────────────────────────────────── -->
+    <!-- ── TOP LABEL BAR ─────────────────────────────────────────── -->
     <div class="top-label">
       <span class="brand-emu">E-mu Systems</span>
       <span class="brand-model">SP-1200</span>
       <span class="brand-subtitle">Sampling Percussion Machine</span>
     </div>
 
-    <!-- ── MAIN BODY ──────────────────────────────────────────────── -->
-    <div class="main-body">
+    <!-- ── UPPER SECTION: Controls ───────────────────────────────── -->
+    <div class="upper-section">
 
-      <!-- LEFT PANEL: 8 vertical faders + mode switch -->
-      <div class="left-panel">
-        <div class="panel-label">LEVEL</div>
-        <div class="faders-container">
-          <div class="fader" data-fader="0">
-            <div class="fader-track"><div class="fader-thumb"></div></div>
-            <div class="fader-num">1</div>
-          </div>
-          <div class="fader" data-fader="1">
-            <div class="fader-track"><div class="fader-thumb"></div></div>
-            <div class="fader-num">2</div>
-          </div>
-          <div class="fader" data-fader="2">
-            <div class="fader-track"><div class="fader-thumb"></div></div>
-            <div class="fader-num">3</div>
-          </div>
-          <div class="fader" data-fader="3">
-            <div class="fader-track"><div class="fader-thumb"></div></div>
-            <div class="fader-num">4</div>
-          </div>
-          <div class="fader" data-fader="4">
-            <div class="fader-track"><div class="fader-thumb"></div></div>
-            <div class="fader-num">5</div>
-          </div>
-          <div class="fader" data-fader="5">
-            <div class="fader-track"><div class="fader-thumb"></div></div>
-            <div class="fader-num">6</div>
-          </div>
-          <div class="fader" data-fader="6">
-            <div class="fader-track"><div class="fader-thumb"></div></div>
-            <div class="fader-num">7</div>
-          </div>
-          <div class="fader" data-fader="7">
-            <div class="fader-track"><div class="fader-thumb"></div></div>
-            <div class="fader-num">8</div>
-          </div>
-        </div>
-        <div class="fader-mode-switch">
-          <button class="mode-btn active" data-mode="volume">VOL</button>
-          <button class="mode-btn" data-mode="pitch">PITCH</button>
-        </div>
-      </div>
-
-      <!-- CENTER PANEL -->
-      <div class="center-panel">
-
-        <!-- LED DISPLAY -->
-        <div class="led-display">
-          <div class="display-field">
-            <div class="display-label">MODE</div>
-            <div class="display-value" id="display-mode">PAT</div>
-          </div>
-          <div class="display-field display-field--wide">
-            <div class="display-label">BPM</div>
-            <div class="display-value" id="display-bpm">090</div>
-          </div>
-          <div class="display-field">
-            <div class="display-label">PAT</div>
-            <div class="display-value" id="display-pattern">01</div>
-          </div>
-          <div class="display-field">
-            <div class="display-label">BAR</div>
-            <div class="display-value" id="display-bar">1</div>
-          </div>
-          <div class="display-field">
-            <div class="display-label">BANK</div>
-            <div class="display-value" id="display-bank">A</div>
-          </div>
-          <div class="display-field display-field--wide">
-            <div class="display-label">MEM</div>
-            <div class="display-value" id="display-memory">10.0s</div>
+      <!-- LEFT: LCD Display -->
+      <div class="lcd-area">
+        <div class="lcd-bezel">
+          <div class="lcd-screen">
+            <div class="lcd-row">
+              <span class="lcd-field"><span class="lcd-label">MODE</span><span class="lcd-val" id="display-mode">PAT</span></span>
+              <span class="lcd-field"><span class="lcd-label">BPM</span><span class="lcd-val" id="display-bpm">090</span></span>
+              <span class="lcd-field"><span class="lcd-label">PAT</span><span class="lcd-val" id="display-pattern">01</span></span>
+            </div>
+            <div class="lcd-row">
+              <span class="lcd-field"><span class="lcd-label">BAR</span><span class="lcd-val" id="display-bar">1</span></span>
+              <span class="lcd-field"><span class="lcd-label">BANK</span><span class="lcd-val" id="display-bank">A</span></span>
+              <span class="lcd-field"><span class="lcd-label">MEM</span><span class="lcd-val" id="display-memory">10.0s</span></span>
+            </div>
           </div>
         </div>
 
-        <!-- CONTROLS GRID -->
-        <div class="controls-grid">
-
-          <!-- Row 1: Transport -->
-          <button class="ctrl-btn ctrl-btn--play" id="btn-play">
-            <span class="btn-icon">&#9654;</span>
-            <span class="btn-label">PLAY</span>
-          </button>
-          <button class="ctrl-btn ctrl-btn--stop" id="btn-stop">
-            <span class="btn-icon">&#9632;</span>
-            <span class="btn-label">STOP</span>
-          </button>
-          <button class="ctrl-btn ctrl-btn--record" id="btn-record">
-            <span class="btn-icon">&#9679;</span>
-            <span class="btn-label">REC</span>
-          </button>
-
-          <!-- Row 1 continued: Mode buttons -->
-          <button class="ctrl-btn ctrl-btn--mode" id="btn-pattern">
-            <span class="btn-label">PATTERN</span>
-          </button>
-          <button class="ctrl-btn ctrl-btn--mode" id="btn-song">
-            <span class="btn-label">SONG</span>
-          </button>
-          <button class="ctrl-btn ctrl-btn--mode" id="btn-step-edit">
-            <span class="btn-label">STEP<br>EDIT</span>
-          </button>
-
-          <!-- Row 1 continued: Utility -->
-          <button class="ctrl-btn" id="btn-sample">
-            <span class="btn-label">SAMPLE</span>
-          </button>
-
-          <!-- Row 2: Edit functions -->
-          <button class="ctrl-btn" id="btn-trunc">
-            <span class="btn-label">TRUNC</span>
-          </button>
-          <button class="ctrl-btn" id="btn-loop">
-            <span class="btn-label">LOOP</span>
-          </button>
-          <button class="ctrl-btn" id="btn-reverse">
-            <span class="btn-label">REVERSE</span>
-          </button>
-          <button class="ctrl-btn ctrl-btn--tap" id="btn-tap-tempo">
-            <span class="btn-label">TAP</span>
-          </button>
-          <button class="ctrl-btn" id="btn-auto-rpt">
-            <span class="btn-label">AUTO<br>RPT</span>
-          </button>
-          <button class="ctrl-btn" id="btn-load">
-            <span class="btn-label">LOAD</span>
-          </button>
-          <button class="ctrl-btn ctrl-btn--record-mic" id="btn-mic-rec">
-            <span class="btn-label">MIC<br>REC</span>
-          </button>
-
-        </div>
-
-        <!-- BOTTOM CONTROLS: Quantize + Swing + Banks -->
-        <div class="bottom-controls">
+        <!-- Quantize / Swing / Bank below LCD -->
+        <div class="lcd-sub-controls">
           <div class="quantize-section">
-            <label class="ctrl-label" for="quantize-select">QUANTIZE</label>
-            <select class="led-select" id="quantize-select">
+            <label class="module-label" for="quantize-select">QUANTIZE</label>
+            <select class="lcd-select" id="quantize-select">
               <option value="96">1/4</option>
               <option value="48">1/8</option>
               <option value="32">1/8T</option>
@@ -167,18 +52,16 @@
               <option value="12">1/32</option>
             </select>
           </div>
-
           <div class="swing-section">
-            <label class="ctrl-label" for="swing-slider">SWING</label>
+            <label class="module-label" for="swing-slider">SWING</label>
             <div class="swing-row">
               <input class="swing-slider" type="range" id="swing-slider"
                      min="50" max="75" value="50" step="1">
               <span class="swing-value-label" id="swing-value">50%</span>
             </div>
           </div>
-
           <div class="bank-section">
-            <div class="ctrl-label">BANK</div>
+            <div class="module-label">BANK</div>
             <div class="bank-buttons">
               <button class="bank-btn active" data-bank="0">A</button>
               <button class="bank-btn" data-bank="1">B</button>
@@ -187,57 +70,156 @@
             </div>
           </div>
         </div>
+      </div>
 
-      </div><!-- /center-panel -->
+      <!-- CENTER: Function Module Groups -->
+      <div class="modules-area">
 
-      <!-- RIGHT PANEL: 8 pads in 2×4 grid -->
-      <div class="right-panel">
-        <div class="panel-label">PADS</div>
-        <div class="pads-grid">
-          <button class="pad" data-pad="0">
-            <span class="pad-num">1</span>
-            <span class="pad-key">Z</span>
-          </button>
-          <button class="pad" data-pad="1">
-            <span class="pad-num">2</span>
-            <span class="pad-key">X</span>
-          </button>
-          <button class="pad" data-pad="2">
-            <span class="pad-num">3</span>
-            <span class="pad-key">C</span>
-          </button>
-          <button class="pad" data-pad="3">
-            <span class="pad-num">4</span>
-            <span class="pad-key">V</span>
-          </button>
-          <button class="pad" data-pad="4">
-            <span class="pad-num">5</span>
-            <span class="pad-key">A</span>
-          </button>
-          <button class="pad" data-pad="5">
-            <span class="pad-num">6</span>
-            <span class="pad-key">S</span>
-          </button>
-          <button class="pad" data-pad="6">
-            <span class="pad-num">7</span>
-            <span class="pad-key">D</span>
-          </button>
-          <button class="pad" data-pad="7">
-            <span class="pad-num">8</span>
-            <span class="pad-key">F</span>
-          </button>
+        <!-- SET-UP module -->
+        <div class="module">
+          <div class="module-title">SET-UP</div>
+          <div class="module-buttons">
+            <button class="fn-btn" id="btn-sample-edit"><span>SAMPLE<br>EDIT</span></button>
+            <button class="fn-btn" id="btn-truncate"><span>TRUNC</span></button>
+            <button class="fn-btn" id="btn-loop"><span>LOOP</span></button>
+            <button class="fn-btn" id="btn-reverse"><span>REVERSE</span></button>
+          </div>
+        </div>
+
+        <!-- DISK module -->
+        <div class="module">
+          <div class="module-title">DISK</div>
+          <div class="module-buttons">
+            <button class="fn-btn" id="btn-load-sample"><span>LOAD<br>SAMPLE</span></button>
+            <button class="fn-btn" id="btn-mic-record"><span>MIC<br>REC</span></button>
+          </div>
+        </div>
+
+        <!-- SAMPLE module -->
+        <div class="module">
+          <div class="module-title">SAMPLE</div>
+          <div class="module-buttons">
+            <button class="fn-btn" id="btn-tap-tempo"><span>TAP<br>TEMPO</span></button>
+            <button class="fn-btn" id="btn-auto-repeat"><span>AUTO<br>RPT</span></button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: Programming & Transport -->
+      <div class="transport-area">
+
+        <!-- Mode select -->
+        <div class="module">
+          <div class="module-title">PROGRAM</div>
+          <div class="module-buttons">
+            <button class="fn-btn fn-btn--mode" id="btn-pattern"><span>PATTERN</span></button>
+            <button class="fn-btn fn-btn--mode" id="btn-song"><span>SONG</span></button>
+            <button class="fn-btn fn-btn--mode" id="btn-step-edit"><span>STEP<br>EDIT</span></button>
+          </div>
+        </div>
+
+        <!-- Transport -->
+        <div class="module">
+          <div class="module-title">TRANSPORT</div>
+          <div class="module-buttons">
+            <button class="fn-btn fn-btn--play" id="btn-play"><span>&#9654; PLAY</span></button>
+            <button class="fn-btn fn-btn--stop" id="btn-stop"><span>&#9632; STOP</span></button>
+            <button class="fn-btn fn-btn--record" id="btn-record"><span>&#9679; REC</span></button>
+          </div>
+        </div>
+
+      </div>
+
+    </div><!-- /upper-section -->
+
+    <!-- ── LOWER SECTION: Faders + Pads ──────────────────────────── -->
+    <div class="lower-section">
+
+      <!-- Fader mode switch -->
+      <div class="fader-mode-switch">
+        <button class="mode-btn active" data-mode="volume">VOL</button>
+        <button class="mode-btn" data-mode="pitch">PITCH</button>
+      </div>
+
+      <!-- 8 Faders in a row -->
+      <div class="faders-row">
+        <div class="fader" data-fader="0">
+          <div class="fader-label">1</div>
+          <div class="fader-track"><div class="fader-thumb"></div></div>
+        </div>
+        <div class="fader" data-fader="1">
+          <div class="fader-label">2</div>
+          <div class="fader-track"><div class="fader-thumb"></div></div>
+        </div>
+        <div class="fader" data-fader="2">
+          <div class="fader-label">3</div>
+          <div class="fader-track"><div class="fader-thumb"></div></div>
+        </div>
+        <div class="fader" data-fader="3">
+          <div class="fader-label">4</div>
+          <div class="fader-track"><div class="fader-thumb"></div></div>
+        </div>
+        <div class="fader" data-fader="4">
+          <div class="fader-label">5</div>
+          <div class="fader-track"><div class="fader-thumb"></div></div>
+        </div>
+        <div class="fader" data-fader="5">
+          <div class="fader-label">6</div>
+          <div class="fader-track"><div class="fader-thumb"></div></div>
+        </div>
+        <div class="fader" data-fader="6">
+          <div class="fader-label">7</div>
+          <div class="fader-track"><div class="fader-thumb"></div></div>
+        </div>
+        <div class="fader" data-fader="7">
+          <div class="fader-label">8</div>
+          <div class="fader-track"><div class="fader-thumb"></div></div>
         </div>
       </div>
 
-    </div><!-- /main-body -->
+      <!-- 8 Pads in a horizontal row -->
+      <div class="pads-row">
+        <button class="pad" data-pad="0">
+          <span class="pad-num">1</span>
+          <span class="pad-key">Z</span>
+        </button>
+        <button class="pad" data-pad="1">
+          <span class="pad-num">2</span>
+          <span class="pad-key">X</span>
+        </button>
+        <button class="pad" data-pad="2">
+          <span class="pad-num">3</span>
+          <span class="pad-key">C</span>
+        </button>
+        <button class="pad" data-pad="3">
+          <span class="pad-num">4</span>
+          <span class="pad-key">V</span>
+        </button>
+        <button class="pad" data-pad="4">
+          <span class="pad-num">5</span>
+          <span class="pad-key">A</span>
+        </button>
+        <button class="pad" data-pad="5">
+          <span class="pad-num">6</span>
+          <span class="pad-key">S</span>
+        </button>
+        <button class="pad" data-pad="6">
+          <span class="pad-num">7</span>
+          <span class="pad-key">D</span>
+        </button>
+        <button class="pad" data-pad="7">
+          <span class="pad-num">8</span>
+          <span class="pad-key">F</span>
+        </button>
+      </div>
 
-    <!-- Drag-and-drop overlay (shown via .dragover class on #sp1200) -->
-    <!-- The ::after pseudo-element from CSS handles the visual overlay -->
+    </div><!-- /lower-section -->
 
   </div><!-- /sp1200 -->
 
   <!-- Hidden file input for sample loading -->
-  <input type="file" id="sample-file-input" accept="audio/*" style="display:none">
+  <input type="file" id="file-input" accept="audio/*" style="display:none">
 
   <script type="module" src="/js/main.js"></script>
 </body>
