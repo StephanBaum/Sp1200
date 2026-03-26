@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   SP-1200 Skeuomorphic UI — Grey/silver faceplate, authentic 1987 layout
+   SP-1200 Skeuomorphic UI — Dark blue-gray charcoal faceplate, authentic 1987 layout
    ───────────────────────────────────────────────────────────────────────── */
 
 *, *::before, *::after {
@@ -24,32 +24,34 @@ body {
   position: relative;
   width: 1200px;
   height: 720px;
-  /* Grey/silver metallic faceplate with brushed-metal texture */
+  /* Darker blue-gray/charcoal faceplate overlay sitting inside lighter warm gray body */
   background:
     repeating-linear-gradient(
       90deg,
-      rgba(255,255,255,0.015) 0px,
+      rgba(255,255,255,0.012) 0px,
       rgba(0,0,0,0.01) 1px,
       transparent 1px,
       transparent 3px
     ),
-    linear-gradient(170deg, #b8b4ac 0%, #a8a49c 20%, #9e9a92 50%, #908c84 80%, #88847c 100%);
+    linear-gradient(170deg, #5e5c5a 0%, #545250 20%, #4e4c4a 50%, #484644 80%, #444240 100%);
   border-radius: 8px;
+  /* Outer ring is the lighter warm gray body color */
   box-shadow:
-    0 0 0 4px #3a3836,
-    0 0 0 6px #2a2826,
-    0 12px 60px rgba(0,0,0,.7),
-    inset 0 1px 0 rgba(255,255,255,.25),
-    inset 0 -1px 0 rgba(0,0,0,.15);
+    0 0 0 6px #8a8a82,
+    0 0 0 10px #6a6a62,
+    0 12px 60px rgba(0,0,0,.8),
+    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 -1px 0 rgba(0,0,0,.25);
   transform-origin: center center;
   scale: min(1, calc(100vw / 1230), calc(100vh / 740));
+  transform: perspective(2000px) rotateX(2deg);
   user-select: none;
   display: flex;
   flex-direction: column;
 }
 
 @supports not (scale: 1) {
-  .sp1200 { transform: scale(min(1, calc(100vw / 1230), calc(100vh / 740))); }
+  .sp1200 { transform: perspective(2000px) rotateX(2deg) scale(min(1, calc(100vw / 1230), calc(100vh / 740))); }
 }
 
 /* Drag-and-drop overlay */
@@ -75,13 +77,13 @@ body {
   align-items: baseline;
   gap: 16px;
   padding: 10px 24px 8px;
-  border-bottom: 1px solid rgba(0,0,0,.1);
+  border-bottom: 1px solid rgba(0,0,0,.3);
   flex-shrink: 0;
 }
 
 .brand-emu {
   font-size: 11px;
-  color: #444;
+  color: #bbb;
   letter-spacing: .14em;
   text-transform: uppercase;
   font-weight: 600;
@@ -90,13 +92,13 @@ body {
 .brand-model {
   font-size: 24px;
   font-weight: 700;
-  color: #222;
+  color: #e8e6e2;
   letter-spacing: .08em;
 }
 
 .brand-subtitle {
   font-size: 10px;
-  color: #555;
+  color: #999;
   letter-spacing: .2em;
   text-transform: uppercase;
   font-weight: 400;
@@ -131,7 +133,7 @@ body {
 }
 
 .lcd-screen {
-  background: #1a3a1a;
+  background: #1a3a30;
   border-radius: 3px;
   padding: 8px 12px;
   display: flex;
@@ -147,7 +149,7 @@ body {
       rgba(0,0,0,0.08) 2px,
       rgba(0,0,0,0.08) 4px
     );
-  background-color: #1a3a1a;
+  background-color: #1a3a30;
 }
 
 .lcd-row {
@@ -167,7 +169,7 @@ body {
 .lcd-label {
   font-family: 'Inter', sans-serif;
   font-size: 7px;
-  color: #4a8a4a;
+  color: #4a8a72;
   letter-spacing: .15em;
   text-transform: uppercase;
 }
@@ -175,10 +177,10 @@ body {
 .lcd-val {
   font-family: 'Share Tech Mono', 'Courier New', monospace;
   font-size: 20px;
-  color: #33ff66;
+  color: #7dcea0;
   text-shadow:
-    0 0 8px rgba(51,255,102,.7),
-    0 0 20px rgba(51,255,102,.3);
+    0 0 8px rgba(125,206,160,.65),
+    0 0 20px rgba(125,206,160,.25);
   line-height: 1.1;
   min-width: 2ch;
   text-align: center;
@@ -202,20 +204,20 @@ body {
 .lcd-select {
   font-family: 'Share Tech Mono', monospace;
   font-size: 11px;
-  color: #33ff66;
-  background: #1a3a1a;
+  color: #7dcea0;
+  background: #1a3a30;
   border: 1px solid #4a4a48;
   border-radius: 3px;
   padding: 3px 6px;
   cursor: pointer;
-  text-shadow: 0 0 5px rgba(51,255,102,.5);
+  text-shadow: 0 0 5px rgba(125,206,160,.4);
   box-shadow: inset 0 1px 4px rgba(0,0,0,.5);
   outline: none;
 }
 
 .lcd-select option {
-  background: #1a2a1a;
-  color: #33ff66;
+  background: #152a22;
+  color: #7dcea0;
 }
 
 .swing-section {
@@ -267,10 +269,10 @@ body {
 .swing-value-label {
   font-family: 'Share Tech Mono', monospace;
   font-size: 10px;
-  color: #33ff66;
+  color: #7dcea0;
   min-width: 32px;
   text-align: right;
-  text-shadow: 0 0 5px rgba(51,255,102,.4);
+  text-shadow: 0 0 5px rgba(125,206,160,.35);
 }
 
 .bank-section {
@@ -285,6 +287,8 @@ body {
 }
 
 .bank-btn {
+  position: relative;
+  overflow: visible;
   width: 30px;
   height: 24px;
   font-family: 'Inter', sans-serif;
@@ -306,20 +310,38 @@ body {
   color: #fff;
 }
 
+.bank-btn::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #333;
+  box-shadow: none;
+  z-index: 2;
+}
+
 .bank-btn.active {
   background: linear-gradient(to bottom, #2a5a2a, #1a3a1a);
-  color: #33ff66;
+  color: #7dcea0;
   border-color: #33aa44;
-  box-shadow: 0 1px 0 rgba(0,0,0,.3), 0 0 6px rgba(51,255,102,.3);
+  box-shadow: 0 1px 0 rgba(0,0,0,.3), 0 0 6px rgba(125,206,160,.3);
+}
+
+.bank-btn.active::before {
+  background: #ff3333;
+  box-shadow: 0 0 4px rgba(255,51,51,.9), 0 0 8px rgba(255,51,51,.5);
 }
 
 /* ── Module shared styles ─────────────────────────────────────────────── */
 .module-label {
   font-size: 8px;
-  color: #444;
-  letter-spacing: .15em;
+  color: #bbb;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .module {
@@ -330,12 +352,12 @@ body {
 
 .module-title {
   font-size: 8px;
-  color: #333;
-  letter-spacing: .2em;
+  color: #ccc;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-weight: 700;
+  font-weight: 800;
   padding-bottom: 3px;
-  border-bottom: 1px solid rgba(0,0,0,.12);
+  border-bottom: 1px solid rgba(255,255,255,.08);
 }
 
 .module-buttons {
@@ -346,6 +368,7 @@ body {
 
 /* ── Function buttons (small tactile) ─────────────────────────────────── */
 .fn-btn {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -370,6 +393,24 @@ body {
     inset 0 1px 0 rgba(255,255,255,.18);
   cursor: pointer;
   transition: all .08s;
+  overflow: visible;
+}
+
+/* LED indicator base — dim by default */
+.fn-btn--play::before,
+.fn-btn--record::before,
+.fn-btn--mode::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #333;
+  box-shadow: none;
+  z-index: 2;
+  transition: background .1s, box-shadow .1s;
 }
 
 .fn-btn:hover {
@@ -393,23 +434,52 @@ body {
   box-shadow: 0 1px 0 rgba(0,0,0,.3), 0 0 8px rgba(68,238,68,.3);
 }
 
+.fn-btn--play.active::before {
+  background: #33ff44;
+  box-shadow: 0 0 4px rgba(51,255,68,.9), 0 0 8px rgba(51,255,68,.5);
+}
+
 /* Stop button */
 .fn-btn--stop:active {
   background: linear-gradient(to bottom, #5a3030, #4a2020);
 }
 
+/* Record button — distinctly red even in default state */
+.fn-btn--record {
+  background: linear-gradient(to bottom, #6a2222, #4a1212);
+  color: #ff9999;
+  border-color: #8a3333;
+  border-bottom-color: #3a0a0a;
+}
+
+.fn-btn--record:hover {
+  background: linear-gradient(to bottom, #7a2a2a, #5a1a1a);
+  color: #ffbbbb;
+}
+
 /* Record button — red pulse when active */
 .fn-btn--record.active {
-  background: linear-gradient(to bottom, #6a2222, #4a1212);
+  background: linear-gradient(to bottom, #8a2222, #5a1212);
   color: #ff4444;
   border-color: #cc2222;
   box-shadow: 0 1px 0 rgba(0,0,0,.3), 0 0 8px rgba(255,68,68,.4);
   animation: record-pulse 1s ease-in-out infinite;
 }
 
+.fn-btn--record.active::before {
+  background: #ff2222;
+  box-shadow: 0 0 4px rgba(255,34,34,.9), 0 0 8px rgba(255,34,34,.6);
+  animation: led-record-pulse 1s ease-in-out infinite;
+}
+
 @keyframes record-pulse {
   0%, 100% { box-shadow: 0 1px 0 rgba(0,0,0,.3), 0 0 6px rgba(255,68,68,.3); }
   50%       { box-shadow: 0 1px 0 rgba(0,0,0,.3), 0 0 18px rgba(255,68,68,.7); }
+}
+
+@keyframes led-record-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(255,34,34,.7), 0 0 6px rgba(255,34,34,.4); }
+  50%       { box-shadow: 0 0 6px rgba(255,34,34,1), 0 0 14px rgba(255,34,34,.8); }
 }
 
 /* Mode buttons — highlight active */
@@ -418,6 +488,11 @@ body {
   color: #33ff66;
   border-color: #33aa44;
   box-shadow: 0 1px 0 rgba(0,0,0,.3), 0 0 8px rgba(51,255,102,.3);
+}
+
+.fn-btn--mode.active::before {
+  background: #ff2222;
+  box-shadow: 0 0 4px rgba(255,34,34,.9), 0 0 8px rgba(255,34,34,.5);
 }
 
 /* ── Modules area (center) ────────────────────────────────────────────── */
@@ -475,9 +550,9 @@ body {
 
 .mode-btn.active {
   background: linear-gradient(to bottom, #2a5a2a, #1a3a1a);
-  color: #33ff66;
+  color: #7dcea0;
   border-color: #33aa44;
-  box-shadow: 0 0 6px rgba(51,255,102,.3);
+  box-shadow: 0 0 6px rgba(125,206,160,.3);
 }
 
 /* ── 8 Faders in a row ────────────────────────────────────────────────── */
@@ -498,7 +573,7 @@ body {
 .fader-label {
   font-family: 'Inter', sans-serif;
   font-size: 9px;
-  color: #444;
+  color: #aaa;
   font-weight: 600;
   letter-spacing: .1em;
 }
@@ -578,16 +653,17 @@ body {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  /* Dark charcoal rubber pad */
-  background:
-    radial-gradient(ellipse at 40% 35%, #4a4848, #333130 60%, #2a2828 100%);
-  border: 2px solid #222;
-  border-radius: 6px;
+  /* Hard plastic pushbutton — flat, mechanical, no rubber rounding */
+  background: linear-gradient(to bottom, #2e2e2e 0%, #242424 50%, #1a1a1a 100%);
+  border: 2px solid #111;
+  border-top-color: #3a3a3a;
+  border-left-color: #333;
+  border-radius: 3px;
   box-shadow:
-    0 4px 0 #1a1a1a,
-    0 6px 12px rgba(0,0,0,.5),
-    inset 0 1px 0 rgba(255,255,255,.06),
-    inset 0 -1px 0 rgba(0,0,0,.3);
+    0 4px 0 #0f0f0f,
+    0 5px 10px rgba(0,0,0,.6),
+    inset 0 1px 0 rgba(255,255,255,.07),
+    inset 0 -1px 0 rgba(0,0,0,.4);
   cursor: pointer;
   font-family: 'Inter', sans-serif;
   transition: box-shadow .06s, transform .06s, background .06s;
@@ -596,43 +672,41 @@ body {
 }
 
 .pad:hover {
-  background:
-    radial-gradient(ellipse at 40% 35%, #5a5858, #3d3b3b 60%, #333130 100%);
+  background: linear-gradient(to bottom, #383838 0%, #2c2c2c 50%, #222 100%);
   box-shadow:
-    0 4px 0 #1a1a1a,
-    0 6px 12px rgba(0,0,0,.5),
-    inset 0 1px 0 rgba(255,255,255,.08);
+    0 4px 0 #0f0f0f,
+    0 5px 10px rgba(0,0,0,.6),
+    inset 0 1px 0 rgba(255,255,255,.1);
 }
 
 .pad:active {
   transform: translateY(2px);
   box-shadow:
-    0 2px 0 #1a1a1a,
-    0 3px 6px rgba(0,0,0,.4),
-    inset 0 2px 6px rgba(0,0,0,.5);
+    0 2px 0 #0f0f0f,
+    0 2px 5px rgba(0,0,0,.5),
+    inset 0 2px 5px rgba(0,0,0,.6);
 }
 
 .pad.triggered {
-  background:
-    radial-gradient(ellipse at 40% 35%, #4a6a3a, #2a4a1a 60%, #1a3a0a 100%);
+  background: linear-gradient(to bottom, #1e3a2a 0%, #142a1e 50%, #0e1e14 100%);
   box-shadow:
-    0 2px 0 #1a1a1a,
-    0 0 0 2px #33ff66,
-    0 0 16px rgba(51,255,102,.5),
-    inset 0 1px 4px rgba(0,0,0,.4);
+    0 2px 0 #0f0f0f,
+    0 0 0 2px #7dcea0,
+    0 0 14px rgba(125,206,160,.45),
+    inset 0 2px 5px rgba(0,0,0,.5);
   transform: translateY(2px);
 }
 
 .pad-num {
   font-size: 16px;
-  color: #ccc;
+  color: #aaa;
   line-height: 1;
   font-weight: 700;
 }
 
 .pad-key {
   font-size: 9px;
-  color: #666;
+  color: #555;
   line-height: 1;
   letter-spacing: .08em;
 }
