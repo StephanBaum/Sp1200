@@ -6,7 +6,7 @@
   <title>SP-1200 – E-mu Systems</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/sp1200.css">
 </head>
 <body>
@@ -19,28 +19,90 @@
       <span class="brand-subtitle">Sampling Percussion Machine</span>
     </div>
 
-    <!-- ── UPPER SECTION: Controls ───────────────────────────────── -->
+    <!-- ── UPPER SECTION: Function modules + Master Control ────── -->
     <div class="upper-section">
 
-      <!-- LEFT: LCD Display -->
-      <div class="lcd-area">
-        <div class="lcd-bezel">
-          <div class="lcd-screen">
-            <div class="lcd-row">
-              <span class="lcd-field"><span class="lcd-label">MODE</span><span class="lcd-val" id="display-mode">PAT</span></span>
-              <span class="lcd-field"><span class="lcd-label">BPM</span><span class="lcd-val" id="display-bpm">090</span></span>
-              <span class="lcd-field"><span class="lcd-label">PAT</span><span class="lcd-val" id="display-pattern">01</span></span>
-            </div>
-            <div class="lcd-row">
-              <span class="lcd-field"><span class="lcd-label">BAR</span><span class="lcd-val" id="display-bar">1</span></span>
-              <span class="lcd-field"><span class="lcd-label">BANK</span><span class="lcd-val" id="display-bank">A</span></span>
-              <span class="lcd-field"><span class="lcd-label">MEM</span><span class="lcd-val" id="display-memory">10.0s</span></span>
+      <!-- ROW of small module groups across the top -->
+      <div class="modules-row">
+
+        <!-- SET-UP -->
+        <div class="module">
+          <div class="module-title">SET-UP</div>
+          <div class="module-buttons">
+            <button class="fn-btn" id="btn-sample-edit">SAMPLE<br>EDIT</button>
+            <button class="fn-btn" id="btn-truncate">TRUNC</button>
+            <button class="fn-btn" id="btn-loop">LOOP</button>
+            <button class="fn-btn" id="btn-reverse">REVERSE</button>
+          </div>
+        </div>
+
+        <!-- DISK -->
+        <div class="module">
+          <div class="module-title">DISK</div>
+          <div class="module-buttons">
+            <button class="fn-btn" id="btn-load-sample">LOAD</button>
+            <button class="fn-btn" id="btn-mic-record">MIC<br>REC</button>
+          </div>
+        </div>
+
+        <!-- SYNC / SAMPLE -->
+        <div class="module">
+          <div class="module-title">SAMPLE</div>
+          <div class="module-buttons">
+            <button class="fn-btn" id="btn-tap-tempo">TAP</button>
+            <button class="fn-btn" id="btn-auto-repeat">AUTO<br>RPT</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MASTER CONTROL: LCD + Keypad + Programming + Transport -->
+      <div class="master-control">
+
+        <!-- LCD Display -->
+        <div class="lcd-area">
+          <div class="lcd-bezel">
+            <div class="lcd-screen">
+              <div class="lcd-row">
+                <span class="lcd-field"><span class="lcd-label">MODE</span><span class="lcd-val" id="display-mode">PAT</span></span>
+                <span class="lcd-field"><span class="lcd-label">BPM</span><span class="lcd-val" id="display-bpm">090</span></span>
+                <span class="lcd-field"><span class="lcd-label">PAT</span><span class="lcd-val" id="display-pattern">01</span></span>
+              </div>
+              <div class="lcd-row">
+                <span class="lcd-field"><span class="lcd-label">BAR</span><span class="lcd-val" id="display-bar">1</span></span>
+                <span class="lcd-field"><span class="lcd-label">BANK</span><span class="lcd-val" id="display-bank">A</span></span>
+                <span class="lcd-field"><span class="lcd-label">MEM</span><span class="lcd-val" id="display-memory">10.0s</span></span>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Quantize / Swing / Bank below LCD -->
-        <div class="lcd-sub-controls">
+        <!-- Numeric Keypad (phone/calculator layout) -->
+        <div class="keypad-area">
+          <div class="module-title">MASTER CONTROL</div>
+          <div class="keypad-grid">
+            <button class="key-btn">1</button>
+            <button class="key-btn">2</button>
+            <button class="key-btn">3</button>
+            <button class="key-btn">4</button>
+            <button class="key-btn">5</button>
+            <button class="key-btn">6</button>
+            <button class="key-btn">7</button>
+            <button class="key-btn">8</button>
+            <button class="key-btn">9</button>
+            <button class="key-btn key-btn--wide">ENTER</button>
+            <button class="key-btn">0</button>
+          </div>
+          <div class="keypad-nav">
+            <button class="key-btn key-btn--sm">&#9668;</button>
+            <button class="key-btn key-btn--sm">&#9658;</button>
+            <button class="key-btn key-btn--sm">YES</button>
+            <button class="key-btn key-btn--sm">NO</button>
+          </div>
+        </div>
+
+        <!-- Quantize / Swing / Bank -->
+        <div class="params-area">
           <div class="quantize-section">
             <label class="module-label" for="quantize-select">QUANTIZE</label>
             <select class="lcd-select" id="quantize-select">
@@ -70,62 +132,24 @@
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- CENTER: Function Module Groups -->
-      <div class="modules-area">
-
-        <!-- SET-UP module -->
-        <div class="module">
-          <div class="module-title">SET-UP</div>
-          <div class="module-buttons">
-            <button class="fn-btn" id="btn-sample-edit"><span>SAMPLE<br>EDIT</span></button>
-            <button class="fn-btn" id="btn-truncate"><span>TRUNC</span></button>
-            <button class="fn-btn" id="btn-loop"><span>LOOP</span></button>
-            <button class="fn-btn" id="btn-reverse"><span>REVERSE</span></button>
+        <!-- PROGRAMMING -->
+        <div class="program-area">
+          <div class="module">
+            <div class="module-title">PROGRAMMING</div>
+            <div class="module-buttons">
+              <button class="fn-btn fn-btn--mode" id="btn-pattern">PATTERN</button>
+              <button class="fn-btn fn-btn--mode" id="btn-song">SONG</button>
+              <button class="fn-btn fn-btn--mode" id="btn-step-edit">STEP<br>EDIT</button>
+            </div>
           </div>
-        </div>
-
-        <!-- DISK module -->
-        <div class="module">
-          <div class="module-title">DISK</div>
-          <div class="module-buttons">
-            <button class="fn-btn" id="btn-load-sample"><span>LOAD<br>SAMPLE</span></button>
-            <button class="fn-btn" id="btn-mic-record"><span>MIC<br>REC</span></button>
-          </div>
-        </div>
-
-        <!-- SAMPLE module -->
-        <div class="module">
-          <div class="module-title">SAMPLE</div>
-          <div class="module-buttons">
-            <button class="fn-btn" id="btn-tap-tempo"><span>TAP<br>TEMPO</span></button>
-            <button class="fn-btn" id="btn-auto-repeat"><span>AUTO<br>RPT</span></button>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- RIGHT: Programming & Transport -->
-      <div class="transport-area">
-
-        <!-- Mode select -->
-        <div class="module">
-          <div class="module-title">PROGRAM</div>
-          <div class="module-buttons">
-            <button class="fn-btn fn-btn--mode" id="btn-pattern"><span>PATTERN</span></button>
-            <button class="fn-btn fn-btn--mode" id="btn-song"><span>SONG</span></button>
-            <button class="fn-btn fn-btn--mode" id="btn-step-edit"><span>STEP<br>EDIT</span></button>
-          </div>
-        </div>
-
-        <!-- Transport -->
-        <div class="module">
-          <div class="module-title">TRANSPORT</div>
-          <div class="module-buttons">
-            <button class="fn-btn fn-btn--play" id="btn-play"><span>&#9654; PLAY</span></button>
-            <button class="fn-btn fn-btn--stop" id="btn-stop"><span>&#9632; STOP</span></button>
-            <button class="fn-btn fn-btn--record" id="btn-record"><span>&#9679; REC</span></button>
+          <div class="module" style="margin-top:8px">
+            <div class="module-title">TRANSPORT</div>
+            <div class="module-buttons">
+              <button class="fn-btn fn-btn--play" id="btn-play">&#9654; RUN</button>
+              <button class="fn-btn fn-btn--stop" id="btn-stop">&#9632; STOP</button>
+              <button class="fn-btn fn-btn--record" id="btn-record">&#9679; REC</button>
+            </div>
           </div>
         </div>
 
@@ -133,94 +157,31 @@
 
     </div><!-- /upper-section -->
 
-    <!-- ── LOWER SECTION: Faders + Pads ──────────────────────────── -->
-    <div class="lower-section">
+    <!-- ── PERFORMANCE SECTION: Faders + Pads (compact bottom strip) ── -->
+    <div class="performance-section">
+      <div class="perf-label">PERFORMANCE</div>
 
-      <!-- Fader mode switch -->
       <div class="fader-mode-switch">
-        <button class="mode-btn active" data-mode="volume">VOL</button>
-        <button class="mode-btn" data-mode="pitch">PITCH</button>
+        <button class="mode-btn active" data-mode="volume">TUNE/DECAY</button>
+        <button class="mode-btn" data-mode="pitch">MIX</button>
       </div>
 
-      <!-- 8 Faders in a row -->
-      <div class="faders-row">
-        <div class="fader" data-fader="0">
-          <div class="fader-label">1</div>
-          <div class="fader-track"><div class="fader-thumb"></div></div>
-        </div>
-        <div class="fader" data-fader="1">
-          <div class="fader-label">2</div>
-          <div class="fader-track"><div class="fader-thumb"></div></div>
-        </div>
-        <div class="fader" data-fader="2">
-          <div class="fader-label">3</div>
-          <div class="fader-track"><div class="fader-thumb"></div></div>
-        </div>
-        <div class="fader" data-fader="3">
-          <div class="fader-label">4</div>
-          <div class="fader-track"><div class="fader-thumb"></div></div>
-        </div>
-        <div class="fader" data-fader="4">
-          <div class="fader-label">5</div>
-          <div class="fader-track"><div class="fader-thumb"></div></div>
-        </div>
-        <div class="fader" data-fader="5">
-          <div class="fader-label">6</div>
-          <div class="fader-track"><div class="fader-thumb"></div></div>
-        </div>
-        <div class="fader" data-fader="6">
-          <div class="fader-label">7</div>
-          <div class="fader-track"><div class="fader-thumb"></div></div>
-        </div>
-        <div class="fader" data-fader="7">
-          <div class="fader-label">8</div>
-          <div class="fader-track"><div class="fader-thumb"></div></div>
-        </div>
+      <!-- 8 columns: each has a fader on top, pad on bottom -->
+      <div class="channels-row">
+        <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><button class="pad" data-pad="0"><span class="pad-num">1</span></button></div>
+        <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><button class="pad" data-pad="1"><span class="pad-num">2</span></button></div>
+        <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><button class="pad" data-pad="2"><span class="pad-num">3</span></button></div>
+        <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><button class="pad" data-pad="3"><span class="pad-num">4</span></button></div>
+        <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><button class="pad" data-pad="4"><span class="pad-num">5</span></button></div>
+        <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><button class="pad" data-pad="5"><span class="pad-num">6</span></button></div>
+        <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><button class="pad" data-pad="6"><span class="pad-num">7</span></button></div>
+        <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><button class="pad" data-pad="7"><span class="pad-num">8</span></button></div>
       </div>
+    </div>
 
-      <!-- 8 Pads in a horizontal row -->
-      <div class="pads-row">
-        <button class="pad" data-pad="0">
-          <span class="pad-num">1</span>
-          <span class="pad-key">Z</span>
-        </button>
-        <button class="pad" data-pad="1">
-          <span class="pad-num">2</span>
-          <span class="pad-key">X</span>
-        </button>
-        <button class="pad" data-pad="2">
-          <span class="pad-num">3</span>
-          <span class="pad-key">C</span>
-        </button>
-        <button class="pad" data-pad="3">
-          <span class="pad-num">4</span>
-          <span class="pad-key">V</span>
-        </button>
-        <button class="pad" data-pad="4">
-          <span class="pad-num">5</span>
-          <span class="pad-key">A</span>
-        </button>
-        <button class="pad" data-pad="5">
-          <span class="pad-num">6</span>
-          <span class="pad-key">S</span>
-        </button>
-        <button class="pad" data-pad="6">
-          <span class="pad-num">7</span>
-          <span class="pad-key">D</span>
-        </button>
-        <button class="pad" data-pad="7">
-          <span class="pad-num">8</span>
-          <span class="pad-key">F</span>
-        </button>
-      </div>
+  </div>
 
-    </div><!-- /lower-section -->
-
-  </div><!-- /sp1200 -->
-
-  <!-- Hidden file input for sample loading -->
   <input type="file" id="file-input" accept="audio/*" style="display:none">
-
   <script type="module" src="/js/main.js"></script>
 </body>
 </html>
