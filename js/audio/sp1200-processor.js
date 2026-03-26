@@ -1,0 +1,654 @@
+/**
+ * SP-1200 AudioWorklet Processor
+ * Self-contained — no ES module imports (AudioWorklet restriction).
+ * All DSP logic is inlined from the reference implementations in js/dsp/ and js/sequencer/.
+ */
+
+// ---------------------------------------------------------------------------
+// Constants (from js/constants.js)
+// ---------------------------------------------------------------------------
+const SP_SAMPLE_RATE = 26040;
+const OUTPUT_SAMPLE_RATE = 44100;
+const NUM_PADS = 8;
+const PPQN = 96;
+const MAX_PATTERNS = 99;
+const MAX_SONG_ENTRIES = 99;
+const BPM_MIN = 30;
+const BPM_MAX = 250;
+const BPM_DEFAULT = 90;
+const SWING_MIN = 50;
+const SWING_MAX = 75;
+const FILTER_DYNAMIC = [0, 1];
+const FILTER_FIXED = [2, 3, 4, 5];
+// FILTER_NONE = [6, 7]
+
+// ---------------------------------------------------------------------------
+// Voice (from js/dsp/voice.js)
+// ---------------------------------------------------------------------------
+class Voice {
+  constructor(channelIndex) {
+    this.channelIndex = channelIndex;
+    this.sample = null;
+    this.active = false;
+    this.position = 0;
+    this.velocity = 0;
+    this.pitch = 1.0;
+    this.decayRate = 1.0;
+    this.decayLevel = 1.0;
+    this.reversed = false;
+    this.loopEnabled = false;
+    this.loopStart = 0;
+    this.loopEnd = 0;
+    this.startPoint = 0;
+    this.endPoint = 0;
+  }
+  loadSample(buffer) {
+    this.sample = buffer;
+    this.startPoint = 0;
+    this.endPoint = buffer.length - 1;
+    this.loopEnd = buffer.length - 1;
+  }
+  trigger(velocity) {
+    if (!this.sample) return;
+    this.active = true;
+    this.velocity = velocity / 127;
+    this.decayLevel = 1.0;
+    this.position = this.reversed ? this.endPoint : this.startPoint;
+  }
+  stop() {
+    this.active = false;
+    this.position = 0;
+  }
+  setPitch(rate) { this.pitch = rate; }
+  setDecay(amount) {
+    if (amount < 1) {
+      this.decayRate = 0.995 + (amount * 0.005);
+    } else {
+      this.decayRate = 1.0;
+    }
+  }
+  setReversed(reversed) { this.reversed = reversed; }
+  setLoop(enabled, start = 0, end = 0) {
+    this.loopEnabled = enabled;
+    if (enabled) { this.loopStart = start; this.loopEnd = end; }
+  }
+  setTruncate(start, end) { this.startPoint = start; this.endPoint = end; }
+  process() {
+    if (!this.active || !this.sample) return 0;
+    const index = Math.floor(this.position);
+    if (this.reversed) {
+      if (index < this.startPoint) {
+        if (this.loopEnabled) { this.position = this.loopEnd; } else { this.active = false; return 0; }
+      }
+    } else {
+      if (index > this.endPoint) {
+        if (this.loopEnabled) { this.position = this.loopStart; } else { this.active = false; return 0; }
+      }
+    }
+    const safeIndex = Math.max(0, Math.min(Math.floor(this.position), this.sample.length - 1));
+    const raw = this.sample[safeIndex];
+    const out = raw * this.velocity * this.decayLevel;
+    this.position += this.reversed ? -this.pitch : this.pitch;
+    this.decayLevel *= this.decayRate;
+    if (this.decayLevel < 0.001) this.active = false;
+    return out;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// SSM2044 Filter — 4-pole ladder (from js/dsp/filters.js)
+// ---------------------------------------------------------------------------
+class SSM2044Filter {
+  constructor(cutoff = 10000, resonance = 0) {
+    this.cutoff = cutoff;
+    this.resonance = resonance;
+    this.sampleRate = SP_SAMPLE_RATE;
+    this.s = [0, 0, 0, 0];
+    this._updateCoefficients();
+  }
+  _updateCoefficients() {
+    const fc = Math.max(20, Math.min(this.cutoff, this.sampleRate * 0.49));
+    this.g = Math.tan(Math.PI * fc / this.sampleRate);
+  }
+  setCutoff(cutoff) { this.cutoff = cutoff; this._updateCoefficients(); }
+  setResonance(resonance) { this.resonance = Math.max(0, Math.min(resonance, 4)); }
+  process(input) {
+    let x = input - this.resonance * Math.tanh(this.s[3]);
+    const g = this.g;
+    const denom = 1 + g;
+    for (let i = 0; i < 4; i++) {
+      const y = (g * x + this.s[i]) / denom;
+      this.s[i] = 2 * y - this.s[i];
+      x = y;
+    }
+    return x;
+  }
+  reset() { this.s = [0, 0, 0, 0]; }
+}
+
+// ---------------------------------------------------------------------------
+// Fixed Filter — 2-pole (from js/dsp/filters.js)
+// ---------------------------------------------------------------------------
+class FixedFilter {
+  constructor(cutoff = 8000) {
+    this.sampleRate = SP_SAMPLE_RATE;
+    this.s = [0, 0];
+    const fc = Math.max(20, Math.min(cutoff, this.sampleRate * 0.49));
+    this.g = Math.tan(Math.PI * fc / this.sampleRate);
+  }
+  process(input) {
+    let x = input;
+    const g = this.g;
+    const denom = 1 + g;
+    for (let i = 0; i < 2; i++) {
+      const y = (g * x + this.s[i]) / denom;
+      this.s[i] = 2 * y - this.s[i];
+      x = y;
+    }
+    return x;
+  }
+  reset() { this.s = [0, 0]; }
+}
+
+// ---------------------------------------------------------------------------
+// Mixer (from js/dsp/mixer.js)
+// ---------------------------------------------------------------------------
+class Mixer {
+  constructor() {
+    this.channels = Array.from({ length: NUM_PADS }, () => ({
+      volume: 1.0,
+      pan: 0,
+      gainL: Math.SQRT1_2,
+      gainR: Math.SQRT1_2,
+    }));
+  }
+  setVolume(channel, volume) {
+    this.channels[channel].volume = Math.max(0, Math.min(1, volume));
+  }
+  setPan(channel, pan) {
+    const ch = this.channels[channel];
+    ch.pan = Math.max(-1, Math.min(1, pan));
+    const angle = (ch.pan + 1) * Math.PI / 4;
+    ch.gainL = Math.cos(angle);
+    ch.gainR = Math.sin(angle);
+  }
+  process(inputs) {
+    let left = 0, right = 0;
+    for (let i = 0; i < NUM_PADS; i++) {
+      const signal = inputs[i] * this.channels[i].volume;
+      left += signal * this.channels[i].gainL;
+      right += signal * this.channels[i].gainR;
+    }
+    return [left, right];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Clock (from js/sequencer/clock.js)
+// ---------------------------------------------------------------------------
+class Clock {
+  constructor(sampleRate) {
+    this.sampleRate = sampleRate;
+    this.bpm = BPM_DEFAULT;
+    this.samplesPerTick = 0;
+    this.sampleCounter = 0;
+    this.tick = 0;
+    this.playing = false;
+    this._calcSamplesPerTick();
+  }
+  _calcSamplesPerTick() {
+    this.samplesPerTick = (this.sampleRate * 60) / (this.bpm * PPQN);
+  }
+  setBpm(bpm) {
+    this.bpm = Math.max(BPM_MIN, Math.min(BPM_MAX, bpm));
+    this._calcSamplesPerTick();
+  }
+  start() { this.playing = true; this.tick = 0; this.sampleCounter = 0; }
+  stop() { this.playing = false; this.tick = 0; this.sampleCounter = 0; }
+  advance() {
+    if (!this.playing) return null;
+    this.sampleCounter++;
+    const nextTickAt = Math.floor((this.tick + 1) * this.samplesPerTick);
+    if (this.sampleCounter >= nextTickAt) { this.tick++; return this.tick; }
+    return null;
+  }
+  getPosition(tick) {
+    const ticksPerBeat = PPQN;
+    const ticksPerBar = PPQN * 4;
+    const ticksPer16th = PPQN / 4;
+    const bar = Math.floor(tick / ticksPerBar);
+    const beatTick = tick % ticksPerBar;
+    const beat = Math.floor(beatTick / ticksPerBeat);
+    const sixteenthTick = beatTick % ticksPerBeat;
+    const sixteenth = Math.floor(sixteenthTick / ticksPer16th);
+    return { bar, beat, sixteenth, tick };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Swing helpers (from js/sequencer/swing.js)
+// ---------------------------------------------------------------------------
+const TICKS_PER_16TH = PPQN / 4;
+
+function getSwingOffset(tick, swingPercent) {
+  if (swingPercent <= 50) return 0;
+  const sixteenthIndex = Math.floor(tick / TICKS_PER_16TH);
+  const posInSixteenth = tick % TICKS_PER_16TH;
+  if (sixteenthIndex % 2 === 0 || posInSixteenth !== 0) return 0;
+  const swingAmount = (swingPercent - 50) / 25;
+  return Math.round(TICKS_PER_16TH * swingAmount * 0.5);
+}
+
+function applySwing(tick, swingPercent) {
+  return tick + getSwingOffset(tick, swingPercent);
+}
+
+// ---------------------------------------------------------------------------
+// Pattern (from js/sequencer/pattern.js)
+// ---------------------------------------------------------------------------
+class PatternEvent {
+  constructor(tick, velocity = 127, pitchOffset = 0) {
+    this.tick = tick;
+    this.velocity = velocity;
+    this.pitchOffset = pitchOffset;
+  }
+}
+
+class Track {
+  constructor() { this.events = []; }
+  addEvent(event) { this.events.push(event); this.events.sort((a, b) => a.tick - b.tick); }
+  removeEventAtTick(tick) {
+    const idx = this.events.findIndex(e => e.tick === tick);
+    if (idx !== -1) this.events.splice(idx, 1);
+  }
+  clear() { this.events = []; }
+  getEventsAtTick(tick) { return this.events.filter(e => e.tick === tick); }
+}
+
+class Pattern {
+  constructor() {
+    this.bars = 1;
+    this.totalTicks = PPQN * 4;
+    this.tracks = Array.from({ length: NUM_PADS }, () => new Track());
+  }
+  setBars(bars) {
+    this.bars = Math.max(1, Math.min(4, bars));
+    this.totalTicks = PPQN * 4 * this.bars;
+  }
+  addEvent(trackIndex, event) {
+    if (trackIndex >= 0 && trackIndex < NUM_PADS) this.tracks[trackIndex].addEvent(event);
+  }
+  removeEvent(trackIndex, tick) {
+    if (trackIndex >= 0 && trackIndex < NUM_PADS) this.tracks[trackIndex].removeEventAtTick(tick);
+  }
+  getEventsAtTick(tick) {
+    const results = [];
+    for (let i = 0; i < NUM_PADS; i++) {
+      for (const e of this.tracks[i].getEventsAtTick(tick)) results.push({ track: i, ...e });
+    }
+    return results;
+  }
+  quantizeTick(tick, gridSize) { return Math.round(tick / gridSize) * gridSize; }
+  clearTrack(trackIndex) {
+    if (trackIndex >= 0 && trackIndex < NUM_PADS) this.tracks[trackIndex].clear();
+  }
+  clear() { for (const track of this.tracks) track.clear(); }
+}
+
+// ---------------------------------------------------------------------------
+// Song (from js/sequencer/song.js)
+// ---------------------------------------------------------------------------
+class SongEntry {
+  constructor(pattern, repeats = 1) {
+    this.pattern = pattern;
+    this.repeats = Math.max(1, repeats);
+  }
+}
+
+class Song {
+  constructor() { this.entries = []; this.currentIndex = 0; this.currentRepeat = 0; }
+  addEntry(entry) { if (this.entries.length < MAX_SONG_ENTRIES) this.entries.push(entry); }
+  removeEntry(index) { if (index >= 0 && index < this.entries.length) this.entries.splice(index, 1); }
+  start() { this.currentIndex = 0; this.currentRepeat = 0; }
+  currentPattern() { if (this.isFinished()) return -1; return this.entries[this.currentIndex].pattern; }
+  advanceRepeat() {
+    if (this.isFinished()) return;
+    this.currentRepeat++;
+    if (this.currentRepeat >= this.entries[this.currentIndex].repeats) {
+      this.currentIndex++;
+      this.currentRepeat = 0;
+    }
+  }
+  isFinished() { return this.currentIndex >= this.entries.length; }
+  getPosition() { return { entryIndex: this.currentIndex, repeat: this.currentRepeat, pattern: this.currentPattern() }; }
+}
+
+// ---------------------------------------------------------------------------
+// Nearest-neighbour pitch resampler ratio: SP rate → output rate
+// The voice works at SP_SAMPLE_RATE internally; we need to step through it
+// at a rate of SP_SAMPLE_RATE / OUTPUT_SAMPLE_RATE per output sample.
+// A pitch of 1.0 means: playback at original pitch through the output DAC.
+// ---------------------------------------------------------------------------
+const BASE_PITCH_STEP = SP_SAMPLE_RATE / OUTPUT_SAMPLE_RATE;
+
+// ---------------------------------------------------------------------------
+// SP1200Processor
+// ---------------------------------------------------------------------------
+class SP1200Processor extends AudioWorkletProcessor {
+  constructor(options) {
+    super(options);
+
+    // Voices: 8 voices (one per pad)
+    this.voices = Array.from({ length: NUM_PADS }, (_, i) => new Voice(i));
+
+    // Filters: ch 0–1 → SSM2044, ch 2–5 → FixedFilter, ch 6–7 → none
+    this.dynamicFilters = [new SSM2044Filter(), new SSM2044Filter()];
+    this.fixedFilters = [new FixedFilter(), new FixedFilter(), new FixedFilter(), new FixedFilter()];
+
+    // Mixer
+    this.mixer = new Mixer();
+
+    // Clock (AudioWorklet global sampleRate)
+    this.clock = new Clock(sampleRate);
+
+    // Sequencer state
+    this.patterns = Array.from({ length: MAX_PATTERNS }, () => new Pattern());
+    this.currentPatternIndex = 0;
+    this.patternTick = 0;       // position within the active pattern
+    this.swingPercent = 50;
+    this.quantizeGrid = PPQN / 4; // default 1/16
+
+    // Transport / mode
+    this.isPlaying = false;
+    this.isRecording = false;
+    this.mode = 'pattern'; // 'pattern' | 'song'
+
+    // Song
+    this.song = new Song();
+    this.songPlaying = false;
+
+    // Auto-repeat: when pattern ends, loop back
+    this.autoRepeat = true;
+
+    // Pending events scheduled (tick → [{pad, velocity}])
+    this._pendingEvents = new Map();
+
+    this.port.onmessage = (e) => this._handleMessage(e.data);
+  }
+
+  // -------------------------------------------------------------------------
+  // Message dispatch
+  // -------------------------------------------------------------------------
+  _handleMessage(msg) {
+    switch (msg.type) {
+      case 'trigger':
+        this._triggerVoice(msg.pad, msg.velocity ?? 127);
+        break;
+
+      case 'stop-voice':
+        if (msg.pad >= 0 && msg.pad < NUM_PADS) this.voices[msg.pad].stop();
+        break;
+
+      case 'load-sample': {
+        const pad = msg.pad;
+        if (pad >= 0 && pad < NUM_PADS) {
+          const buf = new Float32Array(msg.buffer);
+          this.voices[pad].loadSample(buf);
+        }
+        break;
+      }
+
+      case 'set-param':
+        this._setParam(msg.param, msg.pad, msg.value);
+        break;
+
+      case 'transport':
+        this._handleTransport(msg.action);
+        break;
+
+      case 'set-bpm':
+        this.clock.setBpm(msg.bpm);
+        break;
+
+      case 'set-swing':
+        this.swingPercent = Math.max(SWING_MIN, Math.min(SWING_MAX, msg.amount));
+        break;
+
+      case 'set-quantize':
+        if (msg.grid && typeof msg.grid === 'number') this.quantizeGrid = msg.grid;
+        break;
+
+      case 'pattern-select':
+        if (msg.number >= 0 && msg.number < MAX_PATTERNS) {
+          this.currentPatternIndex = msg.number;
+          this.patternTick = 0;
+        }
+        break;
+
+      case 'step-edit': {
+        // { pattern, track, tick, velocity, pitchOffset, remove }
+        const p = this.patterns[msg.pattern ?? this.currentPatternIndex];
+        if (msg.remove) {
+          p.removeEvent(msg.track, msg.tick);
+        } else {
+          p.addEvent(msg.track, new PatternEvent(msg.tick, msg.velocity ?? 127, msg.pitchOffset ?? 0));
+        }
+        break;
+      }
+
+      case 'song-chain': {
+        // { entries: [{pattern, repeats}] }
+        this.song = new Song();
+        if (Array.isArray(msg.entries)) {
+          for (const e of msg.entries) {
+            this.song.addEntry(new SongEntry(e.pattern, e.repeats ?? 1));
+          }
+        }
+        break;
+      }
+
+      case 'set-mode':
+        this.mode = msg.mode; // 'pattern' | 'song'
+        break;
+
+      case 'auto-repeat':
+        this.autoRepeat = !!msg.enabled;
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Transport
+  // -------------------------------------------------------------------------
+  _handleTransport(action) {
+    switch (action) {
+      case 'play':
+        this.isPlaying = true;
+        this.isRecording = false;
+        this.patternTick = 0;
+        this.clock.start();
+        if (this.mode === 'song') {
+          this.songPlaying = true;
+          this.song.start();
+        }
+        break;
+
+      case 'stop':
+        this.isPlaying = false;
+        this.isRecording = false;
+        this.songPlaying = false;
+        this.patternTick = 0;
+        this.clock.stop();
+        for (const v of this.voices) v.stop();
+        break;
+
+      case 'record':
+        this.isPlaying = true;
+        this.isRecording = true;
+        this.patternTick = 0;
+        this.clock.start();
+        break;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Parameter setting
+  // -------------------------------------------------------------------------
+  _setParam(param, pad, value) {
+    if (pad < 0 || pad >= NUM_PADS) return;
+    const voice = this.voices[pad];
+    switch (param) {
+      case 'pitch':
+        // value is semitone offset; convert to rate
+        voice.setPitch(BASE_PITCH_STEP * Math.pow(2, value / 12));
+        break;
+      case 'volume':
+        this.mixer.setVolume(pad, value);
+        break;
+      case 'pan':
+        this.mixer.setPan(pad, value);
+        break;
+      case 'decay':
+        voice.setDecay(value);
+        break;
+      case 'reverse':
+        voice.setReversed(!!value);
+        break;
+      case 'loop':
+        voice.setLoop(!!value);
+        break;
+      case 'truncate':
+        // value: { start, end }
+        if (value && typeof value === 'object') voice.setTruncate(value.start, value.end);
+        break;
+      case 'filter-cutoff':
+        if (FILTER_DYNAMIC.includes(pad)) {
+          this.dynamicFilters[FILTER_DYNAMIC.indexOf(pad)].setCutoff(value);
+        }
+        break;
+      case 'filter-resonance':
+        if (FILTER_DYNAMIC.includes(pad)) {
+          this.dynamicFilters[FILTER_DYNAMIC.indexOf(pad)].setResonance(value);
+        }
+        break;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Trigger a voice (also used from sequencer)
+  // -------------------------------------------------------------------------
+  _triggerVoice(pad, velocity) {
+    if (pad < 0 || pad >= NUM_PADS) return;
+    this.voices[pad].trigger(velocity);
+    this.port.postMessage({ type: 'trigger-visual', pad, velocity });
+  }
+
+  // -------------------------------------------------------------------------
+  // Sequencer tick processing
+  // -------------------------------------------------------------------------
+  _processTick(clockTick) {
+    // Determine which pattern to play
+    let patternIndex = this.currentPatternIndex;
+    if (this.mode === 'song' && this.songPlaying) {
+      patternIndex = this.song.currentPattern();
+      if (patternIndex < 0) {
+        // Song finished
+        this.isPlaying = false;
+        this.songPlaying = false;
+        this.clock.stop();
+        this.port.postMessage({ type: 'song-end' });
+        return;
+      }
+    }
+
+    const pattern = this.patterns[patternIndex];
+
+    // Apply swing to pattern tick lookup
+    const swungTick = applySwing(this.patternTick, this.swingPercent);
+
+    // Fire events at this tick
+    const events = pattern.getEventsAtTick(swungTick);
+    for (const ev of events) {
+      this._triggerVoice(ev.track, ev.velocity);
+    }
+
+    // Post tick position
+    const pos = this.clock.getPosition(clockTick);
+    this.port.postMessage({
+      type: 'tick',
+      ...pos,
+      patternTick: this.patternTick,
+      patternIndex,
+    });
+
+    // Advance pattern tick
+    this.patternTick++;
+
+    if (this.patternTick >= pattern.totalTicks) {
+      this.patternTick = 0;
+      this.port.postMessage({ type: 'pattern-end', patternIndex });
+
+      if (this.mode === 'song' && this.songPlaying) {
+        this.song.advanceRepeat();
+        if (this.song.isFinished()) {
+          this.isPlaying = false;
+          this.songPlaying = false;
+          this.clock.stop();
+          this.port.postMessage({ type: 'song-end' });
+          return;
+        }
+        const pos = this.song.getPosition();
+        this.port.postMessage({ type: 'song-position', ...pos });
+      } else if (!this.autoRepeat) {
+        this.isPlaying = false;
+        this.clock.stop();
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // AudioWorkletProcessor.process()
+  // -------------------------------------------------------------------------
+  process(_inputs, outputs) {
+    const output = outputs[0];
+    const leftOut = output[0];
+    const rightOut = output[1];
+
+    for (let i = 0; i < leftOut.length; i++) {
+      // Advance clock; fire sequencer on each new tick
+      const newTick = this.clock.advance();
+      if (newTick !== null && this.isPlaying) {
+        this._processTick(newTick);
+      }
+
+      // Process voices through filters
+      const voiceOutputs = new Array(NUM_PADS);
+      for (let v = 0; v < NUM_PADS; v++) {
+        let sample = this.voices[v].process();
+
+        if (FILTER_DYNAMIC.includes(v)) {
+          const fi = FILTER_DYNAMIC.indexOf(v);
+          sample = this.dynamicFilters[fi].process(sample);
+        } else if (v >= 2 && v <= 5) {
+          const fi = v - 2; // channels 2–5 → fixed filter indices 0–3
+          sample = this.fixedFilters[fi].process(sample);
+        }
+        // channels 6–7: no filter
+
+        voiceOutputs[v] = sample;
+      }
+
+      // Mix to stereo
+      const [left, right] = this.mixer.process(voiceOutputs);
+      leftOut[i] = left;
+      rightOut[i] = right;
+    }
+
+    return true; // keep processor alive
+  }
+}
+
+registerProcessor('sp1200-processor', SP1200Processor);
