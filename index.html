@@ -12,174 +12,299 @@
 <body>
   <div id="sp1200" class="sp1200">
 
-    <!-- ── TOP LABEL BAR ─────────────────────────────────────────── -->
-    <div class="top-label">
-      <span class="brand-emu">E-mu Systems</span>
-      <span class="brand-model">SP-1200</span>
-      <span class="brand-subtitle">Sampling Percussion Machine</span>
-    </div>
+    <!-- Wooden side panels -->
+    <div class="wood-panel wood-left"></div>
+    <div class="wood-panel wood-right"></div>
 
-    <!-- ── UPPER SECTION: Function modules + Master Control ────── -->
-    <div class="upper-section">
+    <!-- Main faceplate -->
+    <div class="faceplate">
 
-      <!-- ROW of small module groups across the top -->
-      <div class="modules-row">
+      <!-- ═══ ZONE 1: Set-up / Disk / Sync / Sample / Master Control ═══ -->
+      <div class="zone zone-1">
 
-        <!-- SET-UP -->
-        <div class="module">
-          <div class="module-title">SET-UP</div>
-          <div class="module-buttons">
-            <button class="fn-btn" id="btn-sample-edit">SAMPLE<br>EDIT</button>
-            <button class="fn-btn" id="btn-truncate">TRUNC</button>
-            <button class="fn-btn" id="btn-loop">LOOP</button>
-            <button class="fn-btn" id="btn-reverse">REVERSE</button>
-          </div>
-        </div>
+        <div class="zone-modules">
 
-        <!-- DISK -->
-        <div class="module">
-          <div class="module-title">DISK</div>
-          <div class="module-buttons">
-            <button class="fn-btn" id="btn-load-sample">LOAD</button>
-            <button class="fn-btn" id="btn-mic-record">MIC<br>REC</button>
-          </div>
-        </div>
-
-        <!-- SYNC / SAMPLE -->
-        <div class="module">
-          <div class="module-title">SAMPLE</div>
-          <div class="module-buttons">
-            <button class="fn-btn" id="btn-tap-tempo">TAP</button>
-            <button class="fn-btn" id="btn-auto-repeat">AUTO<br>RPT</button>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- MASTER CONTROL: LCD + Keypad + Programming + Transport -->
-      <div class="master-control">
-
-        <!-- LCD Display -->
-        <div class="lcd-area">
-          <div class="lcd-bezel">
-            <div class="lcd-screen">
-              <div class="lcd-row">
-                <span class="lcd-field"><span class="lcd-label">MODE</span><span class="lcd-val" id="display-mode">PAT</span></span>
-                <span class="lcd-field"><span class="lcd-label">BPM</span><span class="lcd-val" id="display-bpm">090</span></span>
-                <span class="lcd-field"><span class="lcd-label">PAT</span><span class="lcd-val" id="display-pattern">01</span></span>
-              </div>
-              <div class="lcd-row">
-                <span class="lcd-field"><span class="lcd-label">BAR</span><span class="lcd-val" id="display-bar">1</span></span>
-                <span class="lcd-field"><span class="lcd-label">BANK</span><span class="lcd-val" id="display-bank">A</span></span>
-                <span class="lcd-field"><span class="lcd-label">MEM</span><span class="lcd-val" id="display-memory">10.0s</span></span>
+          <!-- SET-UP -->
+          <div class="module module-setup">
+            <div class="module-header"><span class="section-title">Set-up</span></div>
+            <div class="module-body">
+              <div class="led-indicator led-cyan"></div>
+              <button class="cream-btn" id="btn-sample-edit">SELECT</button>
+              <div class="fn-list">
+                <span>1 Tune</span><span>2 Decay</span><span>3 Filter</span>
+                <span>4 Pan</span><span>5 Output</span><span>6 Velocity</span>
+                <span>7 Reverse</span><span>8 Loop</span><span>9 Truncate</span>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Numeric Keypad (phone/calculator layout) -->
-        <div class="keypad-area">
-          <div class="module-title">MASTER CONTROL</div>
-          <div class="keypad-grid">
-            <button class="key-btn">1</button>
-            <button class="key-btn">2</button>
-            <button class="key-btn">3</button>
-            <button class="key-btn">4</button>
-            <button class="key-btn">5</button>
-            <button class="key-btn">6</button>
-            <button class="key-btn">7</button>
-            <button class="key-btn">8</button>
-            <button class="key-btn">9</button>
-            <button class="key-btn key-btn--wide">ENTER</button>
-            <button class="key-btn">0</button>
-          </div>
-          <div class="keypad-nav">
-            <button class="key-btn key-btn--sm">&#9668;</button>
-            <button class="key-btn key-btn--sm">&#9658;</button>
-            <button class="key-btn key-btn--sm">YES</button>
-            <button class="key-btn key-btn--sm">NO</button>
-          </div>
-        </div>
-
-        <!-- Quantize / Swing / Bank -->
-        <div class="params-area">
-          <div class="quantize-section">
-            <label class="module-label" for="quantize-select">QUANTIZE</label>
-            <select class="lcd-select" id="quantize-select">
-              <option value="96">1/4</option>
-              <option value="48">1/8</option>
-              <option value="32">1/8T</option>
-              <option value="24" selected>1/16</option>
-              <option value="16">1/16T</option>
-              <option value="12">1/32</option>
-            </select>
-          </div>
-          <div class="swing-section">
-            <label class="module-label" for="swing-slider">SWING</label>
-            <div class="swing-row">
-              <input class="swing-slider" type="range" id="swing-slider"
-                     min="50" max="75" value="50" step="1">
-              <span class="swing-value-label" id="swing-value">50%</span>
+          <!-- DISK -->
+          <div class="module module-disk">
+            <div class="module-header"><span class="section-title">Disk</span></div>
+            <div class="module-body">
+              <button class="cream-btn" id="btn-load-sample">SELECT</button>
+              <div class="fn-list">
+                <span>1 Load Song</span><span>2 Save Song</span>
+                <span>3 Load Sound</span><span>4 Save Sound</span>
+                <span>5 Format</span><span>6 Delete</span>
+              </div>
             </div>
           </div>
-          <div class="bank-section">
-            <div class="module-label">BANK</div>
-            <div class="bank-buttons">
-              <button class="bank-btn active" data-bank="0">A</button>
-              <button class="bank-btn" data-bank="1">B</button>
-              <button class="bank-btn" data-bank="2">C</button>
-              <button class="bank-btn" data-bank="3">D</button>
+
+          <!-- SYNC -->
+          <div class="module module-sync">
+            <div class="module-header"><span class="section-title">Sync</span></div>
+            <div class="module-body">
+              <button class="cream-btn" id="btn-auto-repeat">SELECT</button>
+              <div class="fn-list">
+                <span>1 Internal</span><span>2 MIDI</span>
+                <span>3 SMPTE</span><span>4 Click</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SAMPLE -->
+          <div class="module module-sample">
+            <div class="module-header"><span class="section-title">Sample</span></div>
+            <div class="module-body">
+              <div class="led-indicator led-red"></div>
+              <button class="cream-btn" id="btn-mic-record">SELECT</button>
+              <div class="fn-list">
+                <span>1 Sample</span><span>2 Threshold</span>
+                <span>3 Monitor</span><span>4 Input</span>
+                <span>5 Rate</span><span>6 Length</span>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /zone-modules -->
+
+        <!-- MASTER CONTROL -->
+        <div class="master-control">
+          <div class="module-header"><span class="section-title">Master Control</span></div>
+          <div class="master-inner">
+
+            <!-- Rotary knobs -->
+            <div class="knobs-row">
+              <div class="knob-group">
+                <div class="rotary-knob"><div class="knob-indicator"></div></div>
+                <span class="knob-label">VOLUME</span>
+              </div>
+              <div class="knob-group">
+                <div class="rotary-knob"><div class="knob-indicator"></div></div>
+                <span class="knob-label">TEMPO</span>
+              </div>
+            </div>
+
+            <!-- LCD Display -->
+            <div class="lcd-bezel">
+              <div class="lcd-screen">
+                <div class="lcd-row">
+                  <span class="lcd-field"><span class="lcd-label">MODE</span><span class="lcd-val" id="display-mode">PAT</span></span>
+                  <span class="lcd-field"><span class="lcd-label">BPM</span><span class="lcd-val" id="display-bpm">090</span></span>
+                  <span class="lcd-field"><span class="lcd-label">PAT</span><span class="lcd-val" id="display-pattern">01</span></span>
+                </div>
+                <div class="lcd-row">
+                  <span class="lcd-field"><span class="lcd-label">BAR</span><span class="lcd-val" id="display-bar">1</span></span>
+                  <span class="lcd-field"><span class="lcd-label">BANK</span><span class="lcd-val" id="display-bank">A</span></span>
+                  <span class="lcd-field"><span class="lcd-label">MEM</span><span class="lcd-val" id="display-memory">10.0s</span></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Numeric keypad -->
+            <div class="keypad">
+              <div class="keypad-grid">
+                <button class="cream-btn key-btn">1</button>
+                <button class="cream-btn key-btn">2</button>
+                <button class="cream-btn key-btn">3</button>
+                <button class="cream-btn key-btn">4</button>
+                <button class="cream-btn key-btn">5</button>
+                <button class="cream-btn key-btn">6</button>
+                <button class="cream-btn key-btn">7</button>
+                <button class="cream-btn key-btn">8</button>
+                <button class="cream-btn key-btn">9</button>
+                <button class="cream-btn key-btn">&#9668;</button>
+                <button class="cream-btn key-btn">&#9658;</button>
+                <button class="cream-btn key-btn">ENTER</button>
+                <button class="cream-btn key-btn">YES</button>
+                <button class="cream-btn key-btn">0</button>
+                <button class="cream-btn key-btn">NO</button>
+              </div>
+            </div>
+
+            <!-- Hidden controls for JS (quantize / swing) -->
+            <div class="hidden-params">
+              <select id="quantize-select">
+                <option value="96">1/4</option>
+                <option value="48">1/8</option>
+                <option value="32">1/8T</option>
+                <option value="24" selected>1/16</option>
+                <option value="16">1/16T</option>
+                <option value="12">1/32</option>
+              </select>
+              <input type="range" id="swing-slider" min="50" max="75" value="50" step="1">
+              <span id="swing-value">50%</span>
+            </div>
+
+          </div>
+        </div><!-- /master-control -->
+
+      </div><!-- /zone-1 -->
+
+      <!-- ═══ ZONE 2: Programming ═══ -->
+      <div class="zone zone-2">
+        <div class="zone-header">
+          <span class="section-title">Programming</span>
+          <div class="section-line"></div>
+        </div>
+        <div class="prog-rows">
+          <div class="prog-row">
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn" id="btn-pattern">SELECT</button>
+              <span class="prog-label">Segment</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn" id="btn-tap-tempo">SELECT</button>
+              <span class="prog-label">Trigger</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn" id="btn-truncate">SELECT</button>
+              <span class="prog-label">Repeat</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn fn-btn--record" id="btn-record">SELECT</button>
+              <span class="prog-label">Record</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn" id="btn-song">SELECT</button>
+              <span class="prog-label">Subseq</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn" id="btn-loop">SELECT</button>
+              <span class="prog-label">End</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn" id="btn-reverse">SELECT</button>
+              <span class="prog-label">Insert</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn">SELECT</button>
+              <span class="prog-label">Delete</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn">SELECT</button>
+              <span class="prog-label">Tempo Chg</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn">SELECT</button>
+              <span class="prog-label">Mix Chg</span>
+            </div>
+          </div>
+          <div class="prog-row">
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn">SELECT</button>
+              <span class="prog-label">Segment</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn">SELECT</button>
+              <span class="prog-label">Metronome</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn">SELECT</button>
+              <span class="prog-label">Swing</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn">SELECT</button>
+              <span class="prog-label">Copy</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn">SELECT</button>
+              <span class="prog-label">Time Sig</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn">SELECT</button>
+              <span class="prog-label">Seg Length</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn">SELECT</button>
+              <span class="prog-label">Erase</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn">SELECT</button>
+              <span class="prog-label">Auto Corr</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn" id="btn-step-edit">SELECT</button>
+              <span class="prog-label">Step Prog</span>
+            </div>
+            <div class="prog-btn-col">
+              <button class="cream-btn prog-btn">SELECT</button>
+              <span class="prog-label">Title Prog</span>
             </div>
           </div>
         </div>
+      </div><!-- /zone-2 -->
 
-        <!-- PROGRAMMING -->
-        <div class="program-area">
-          <div class="module">
-            <div class="module-title">PROGRAMMING</div>
-            <div class="module-buttons">
-              <button class="fn-btn fn-btn--mode" id="btn-pattern">PATTERN</button>
-              <button class="fn-btn fn-btn--mode" id="btn-song">SONG</button>
-              <button class="fn-btn fn-btn--mode" id="btn-step-edit">STEP<br>EDIT</button>
-            </div>
-          </div>
-          <div class="module" style="margin-top:8px">
-            <div class="module-title">TRANSPORT</div>
-            <div class="module-buttons">
-              <button class="fn-btn fn-btn--play" id="btn-play">&#9654; RUN</button>
-              <button class="fn-btn fn-btn--stop" id="btn-stop">&#9632; STOP</button>
-              <button class="fn-btn fn-btn--record" id="btn-record">&#9679; REC</button>
-            </div>
-          </div>
+      <!-- ═══ ZONE 3: Performance ═══ -->
+      <div class="zone zone-3">
+        <div class="zone-header">
+          <span class="section-title">Performance</span>
+          <div class="section-line"></div>
         </div>
 
+        <div class="perf-layout">
+
+          <!-- Left column: mode selectors + bank buttons -->
+          <div class="perf-left">
+            <div class="fader-mode-switch">
+              <button class="cream-btn mode-btn active" data-mode="volume">Tune/<br>Decay</button>
+              <button class="cream-btn mode-btn" data-mode="pitch">Mix</button>
+              <button class="cream-btn mode-btn">Multi<br>Mode</button>
+            </div>
+            <div class="bank-group">
+              <div class="bank-label">BANK</div>
+              <button class="cream-btn bank-btn active" data-bank="0"><span class="bank-led"></span>A</button>
+              <button class="cream-btn bank-btn" data-bank="1"><span class="bank-led"></span>B</button>
+              <button class="cream-btn bank-btn" data-bank="2"><span class="bank-led"></span>C</button>
+              <button class="cream-btn bank-btn" data-bank="3"><span class="bank-led"></span>D</button>
+            </div>
+          </div>
+
+          <!-- Center: Faders + Pads -->
+          <div class="perf-center">
+            <div class="channels-row">
+              <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><div class="channel-num">1</div><button class="pad" data-pad="0"></button></div>
+              <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><div class="channel-num">2</div><button class="pad" data-pad="1"></button></div>
+              <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><div class="channel-num">3</div><button class="pad" data-pad="2"></button></div>
+              <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><div class="channel-num">4</div><button class="pad" data-pad="3"></button></div>
+              <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><div class="channel-num">5</div><button class="pad" data-pad="4"></button></div>
+              <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><div class="channel-num">6</div><button class="pad" data-pad="5"></button></div>
+              <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><div class="channel-num">7</div><button class="pad" data-pad="6"></button></div>
+              <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><div class="channel-num">8</div><button class="pad" data-pad="7"></button></div>
+            </div>
+          </div>
+
+          <!-- Right: Transport buttons -->
+          <div class="perf-right">
+            <button class="cream-btn transport-btn fn-btn--play" id="btn-play">&#9654; RUN</button>
+            <button class="cream-btn transport-btn fn-btn--stop" id="btn-stop">&#9632; STOP</button>
+            <button class="red-btn transport-btn">&#9679; REC</button>
+          </div>
+
+        </div>
+      </div><!-- /zone-3 -->
+
+      <!-- Bottom strip -->
+      <div class="bottom-strip">
+        <span class="brand-text">E-mu Systems, Inc.</span>
+        <span class="model-text">SP-1200</span>
+        <span class="brand-sub">Sampling Percussion Machine</span>
       </div>
 
-    </div><!-- /upper-section -->
+    </div><!-- /faceplate -->
 
-    <!-- ── PERFORMANCE SECTION: Faders + Pads (compact bottom strip) ── -->
-    <div class="performance-section">
-      <div class="perf-label">PERFORMANCE</div>
-
-      <div class="fader-mode-switch">
-        <button class="mode-btn active" data-mode="volume">TUNE/DECAY</button>
-        <button class="mode-btn" data-mode="pitch">MIX</button>
-      </div>
-
-      <!-- 8 columns: each has a fader on top, pad on bottom -->
-      <div class="channels-row">
-        <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><button class="pad" data-pad="0"><span class="pad-num">1</span></button></div>
-        <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><button class="pad" data-pad="1"><span class="pad-num">2</span></button></div>
-        <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><button class="pad" data-pad="2"><span class="pad-num">3</span></button></div>
-        <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><button class="pad" data-pad="3"><span class="pad-num">4</span></button></div>
-        <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><button class="pad" data-pad="4"><span class="pad-num">5</span></button></div>
-        <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><button class="pad" data-pad="5"><span class="pad-num">6</span></button></div>
-        <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><button class="pad" data-pad="6"><span class="pad-num">7</span></button></div>
-        <div class="channel"><div class="fader-track"><div class="fader-thumb"></div></div><button class="pad" data-pad="7"><span class="pad-num">8</span></button></div>
-      </div>
-    </div>
-
-  </div>
+  </div><!-- /sp1200 -->
 
   <input type="file" id="file-input" accept="audio/*" style="display:none">
   <script type="module" src="/js/main.js"></script>

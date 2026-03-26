@@ -1,7 +1,7 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   SP-1200 Skeuomorphic UI — Authentic 1987 layout
-   Panel: dark charcoal overlay on warm grey body
-   Performance section: compact faders + small telephone-key pads at bottom
+   SP-1200 Skeuomorphic UI — Authentic E-mu SP-1200 Layout
+   Dark blue-grey faceplate, lighter grey chassis, wooden side panels
+   Three horizontal zones: Set-up/Disk/Sync/Sample/Master, Programming, Performance
    ───────────────────────────────────────────────────────────────────────── */
 
 *, *::before, *::after {
@@ -20,32 +20,22 @@ body {
   font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
 }
 
-/* ── Faceplate ───────────────────────────────────────────────────────────── */
+/* ── Outer chassis ──────────────────────────────────────────────────────── */
 .sp1200 {
   position: relative;
   width: 1100px;
-  height: 640px;
-  background:
-    repeating-linear-gradient(
-      90deg,
-      rgba(255,255,255,0.01) 0px, rgba(0,0,0,0.008) 1px,
-      transparent 1px, transparent 3px
-    ),
-    linear-gradient(175deg, #5e5c58 0%, #524f4c 30%, #4a4845 60%, #444240 100%);
+  height: 720px;
+  background: #7a7a74;
   border-radius: 6px;
   box-shadow:
-    0 0 0 5px #8a887e,
-    0 0 0 8px #6a6862,
-    0 0 0 9px #3a3836,
-    0 10px 50px rgba(0,0,0,.8),
-    inset 0 1px 0 rgba(255,255,255,.1),
-    inset 0 -1px 0 rgba(0,0,0,.2);
+    0 0 0 3px #6a6a64,
+    0 0 0 5px #555550,
+    0 12px 60px rgba(0,0,0,.8);
   transform-origin: center center;
-  transform: perspective(2400px) rotateX(2deg) scale(var(--sp-scale, 1));
-  --sp-scale: min(1, calc(100vw / 1130), calc(100vh / 670));
+  transform: perspective(2400px) rotateX(1.5deg) scale(var(--sp-scale, 1));
+  --sp-scale: min(1, calc(100vw / 1130), calc(100vh / 750));
   user-select: none;
   display: flex;
-  flex-direction: column;
   overflow: hidden;
 }
 
@@ -66,229 +56,309 @@ body {
   z-index: 100;
 }
 
-/* ── Top label strip ────────────────────────────────────────────────────── */
-.top-label {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  padding: 8px 20px 6px;
-  border-bottom: 1px solid rgba(255,255,255,.06);
+/* ── Wooden side panels ─────────────────────────────────────────────────── */
+.wood-panel {
+  width: 28px;
   flex-shrink: 0;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(0,0,0,0.05) 0px, transparent 2px,
+      transparent 4px, rgba(0,0,0,0.03) 6px
+    ),
+    linear-gradient(90deg, #6b4226, #8b5e3c 30%, #7a4f30 50%, #8b5e3c 70%, #6b4226);
+  border-radius: 6px 0 0 6px;
+}
+.wood-right {
+  border-radius: 0 6px 6px 0;
 }
 
-.brand-emu {
-  font-size: 10px;
-  color: #aaa;
-  letter-spacing: .15em;
-  text-transform: uppercase;
-  font-weight: 600;
+/* ── Faceplate (dark blue-grey) ─────────────────────────────────────────── */
+.faceplate {
+  flex: 1;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255,255,255,0.008) 0px, transparent 1px,
+      transparent 3px
+    ),
+    linear-gradient(175deg, #3e4d5c 0%, #3a4858 25%, #2e3a4a 60%, #2a3544 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
 }
 
-.brand-model {
-  font-size: 22px;
-  font-weight: 800;
-  color: #e8e4dc;
-  letter-spacing: .08em;
+/* ── Zone shared ────────────────────────────────────────────────────────── */
+.zone {
+  padding: 6px 18px;
 }
 
-.brand-subtitle {
-  font-size: 9px;
-  color: #888;
-  letter-spacing: .2em;
-  text-transform: uppercase;
+/* ── Section titles (blue italic) ───────────────────────────────────────── */
+.section-title {
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 700;
+  color: #5b8ec2;
+  letter-spacing: .04em;
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   UPPER SECTION — The control surface (takes most of the panel)
-   ══════════════════════════════════════════════════════════════════════════ */
-.upper-section {
+.module-header {
+  margin-bottom: 4px;
+}
+
+.zone-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.section-line {
+  flex: 1;
+  height: 1px;
+  background: #4a7aaa;
+}
+
+/* ── Blue separator lines between zones ─────────────────────────────────── */
+.zone-1 {
+  border-bottom: 1px solid #4a7aaa;
+  padding-bottom: 8px;
+}
+.zone-2 {
+  border-bottom: 1px solid #4a7aaa;
+  padding-top: 6px;
+  padding-bottom: 8px;
+}
+.zone-3 {
+  padding-top: 6px;
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 8px 16px;
-  gap: 8px;
-  min-height: 0;
 }
 
-/* Top row of small modules */
-.modules-row {
+/* ═══════════════════════════════════════════════════════════════════════════
+   ZONE 1: Set-up, Disk, Sync, Sample + Master Control
+   ═══════════════════════════════════════════════════════════════════════════ */
+.zone-1 {
   display: flex;
-  gap: 16px;
-  flex-shrink: 0;
+  gap: 0;
 }
 
-/* Master control area */
-.master-control {
+.zone-modules {
+  display: flex;
+  gap: 2px;
   flex: 1;
-  display: grid;
-  grid-template-columns: 280px 160px 1fr 220px;
-  gap: 14px;
-  min-height: 0;
 }
 
-/* ── Shared module styles ────────────────────────────────────────────── */
 .module {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  padding: 0 8px;
+  border-right: 1px solid rgba(74,122,170,0.3);
+}
+.module:last-child {
+  border-right: none;
 }
 
-.module-title {
-  font-size: 8px;
-  color: #ccc;
-  letter-spacing: .12em;
+.module-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+/* LED indicators */
+.led-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+}
+.led-cyan {
+  background: #1a3a3a;
+  box-shadow: inset 0 0 2px rgba(0,200,200,.3);
+}
+.led-cyan.active {
+  background: #00cccc;
+  box-shadow: 0 0 4px #00cccc, 0 0 8px rgba(0,204,204,.5);
+}
+.led-red {
+  background: #3a1a1a;
+  box-shadow: inset 0 0 2px rgba(200,0,0,.3);
+}
+.led-red.active {
+  background: #ff2222;
+  box-shadow: 0 0 4px #ff2222, 0 0 8px rgba(255,34,34,.5);
+}
+
+/* Function lists (white text, tiny) */
+.fn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.fn-list span {
+  font-size: 6.5px;
+  color: rgba(220,220,220,0.8);
+  letter-spacing: .02em;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+/* ── Cream/off-white buttons (dominant button style) ────────────────────── */
+.cream-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  min-height: 20px;
+  padding: 2px 5px;
+  font-family: inherit;
+  font-size: 6.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-align: center;
+  line-height: 1.15;
   text-transform: uppercase;
-  font-weight: 800;
-  padding-bottom: 2px;
-  border-bottom: 1px solid rgba(255,255,255,.08);
+  background: linear-gradient(to bottom, #ede8df, #d8d2c6);
+  color: #333;
+  border: 1px solid #c0bab0;
+  border-bottom-color: #a09a90;
+  border-radius: 2px;
+  box-shadow:
+    0 2px 0 rgba(0,0,0,.2),
+    inset 0 1px 0 rgba(255,255,255,.7);
+  cursor: pointer;
+  transition: all .05s;
+}
+.cream-btn:hover {
+  background: linear-gradient(to bottom, #f5f0e8, #e0dbd0);
+}
+.cream-btn:active, .cream-btn.active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 rgba(0,0,0,.15), inset 0 1px 2px rgba(0,0,0,.15);
 }
 
-.module-label {
-  font-size: 7px;
-  color: #aaa;
+/* Red button variant */
+.red-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  min-height: 20px;
+  padding: 2px 5px;
+  font-family: inherit;
+  font-size: 6.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-align: center;
+  line-height: 1.15;
+  text-transform: uppercase;
+  background: linear-gradient(to bottom, #cc3333, #991a1a);
+  color: #ffdada;
+  border: 1px solid #aa2222;
+  border-bottom-color: #661111;
+  border-radius: 2px;
+  box-shadow:
+    0 2px 0 rgba(0,0,0,.25),
+    inset 0 1px 0 rgba(255,255,255,.2);
+  cursor: pointer;
+  transition: all .05s;
+}
+.red-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 rgba(0,0,0,.15), inset 0 1px 2px rgba(0,0,0,.2);
+}
+
+/* ── Master Control ─────────────────────────────────────────────────────── */
+.master-control {
+  width: 280px;
+  flex-shrink: 0;
+  border-left: 1px solid #4a7aaa;
+  padding-left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.master-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ── Rotary knobs ───────────────────────────────────────────────────────── */
+.knobs-row {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.knob-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.rotary-knob {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 35%, #444, #1a1a1a 60%, #111);
+  border: 2px solid #555;
+  box-shadow:
+    0 2px 6px rgba(0,0,0,.5),
+    inset 0 1px 2px rgba(255,255,255,.08);
+  position: relative;
+  cursor: pointer;
+}
+.knob-indicator {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 8px;
+  background: #ccc;
+  border-radius: 1px;
+}
+.knob-label {
+  font-size: 6px;
+  color: rgba(200,200,200,.7);
   letter-spacing: .12em;
   text-transform: uppercase;
   font-weight: 700;
 }
 
-.module-buttons {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-
-/* ── Function buttons (small grey tactile) ────────────────────────────── */
-.fn-btn {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 6px;
-  min-width: 40px;
-  height: 28px;
-  font-family: inherit;
-  font-size: 7px;
-  font-weight: 600;
-  letter-spacing: .06em;
-  text-align: center;
-  line-height: 1.2;
-  text-transform: uppercase;
-  background: linear-gradient(to bottom, #7a7874, #5e5c58);
-  color: #e0dedc;
-  border: 1px solid #8a8884;
-  border-bottom-color: #4a4846;
-  border-radius: 2px;
-  box-shadow:
-    0 2px 0 rgba(0,0,0,.2),
-    inset 0 1px 0 rgba(255,255,255,.15);
-  cursor: pointer;
-  transition: all .06s;
-  overflow: visible;
-}
-
-.fn-btn:hover {
-  background: linear-gradient(to bottom, #8a8884, #6e6c68);
-  color: #fff;
-}
-
-.fn-btn:active, .fn-btn.active {
-  transform: translateY(1px);
-  box-shadow: 0 1px 0 rgba(0,0,0,.2), inset 0 1px 3px rgba(0,0,0,.3);
-}
-
-/* LED indicator dots */
-.fn-btn--play::before, .fn-btn--record::before, .fn-btn--mode::before {
-  content: '';
-  position: absolute;
-  top: -3px;
-  right: -3px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #333;
-  z-index: 2;
-  transition: background .1s, box-shadow .1s;
-}
-
-/* Play — green LED active */
-.fn-btn--play.active {
-  background: linear-gradient(to bottom, #2a6a2a, #1a4a1a);
-  color: #44ee44;
-  border-color: #44aa44;
-}
-.fn-btn--play.active::before {
-  background: #33ff44;
-  box-shadow: 0 0 4px #33ff44, 0 0 8px rgba(51,255,68,.5);
-}
-
-/* Stop */
-.fn-btn--stop:active {
-  background: linear-gradient(to bottom, #5a3030, #4a2020);
-}
-
-/* Record — red default, brighter active */
-.fn-btn--record {
-  background: linear-gradient(to bottom, #6a2222, #4a1212);
-  color: #ff9999;
-  border-color: #8a3333;
-  border-bottom-color: #3a0a0a;
-}
-.fn-btn--record.active {
-  color: #ff4444;
-  animation: rec-pulse 1s ease-in-out infinite;
-}
-.fn-btn--record.active::before {
-  background: #ff2222;
-  box-shadow: 0 0 4px #ff2222, 0 0 8px rgba(255,34,34,.6);
-}
-@keyframes rec-pulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(255,68,68,.3); }
-  50%      { box-shadow: 0 0 16px rgba(255,68,68,.7); }
-}
-
-/* Mode — active */
-.fn-btn--mode.active {
-  background: linear-gradient(to bottom, #2a5a2a, #1a3a1a);
-  color: #7dcea0;
-  border-color: #33aa44;
-}
-.fn-btn--mode.active::before {
-  background: #ff2222;
-  box-shadow: 0 0 4px #ff2222;
-}
-
-/* ── LCD ──────────────────────────────────────────────────────────────── */
-.lcd-area {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-}
-
+/* ── LCD Display ────────────────────────────────────────────────────────── */
 .lcd-bezel {
-  background: #222;
-  border-radius: 4px;
-  padding: 6px 8px;
-  border: 2px solid #3a3a38;
-  box-shadow: inset 0 2px 8px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.1);
+  background: #1a1a18;
+  border-radius: 3px;
+  padding: 4px 6px;
+  border: 2px solid #333;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,.7), 0 1px 0 rgba(255,255,255,.05);
+  max-width: 200px;
 }
 
 .lcd-screen {
-  background: #1a3a2e;
+  background: #0a2a16;
   background-image: repeating-linear-gradient(
     0deg, transparent 0px, transparent 2px,
-    rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px
+    rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px
   );
-  border-radius: 3px;
-  padding: 8px 10px;
+  border-radius: 2px;
+  padding: 5px 8px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  box-shadow: inset 0 1px 6px rgba(0,0,0,.5);
+  gap: 2px;
+  box-shadow: inset 0 1px 6px rgba(0,0,0,.6);
 }
 
 .lcd-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: space-between;
 }
 
@@ -296,32 +366,30 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
+  gap: 0;
   flex: 1;
 }
 
 .lcd-label {
-  font-size: 6px;
-  color: #4a8a70;
-  letter-spacing: .15em;
+  font-size: 5px;
+  color: #2a7a4a;
+  letter-spacing: .12em;
   text-transform: uppercase;
 }
 
 .lcd-val {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 18px;
-  color: #7dcea0;
-  text-shadow: 0 0 6px rgba(125,206,160,.6), 0 0 16px rgba(125,206,160,.2);
+  font-size: 14px;
+  color: #33dd66;
+  text-shadow: 0 0 6px rgba(51,221,102,.5), 0 0 14px rgba(51,221,102,.2);
   line-height: 1.1;
   min-width: 2ch;
   text-align: center;
 }
 
-/* ── Numeric keypad (white phone-key buttons) ─────────────────────────── */
-.keypad-area {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+/* ── Numeric keypad ─────────────────────────────────────────────────────── */
+.keypad {
+  max-width: 140px;
 }
 
 .keypad-grid {
@@ -331,236 +399,210 @@ body {
 }
 
 .key-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 24px;
-  font-family: inherit;
-  font-size: 9px;
-  font-weight: 700;
-  /* White/cream plastic key */
-  background: linear-gradient(to bottom, #e8e4dc, #d0ccc4);
-  color: #333;
-  border: 1px solid #bbb;
-  border-bottom-color: #999;
-  border-radius: 2px;
-  box-shadow: 0 2px 0 rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.6);
-  cursor: pointer;
-  transition: all .05s;
-}
-
-.key-btn:active {
-  transform: translateY(1px);
-  box-shadow: 0 1px 0 rgba(0,0,0,.1), inset 0 1px 2px rgba(0,0,0,.15);
-}
-
-.key-btn--wide {
-  font-size: 7px;
-  letter-spacing: .06em;
-}
-
-.keypad-nav {
-  display: flex;
-  gap: 3px;
-  margin-top: 3px;
-}
-
-.key-btn--sm {
-  flex: 1;
+  width: 22px;
   height: 20px;
-  font-size: 7px;
-  letter-spacing: .04em;
-}
-
-/* ── Params: quantize, swing, bank ────────────────────────────────────── */
-.params-area {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  justify-content: flex-start;
-}
-
-.quantize-section, .swing-section, .bank-section {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.lcd-select {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
-  color: #7dcea0;
-  background: #1a3a2e;
-  border: 1px solid #4a4a48;
-  border-radius: 2px;
-  padding: 2px 5px;
-  cursor: pointer;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,.4);
-  outline: none;
-}
-.lcd-select option { background: #152a22; color: #7dcea0; }
-
-.swing-row { display: flex; align-items: center; gap: 6px; }
-
-.swing-slider {
-  flex: 1;
-  -webkit-appearance: none; appearance: none;
-  height: 4px;
-  background: #4a4a48;
-  border-radius: 2px;
-  outline: none;
-  cursor: pointer;
-  border: 1px solid #5a5a58;
-}
-.swing-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 12px; height: 12px;
-  border-radius: 50%;
-  background: linear-gradient(to bottom, #ddd, #aaa);
-  border: 1px solid #777;
-  box-shadow: 0 1px 2px rgba(0,0,0,.4);
-  cursor: pointer;
-}
-.swing-slider::-moz-range-thumb {
-  width: 12px; height: 12px;
-  border-radius: 50%;
-  background: linear-gradient(to bottom, #ddd, #aaa);
-  border: 1px solid #777;
-}
-
-.swing-value-label {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 10px;
-  color: #7dcea0;
-  min-width: 30px;
-  text-align: right;
-}
-
-.bank-buttons { display: flex; gap: 3px; }
-
-.bank-btn {
-  position: relative;
-  width: 28px; height: 22px;
-  font-family: inherit;
-  font-size: 10px;
-  font-weight: 700;
-  background: linear-gradient(to bottom, #6a6862, #555350);
-  color: #ddd;
-  border: 1px solid #7a7876;
-  border-radius: 2px;
-  box-shadow: 0 1px 0 rgba(0,0,0,.2);
-  cursor: pointer;
-  overflow: visible;
-}
-.bank-btn::before {
-  content: '';
-  position: absolute;
-  top: -3px; right: -3px;
-  width: 4px; height: 4px;
-  border-radius: 50%;
-  background: #333;
-  z-index: 2;
-}
-.bank-btn.active {
-  background: linear-gradient(to bottom, #2a5a2a, #1a3a1a);
-  color: #7dcea0;
-  border-color: #33aa44;
-}
-.bank-btn.active::before {
-  background: #ff3333;
-  box-shadow: 0 0 4px rgba(255,51,51,.8);
-}
-
-/* ── Programming + Transport area ─────────────────────────────────────── */
-.program-area {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-
-/* ══════════════════════════════════════════════════════════════════════════
-   PERFORMANCE SECTION — Compact strip at bottom: faders + pads
-   ══════════════════════════════════════════════════════════════════════════ */
-.performance-section {
-  flex-shrink: 0;
-  padding: 6px 20px 12px;
-  border-top: 1px solid rgba(255,255,255,.06);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.perf-label {
+  min-width: 22px;
+  min-height: 20px;
+  padding: 0;
   font-size: 8px;
-  color: #bbb;
-  letter-spacing: .15em;
-  text-transform: uppercase;
-  font-weight: 800;
+}
+
+/* ── Hidden params (quantize/swing — off-screen but functional) ─────── */
+.hidden-params {
+  position: absolute;
+  left: -9999px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ZONE 2: Programming
+   ═══════════════════════════════════════════════════════════════════════════ */
+.prog-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prog-row {
+  display: flex;
+  gap: 4px;
+}
+
+.prog-btn-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+
+.prog-btn {
+  width: 22px;
+  height: 20px;
+  min-width: 22px;
+  min-height: 20px;
+  padding: 0;
+  font-size: 5px;
+}
+
+.prog-label {
+  font-size: 6px;
+  color: rgba(220,220,220,0.75);
+  letter-spacing: .02em;
+  text-align: center;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+/* Record button special styling */
+.fn-btn--record {
+  background: linear-gradient(to bottom, #cc3333, #991a1a) !important;
+  color: #ffdada !important;
+  border-color: #aa2222 !important;
+}
+.fn-btn--record.active {
+  animation: rec-pulse 1s ease-in-out infinite;
+}
+@keyframes rec-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(255,68,68,.3); }
+  50%      { box-shadow: 0 0 16px rgba(255,68,68,.7); }
+}
+
+/* Play button active */
+.fn-btn--play.active {
+  background: linear-gradient(to bottom, #2a6a2a, #1a4a1a) !important;
+  color: #44ee44 !important;
+  border-color: #44aa44 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ZONE 3: Performance — Faders + Pads
+   ═══════════════════════════════════════════════════════════════════════════ */
+.perf-layout {
+  flex: 1;
+  display: flex;
+  gap: 14px;
+  min-height: 0;
+}
+
+/* Left column: mode switches + bank buttons */
+.perf-left {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 52px;
+  flex-shrink: 0;
 }
 
 .fader-mode-switch {
   display: flex;
+  flex-direction: column;
   gap: 3px;
-  align-self: flex-start;
 }
 
 .mode-btn {
-  padding: 2px 8px;
-  font-family: inherit;
-  font-size: 7px;
-  font-weight: 600;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  background: linear-gradient(to bottom, #6a6862, #555350);
-  color: #aaa;
-  border: 1px solid #7a7876;
-  border-radius: 2px;
-  cursor: pointer;
-  box-shadow: 0 1px 0 rgba(0,0,0,.15);
+  width: 48px;
+  height: 26px;
+  font-size: 6px;
+  line-height: 1.15;
+  padding: 2px;
 }
 .mode-btn.active {
-  background: linear-gradient(to bottom, #2a5a2a, #1a3a1a);
-  color: #7dcea0;
-  border-color: #33aa44;
+  background: linear-gradient(to bottom, #b8d8b0, #90b888);
+  color: #1a3a1a;
+  border-color: #7a9a72;
 }
 
-/* 8 channels: each is a column with fader + pad */
+.bank-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.bank-label {
+  font-size: 6px;
+  color: rgba(200,200,200,.7);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  text-align: center;
+}
+
+.bank-btn {
+  width: 48px;
+  height: 22px;
+  font-size: 8px;
+  position: relative;
+}
+.bank-btn.active {
+  background: linear-gradient(to bottom, #b8d8b0, #90b888);
+  color: #1a3a1a;
+  border-color: #7a9a72;
+}
+.bank-led {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #333;
+  margin-right: 3px;
+  vertical-align: middle;
+}
+.bank-btn.active .bank-led {
+  background: #ff3333;
+  box-shadow: 0 0 4px rgba(255,51,51,.8);
+}
+
+/* Center: channels (faders + pads) */
+.perf-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .channels-row {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 10px;
-  max-width: 900px;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  padding: 0 10px;
 }
 
 .channel {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  min-height: 0;
 }
 
-/* Fader track — short vertical slider */
+/* ── Fader tracks (tall vertical sliders) ───────────────────────────────── */
 .fader-track {
   position: relative;
-  width: 6px;
-  height: 80px;
-  background: linear-gradient(to right, #444, #333, #444);
-  border-radius: 3px;
-  border: 1px solid #5a5a58;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,.5);
+  width: 8px;
+  flex: 1;
+  min-height: 100px;
+  background: linear-gradient(to right, #555, #3a3a3a, #555);
+  border-radius: 4px;
+  border: 1px solid #666;
+  box-shadow: inset 0 1px 4px rgba(0,0,0,.6);
   cursor: pointer;
 }
 
+/* Scale markings on fader track */
 .fader-track::before {
   content: '';
   position: absolute;
-  left: -4px; right: -4px;
-  top: 10%; bottom: 10%;
+  left: -5px;
+  right: -5px;
+  top: 8%;
+  bottom: 8%;
   background: repeating-linear-gradient(
     to bottom,
-    transparent 0px, transparent 7px,
-    rgba(255,255,255,.05) 7px, rgba(255,255,255,.05) 8px
+    transparent 0px, transparent 8px,
+    rgba(255,255,255,.08) 8px, rgba(255,255,255,.08) 9px
   );
   pointer-events: none;
 }
@@ -569,35 +611,44 @@ body {
   position: absolute;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 20px;
-  height: 10px;
-  background: linear-gradient(to bottom, #222, #111, #222);
+  width: 22px;
+  height: 12px;
+  background: linear-gradient(to bottom, #333, #111, #222, #111, #333);
   border-radius: 2px;
-  border: 1px solid #444;
-  box-shadow: 0 1px 3px rgba(0,0,0,.5);
+  border: 1px solid #555;
+  box-shadow: 0 2px 4px rgba(0,0,0,.6);
   cursor: ns-resize;
   top: 25%;
   z-index: 2;
 }
 
-/* White indicator line on black knob */
+/* White indicator line on thumb */
 .fader-thumb::after {
   content: '';
   position: absolute;
-  left: 5px; right: 5px;
-  top: 50%; height: 1px;
-  background: #ccc;
+  left: 5px;
+  right: 5px;
+  top: 50%;
+  height: 1px;
+  background: #bbb;
 }
 
-/* ── Pads: small hard plastic telephone-key buttons ───────────────────── */
+/* Channel number */
+.channel-num {
+  font-size: 9px;
+  color: rgba(220,220,220,.7);
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ── Pads: small hard black plastic buttons ─────────────────────────────── */
 .pad {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 32px;
-  /* Hard black plastic — flat, mechanical, telephone-key style */
-  background: linear-gradient(to bottom, #2a2a2a, #1e1e1e);
+  width: 30px;
+  height: 25px;
+  background: linear-gradient(to bottom, #2a2a2a, #181818);
   border: 1px solid #444;
   border-bottom-color: #111;
   border-right-color: #222;
@@ -605,10 +656,11 @@ body {
   box-shadow:
     0 2px 0 #0a0a0a,
     0 3px 5px rgba(0,0,0,.5),
-    inset 0 1px 0 rgba(255,255,255,.06);
+    inset 0 1px 0 rgba(255,255,255,.05);
   cursor: pointer;
   font-family: inherit;
   transition: all .04s;
+  flex-shrink: 0;
 }
 
 .pad:active {
@@ -622,24 +674,61 @@ body {
 .pad.triggered {
   background: linear-gradient(to bottom, #1e3a2a, #142a1e);
   box-shadow:
-    0 0 0 1px #7dcea0,
-    0 0 10px rgba(125,206,160,.4),
+    0 0 0 1px #33dd66,
+    0 0 10px rgba(51,221,102,.4),
     inset 0 1px 3px rgba(0,0,0,.4);
   transform: translateY(2px);
 }
 
-.pad-num {
-  font-size: 10px;
-  color: #999;
-  font-weight: 700;
-  line-height: 1;
+/* Right: transport buttons */
+.perf-right {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 52px;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  padding-bottom: 10px;
 }
 
-.pad.triggered .pad-num {
-  color: #7dcea0;
+.transport-btn {
+  width: 48px;
+  height: 28px;
+  font-size: 6px;
 }
 
-/* ── Scrollbar ────────────────────────────────────────────────────────── */
+/* ── Bottom strip ───────────────────────────────────────────────────────── */
+.bottom-strip {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 4px 18px 6px;
+  border-top: 1px solid #4a7aaa;
+  flex-shrink: 0;
+}
+
+.brand-text {
+  font-size: 9px;
+  color: rgba(200,200,200,.5);
+  letter-spacing: .15em;
+  font-weight: 600;
+}
+
+.model-text {
+  font-size: 14px;
+  font-weight: 800;
+  color: rgba(220,220,220,.7);
+  letter-spacing: .08em;
+}
+
+.brand-sub {
+  font-size: 7px;
+  color: rgba(200,200,200,.4);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: #3a3a38; }
-::-webkit-scrollbar-thumb { background: #6a6a68; border-radius: 3px; }
+::-webkit-scrollbar-track { background: #2e3a4a; }
+::-webkit-scrollbar-thumb { background: #5a6a7a; border-radius: 3px; }
