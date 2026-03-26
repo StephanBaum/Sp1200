@@ -1,8 +1,4 @@
-/* ─────────────────────────────────────────────────────────────────────────
-   SP-1200 Skeuomorphic UI — Rossum Electro-Music SP-1200
-   Pure black faceplate, gold top/bottom strips, dark blue-grey chassis
-   Amber LEDs, amber LCD, gold section headers
-   ───────────────────────────────────────────────────────────────────────── */
+/* SP-1200 — Photo-real UI with interactive overlays on actual hardware image */
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -11,32 +7,29 @@
 }
 
 body {
-  background: #111;
+  background: #0a0a0a;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
   overflow: hidden;
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
 }
 
-/* ── Outer chassis (dark blue-grey) ───────────────────────────────────── */
+/* ── Main container — holds the photo and all overlays ─────────────────── */
 .sp1200 {
   position: relative;
-  width: 1100px;
-  height: 740px;
-  background: #2a3040;
-  border-radius: 6px;
-  box-shadow:
-    0 0 0 3px #222a36,
-    0 0 0 5px #1a2028,
-    0 12px 60px rgba(0,0,0,.8);
-  transform-origin: center center;
-  transform: perspective(2400px) rotateX(1.5deg) scale(var(--sp-scale, 1));
-  --sp-scale: min(1, calc(100vw / 1130), calc(100vh / 770));
+  width: min(95vw, 95vh); /* square image, fit to viewport */
+  max-width: 1000px;
+  aspect-ratio: 1;
   user-select: none;
-  display: flex;
-  overflow: hidden;
+}
+
+.panel-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
 }
 
 /* Drag-and-drop overlay */
@@ -44,773 +37,158 @@ body {
   content: 'DROP SAMPLE';
   position: absolute;
   inset: 0;
-  background: rgba(50, 180, 50, .12);
-  border: 2px dashed #44cc55;
-  border-radius: 6px;
+  background: rgba(255, 160, 0, .15);
+  border: 3px dashed #ffa500;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font: 800 28px/1 sans-serif;
   letter-spacing: .3em;
-  color: #44cc55;
+  color: #ffa500;
   z-index: 100;
 }
 
-/* ── Faceplate (PURE BLACK) ───────────────────────────────────────────── */
-.faceplate {
-  flex: 1;
-  background: #141414;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 0;
-}
+/* ══════════════════════════════════════════════════════════════════════════
+   INTERACTIVE OVERLAYS — transparent buttons positioned over the photo
+   ══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Gold strips (top and bottom) ─────────────────────────────────────── */
-.gold-strip {
-  display: flex;
-  align-items: center;
-  padding: 0 24px;
-  flex-shrink: 0;
-  background: linear-gradient(180deg, #d4b85a 0%, #c4a54a 30%, #b89840 60%, #a88a38 100%);
-  color: #2a2000;
-}
-
-.gold-strip--top {
-  height: 44px;
-  gap: 18px;
-  border-bottom: 2px solid #8a7030;
-}
-
-.gold-strip--bottom {
-  height: 48px;
-  gap: 18px;
-  border-top: 2px solid #8a7030;
-  justify-content: center;
-}
-
-.gold-strip__title {
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: .06em;
-  color: #1a1400;
-}
-
-.gold-strip__sub {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .22em;
-  text-transform: uppercase;
-  color: #3a2a00;
-}
-
-.gold-strip__brand {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: .15em;
-  color: #2a1a00;
-}
-
-.gold-strip__model {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .2em;
-  color: #3a2a00;
-  text-transform: uppercase;
-}
-
-/* ── Zone shared ──────────────────────────────────────────────────────── */
-.zone {
-  padding: 6px 18px;
-}
-
-/* ── Section titles (GOLD italic) ─────────────────────────────────────── */
-.section-title {
-  font-size: 12px;
-  font-style: italic;
-  font-weight: 700;
-  color: #c4a55a;
-  letter-spacing: .04em;
-}
-
-.module-header {
-  margin-bottom: 4px;
-}
-
-.zone-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 6px;
-}
-
-.section-line {
-  flex: 1;
-  height: 1px;
-  background: #c4a55a;
-}
-
-/* ── Gold separator lines between zones ───────────────────────────────── */
-.zone-1 {
-  border-bottom: 1px solid rgba(196,165,90,0.4);
-  padding-bottom: 8px;
-}
-.zone-2 {
-  border-bottom: 1px solid rgba(196,165,90,0.4);
-  padding-top: 6px;
-  padding-bottom: 8px;
-}
-.zone-3 {
-  padding-top: 6px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   ZONE 1: Set-up, Disk, Sync, Sample + Master Control
-   ═══════════════════════════════════════════════════════════════════════════ */
-.zone-1 {
-  display: flex;
-  gap: 0;
-}
-
-.zone-modules {
-  display: flex;
-  gap: 2px;
-  flex: 1;
-}
-
-.module {
-  display: flex;
-  flex-direction: column;
-  padding: 0 10px;
-  border-right: 1px solid rgba(196,165,90,0.2);
-}
-.module:last-child {
-  border-right: none;
-}
-
-.module-body {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-}
-
-/* ── LED indicators ───────────────────────────────────────────────────── */
-.led-indicator {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-/* Amber/yellow LEDs (dominant style) */
-.led-amber {
-  background: #3a2a1a;
-  box-shadow: inset 0 0 2px rgba(200,160,0,.3);
-}
-.led-amber.active {
-  background: #ffaa22;
-  box-shadow: 0 0 4px #ffaa22, 0 0 10px rgba(255,170,34,.6);
-}
-
-/* Red LED */
-.led-red {
-  background: #3a1a1a;
-  box-shadow: inset 0 0 2px rgba(200,0,0,.3);
-  border-radius: 2px;
-  width: 7px;
-  height: 7px;
-}
-.led-red.active {
-  background: #ff2222;
-  box-shadow: 0 0 4px #ff2222, 0 0 8px rgba(255,34,34,.5);
-}
-
-/* Function lists (white text, tiny) */
-.fn-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-.fn-list span {
-  font-size: 7px;
-  color: rgba(220,220,220,0.8);
-  letter-spacing: .02em;
-  white-space: nowrap;
-  line-height: 1.3;
-}
-
-/* ── Cream/off-white buttons (dominant button style) ──────────────────── */
-.cream-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 22px;
-  min-height: 22px;
-  padding: 2px 5px;
-  font-family: inherit;
-  font-size: 7px;
-  font-weight: 700;
-  letter-spacing: .04em;
-  text-align: center;
-  line-height: 1.15;
-  text-transform: uppercase;
-  background: linear-gradient(to bottom, #ede8df, #d8d2c6);
-  color: #333;
-  border: 1px solid #c0bab0;
-  border-bottom-color: #a09a90;
-  border-radius: 2px;
-  box-shadow:
-    0 2px 0 rgba(0,0,0,.2),
-    inset 0 1px 0 rgba(255,255,255,.7);
-  cursor: pointer;
-  transition: all .05s;
-}
-.cream-btn:hover {
-  background: linear-gradient(to bottom, #f5f0e8, #e0dbd0);
-}
-.cream-btn:active, .cream-btn.active {
-  transform: translateY(1px);
-  box-shadow: 0 1px 0 rgba(0,0,0,.15), inset 0 1px 2px rgba(0,0,0,.15);
-}
-
-/* Red button variant */
-.red-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 22px;
-  min-height: 22px;
-  padding: 2px 5px;
-  font-family: inherit;
-  font-size: 7px;
-  font-weight: 700;
-  letter-spacing: .04em;
-  text-align: center;
-  line-height: 1.15;
-  text-transform: uppercase;
-  background: linear-gradient(to bottom, #cc3333, #991a1a);
-  color: #ffdada;
-  border: 1px solid #aa2222;
-  border-bottom-color: #661111;
-  border-radius: 2px;
-  box-shadow:
-    0 2px 0 rgba(0,0,0,.25),
-    inset 0 1px 0 rgba(255,255,255,.2);
-  cursor: pointer;
-  transition: all .05s;
-}
-.red-btn:active {
-  transform: translateY(1px);
-  box-shadow: 0 1px 0 rgba(0,0,0,.15), inset 0 1px 2px rgba(0,0,0,.2);
-}
-
-/* ── Master Control ───────────────────────────────────────────────────── */
-.master-control {
-  width: 280px;
-  flex-shrink: 0;
-  border-left: 1px solid rgba(196,165,90,0.3);
-  padding-left: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.master-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-/* ── Rotary knobs ─────────────────────────────────────────────────────── */
-.knobs-row {
-  display: flex;
-  gap: 18px;
-  align-items: center;
-}
-
-.knob-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-}
-
-.knob-group--top {
-  align-self: flex-start;
-}
-
-.rotary-knob {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 35% 35%, #444, #1a1a1a 60%, #0a0a0a);
-  border: 2px solid #555;
-  box-shadow:
-    0 2px 6px rgba(0,0,0,.6),
-    inset 0 1px 2px rgba(255,255,255,.08);
-  position: relative;
-  cursor: pointer;
-}
-.knob-indicator {
+/* Generic hit zone — MAGENTA DEBUG MODE (make transparent once aligned) */
+.hit {
   position: absolute;
-  top: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 2px;
-  height: 9px;
-  background: #ccc;
-  border-radius: 1px;
+  background: rgba(255, 0, 255, 0.35);
+  border: 1px solid magenta;
+  cursor: pointer;
+  outline: none;
+  padding: 0;
+  z-index: 10;
+  font-size: 0; /* hide text */
 }
-.knob-label {
-  font-size: 7px;
-  color: rgba(200,200,200,.7);
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  font-weight: 700;
+.hit:hover {
+  background: rgba(255, 0, 255, 0.5);
 }
-
-/* ── LCD Display (AMBER) ──────────────────────────────────────────────── */
-.lcd-bezel {
-  background: #1a1a18;
-  border-radius: 3px;
-  padding: 4px 6px;
-  border: 2px solid #333;
-  box-shadow: inset 0 2px 8px rgba(0,0,0,.7), 0 1px 0 rgba(255,255,255,.05);
-  max-width: 220px;
+.hit:active, .hit.active {
+  background: rgba(255, 200, 50, 0.4);
 }
 
-.lcd-screen {
-  background: #1a1200;
-  background-image: repeating-linear-gradient(
-    0deg, transparent 0px, transparent 2px,
-    rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px
-  );
-  border-radius: 2px;
-  padding: 5px 8px;
+/* Record button highlight */
+.hit.rec:active, .hit.rec.active {
+  background: rgba(255, 50, 50, 0.25);
+  box-shadow: 0 0 12px rgba(255, 50, 50, 0.4);
+}
+
+/* ── LCD overlay — positioned over the photo's LCD display area ────────── */
+.lcd-overlay {
+  position: absolute;
+  left: 68.5%;
+  top: 17.5%;
+  width: 19%;
+  height: 7%;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  box-shadow: inset 0 1px 6px rgba(0,0,0,.6);
-}
-
-.lcd-row {
-  display: flex;
-  gap: 8px;
-  justify-content: space-between;
-}
-
-.lcd-field {
-  display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0;
-  flex: 1;
+  justify-content: center;
+  gap: 0 8px;
+  z-index: 15;
+  pointer-events: none;
+  padding: 2px 6px;
+  /* MAGENTA DEBUG */
+  border: 1px solid magenta;
+  background: rgba(255, 0, 255, 0.15);
 }
 
-.lcd-label {
-  font-size: 5px;
-  color: #7a5a22;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-}
-
-.lcd-val {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 14px;
+.lcd-text {
+  font-family: 'Courier New', monospace;
+  font-size: clamp(8px, 1.2vw, 14px);
+  font-weight: bold;
   color: #ff9922;
-  text-shadow: 0 0 6px rgba(255,153,34,.5), 0 0 14px rgba(255,153,34,.2);
-  line-height: 1.1;
-  min-width: 2ch;
-  text-align: center;
+  text-shadow: 0 0 6px rgba(255, 153, 34, 0.6);
+  letter-spacing: 0.05em;
 }
 
-/* LCD buttons row (below display) */
-.lcd-buttons-row {
-  display: flex;
-  gap: 4px;
-  max-width: 220px;
-}
-
-.lcd-nav-btn {
-  flex: 1;
-  height: 20px;
-  font-size: 6.5px;
-  padding: 0 2px;
-}
-
-/* ── Numeric keypad ───────────────────────────────────────────────────── */
-.keypad {
-  max-width: 160px;
-}
-
-.keypad-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 3px;
-}
-
-.key-btn {
-  width: 28px;
-  height: 22px;
-  min-width: 28px;
-  min-height: 22px;
-  padding: 0;
-  font-size: 8px;
-}
-
-/* ── Hidden params (quantize/swing — off-screen but functional) ─────── */
-.hidden-params {
+/* ── Fader overlays — transparent drag zones over photo faders ─────────── */
+/* MAGENTA DEBUG — fader zones */
+.fader-hit {
   position: absolute;
-  left: -9999px;
-  opacity: 0;
-  pointer-events: none;
+  z-index: 10;
+  border: 1px dashed rgba(255, 0, 255, 0.4);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   ZONE 2: Programming
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/* Programming LEDs */
-.prog-leds {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.prog-led-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.prog-led-label {
-  font-size: 6px;
-  color: rgba(200,200,200,.6);
-  text-transform: uppercase;
-  letter-spacing: .06em;
-}
-
-.prog-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.prog-row {
-  display: flex;
-  gap: 4px;
-}
-
-.prog-btn-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  flex: 1;
-}
-
-.prog-btn {
-  width: 24px;
-  height: 22px;
-  min-width: 24px;
-  min-height: 22px;
-  padding: 0;
-  font-size: 5px;
-}
-
-.prog-label {
-  font-size: 6.5px;
-  color: rgba(220,220,220,0.75);
-  letter-spacing: .02em;
-  text-align: center;
-  white-space: nowrap;
-  line-height: 1;
-}
-
-/* Record button special styling (RED) */
-.fn-btn--record {
-  background: linear-gradient(to bottom, #cc3333, #991a1a) !important;
-  color: #ffdada !important;
-  border-color: #aa2222 !important;
-}
-.fn-btn--record.active {
-  animation: rec-pulse 1s ease-in-out infinite;
-}
-@keyframes rec-pulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(255,68,68,.3); }
-  50%      { box-shadow: 0 0 16px rgba(255,68,68,.7); }
-}
-
-/* Play button active */
-.fn-btn--play.active {
-  background: linear-gradient(to bottom, #2a6a2a, #1a4a1a) !important;
-  color: #44ee44 !important;
-  border-color: #44aa44 !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   ZONE 3: Performance — Faders + Pads
-   ═══════════════════════════════════════════════════════════════════════════ */
-.perf-layout {
-  flex: 1;
-  display: flex;
-  gap: 14px;
-  min-height: 0;
-}
-
-/* Left column: mode switches + bank buttons */
-.perf-left {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 62px;
-  flex-shrink: 0;
-}
-
-.fader-mode-switch {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.mode-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.mode-btn {
-  width: 50px;
-  height: 26px;
-  font-size: 6.5px;
-  line-height: 1.15;
-  padding: 2px;
-}
-.mode-btn.active {
-  background: linear-gradient(to bottom, #d4c090, #b8a878);
-  color: #2a2000;
-  border-color: #a09060;
-}
-
-.select-btn {
-  width: 50px;
-  height: 22px;
-  font-size: 7px;
-  align-self: flex-end;
-}
-
-.bank-group {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.bank-btn {
-  width: 50px;
-  height: 22px;
-  font-size: 8px;
-  position: relative;
-}
-.bank-btn.active {
-  background: linear-gradient(to bottom, #d4c090, #b8a878);
-  color: #2a2000;
-  border-color: #a09060;
-}
-.bank-led {
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #3a2a1a;
-  margin-right: 3px;
-  vertical-align: middle;
-}
-.bank-btn.active .bank-led {
-  background: #ffaa22;
-  box-shadow: 0 0 4px rgba(255,170,34,.8);
-}
-
-/* ── Center: faders + pads ────────────────────────────────────────────── */
-.perf-center {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  gap: 4px;
-}
-
-/* Fader area with prominent white gridlines */
-.fader-area {
-  position: relative;
-  flex: 1;
-  min-height: 140px;
-  display: flex;
-}
-
-/* White horizontal gridlines spanning all faders */
-.fader-gridlines {
-  position: absolute;
-  inset: 4px 0;
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent 0px, transparent 11px,
-    rgba(255,255,255,0.12) 11px, rgba(255,255,255,0.12) 12px
-  );
-  pointer-events: none;
-  z-index: 0;
-}
-
-.faders-row {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 10px;
-  flex: 1;
-  padding: 0 10px;
-  z-index: 1;
-}
-
-.fader-col {
-  display: flex;
-  justify-content: center;
-}
-
-/* ── Fader tracks (tall vertical sliders) ─────────────────────────────── */
 .fader-track {
   position: relative;
-  width: 8px;
+  width: 100%;
   height: 100%;
-  background: linear-gradient(to right, #555, #3a3a3a, #555);
-  border-radius: 4px;
-  border: 1px solid #666;
-  box-shadow: inset 0 1px 4px rgba(0,0,0,.6);
   cursor: pointer;
+  background: transparent;
 }
 
+/* MAGENTA DEBUG — fader thumb */
 .fader-thumb {
   position: absolute;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 24px;
-  height: 14px;
-  background: linear-gradient(to bottom, #333, #111, #222, #111, #333);
-  border-radius: 2px;
-  border: 1px solid #555;
-  box-shadow: 0 2px 4px rgba(0,0,0,.6);
+  width: 70%;
+  height: 6%;
+  background: rgba(0, 255, 255, 0.4);
+  border: 1px solid cyan;
   cursor: ns-resize;
   top: 25%;
-  z-index: 2;
-}
-
-/* White indicator line on thumb */
-.fader-thumb::after {
-  content: '';
-  position: absolute;
-  left: 5px;
-  right: 5px;
-  top: 50%;
-  height: 1px;
-  background: #bbb;
-}
-
-/* Channel numbers */
-.channel-nums {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 10px;
-  padding: 0 10px;
-  flex-shrink: 0;
-}
-
-.channel-nums span {
-  font-size: 9px;
-  color: rgba(220,220,220,.7);
-  font-weight: 700;
-  text-align: center;
-  line-height: 1;
-}
-
-/* ── Pads row: small dark black plastic buttons ───────────────────────── */
-.pads-row {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 10px;
-  padding: 0 10px;
-  flex-shrink: 0;
-}
-
-.pad {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 28px;
-  background: linear-gradient(to bottom, #2a2a2a, #181818);
-  border: 1px solid #444;
-  border-bottom-color: #111;
-  border-right-color: #222;
+  z-index: 12;
   border-radius: 2px;
-  box-shadow:
-    0 2px 0 #0a0a0a,
-    0 3px 5px rgba(0,0,0,.5),
-    inset 0 1px 0 rgba(255,255,255,.05);
+}
+.fader-thumb:hover {
+  background: rgba(0, 255, 255, 0.6);
+}
+
+/* ── Pad overlays — transparent hit zones over the photo's pads ────────── */
+/* MAGENTA DEBUG — pads */
+.pad {
+  position: absolute;
+  background: rgba(255, 0, 255, 0.35);
+  border: 1px solid magenta;
   cursor: pointer;
-  font-family: inherit;
-  transition: all .04s;
-  flex-shrink: 0;
+  outline: none;
+  z-index: 10;
+  border-radius: 3px;
 }
-
+.pad:hover {
+  background: rgba(255, 0, 255, 0.5);
+}
 .pad:active {
-  transform: translateY(2px);
-  box-shadow:
-    0 0 0 #0a0a0a,
-    0 1px 2px rgba(0,0,0,.4),
-    inset 0 1px 3px rgba(0,0,0,.5);
+  background: rgba(255, 200, 50, 0.12);
 }
-
 .pad.triggered {
-  background: linear-gradient(to bottom, #3a2a1a, #2a1e10);
-  box-shadow:
-    0 0 0 1px #ffaa22,
-    0 0 10px rgba(255,170,34,.4),
-    inset 0 1px 3px rgba(0,0,0,.4);
-  transform: translateY(2px);
+  background: rgba(255, 160, 0, 0.2);
+  box-shadow: 0 0 15px rgba(255, 160, 0, 0.4);
 }
 
-/* ── Right: transport buttons ─────────────────────────────────────────── */
-.perf-right {
-  display: flex;
-  flex-direction: column;
-  width: 68px;
-  flex-shrink: 0;
-  justify-content: flex-end;
-  padding-bottom: 10px;
+/* ── Bank button active state ──────────────────────────────────────────── */
+.bank-btn.active {
+  background: rgba(255, 200, 50, 0.12);
+  box-shadow: inset 0 0 8px rgba(255, 200, 50, 0.2);
 }
 
-.transport-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+/* ── Mode button active state ──────────────────────────────────────────── */
+.hit.mode-btn.active {
+  background: rgba(255, 200, 50, 0.12);
 }
 
-.transport-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+/* ── Play active (green tint) ──────────────────────────────────────────── */
+#btn-play.active {
+  background: rgba(50, 255, 50, 0.12);
+  box-shadow: 0 0 10px rgba(50, 255, 50, 0.3);
 }
 
-.transport-btn {
-  width: 52px;
-  height: 28px;
-  font-size: 6.5px;
-  line-height: 1.15;
+/* ── Record active (red pulse) ─────────────────────────────────────────── */
+#btn-record.active {
+  background: rgba(255, 50, 50, 0.2);
+  animation: rec-glow 1s ease-in-out infinite;
+}
+@keyframes rec-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 50, 50, 0.3); }
+  50%      { box-shadow: 0 0 20px rgba(255, 50, 50, 0.6); }
 }
 
-/* ── Scrollbar ────────────────────────────────────────────────────────── */
+/* ── Scrollbar ──────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: #141414; }
-::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 3px; }
+::-webkit-scrollbar-track { background: #111; }
+::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }

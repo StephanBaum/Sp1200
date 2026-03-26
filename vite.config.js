@@ -1,6 +1,6 @@
 export default {
   root: '.',
-  publicDir: 'samples',
+  publicDir: 'public',
   server: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',

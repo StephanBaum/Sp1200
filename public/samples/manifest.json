@@ -1,0 +1,32 @@
+{
+  "categories": [
+    { "name": "Kicks", "samples": [
+      { "name": "Kick 1", "file": "kicks/kick-1.wav" },
+      { "name": "Kick 2", "file": "kicks/kick-2.wav" },
+      { "name": "Kick 3", "file": "kicks/kick-3.wav" }
+    ]},
+    { "name": "Snares", "samples": [
+      { "name": "Snare 1", "file": "snares/snare-1.wav" },
+      { "name": "Snare 2", "file": "snares/snare-2.wav" },
+      { "name": "Snare 3", "file": "snares/snare-3.wav" }
+    ]},
+    { "name": "Hats", "samples": [
+      { "name": "Closed Hat 1", "file": "hats/hat-closed-1.wav" },
+      { "name": "Open Hat 1", "file": "hats/hat-open-1.wav" },
+      { "name": "Closed Hat 2", "file": "hats/hat-closed-2.wav" }
+    ]},
+    { "name": "Claps", "samples": [
+      { "name": "Clap 1", "file": "claps/clap-1.wav" },
+      { "name": "Clap 2", "file": "claps/clap-2.wav" }
+    ]},
+    { "name": "Percussion", "samples": [
+      { "name": "Rim 1", "file": "percussion/rim-1.wav" },
+      { "name": "Tom 1", "file": "percussion/tom-1.wav" },
+      { "name": "Shaker 1", "file": "percussion/shaker-1.wav" }
+    ]},
+    { "name": "Bass", "samples": [
+      { "name": "Bass C2", "file": "bass/bass-c2.wav" },
+      { "name": "Bass E2", "file": "bass/bass-e2.wav" }
+    ]}
+  ]
+}

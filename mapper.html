@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html><head><style>
+body { margin: 0; background: #000; display: flex; justify-content: center; }
+#container { position: relative; width: 100vw; max-width: 1200px; }
+#container img { width: 100%; display: block; }
+#coords { position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,.8); color: #0f0; padding: 10px; font: 12px monospace; z-index: 999; max-height: 90vh; overflow-y: auto; }
+.marker { position: absolute; width: 6px; height: 6px; background: red; border-radius: 50%; transform: translate(-50%,-50%); pointer-events: none; }
+</style></head><body>
+<div id="coords">Click on controls to get coordinates (as % of image)<br>Format: left%, top%<br><br></div>
+<div id="container">
+  <img src="/assets/sp1200-panel.png" id="img">
+</div>
+<script>
+const img = document.getElementById('img');
+const coords = document.getElementById('coords');
+const container = document.getElementById('container');
+img.addEventListener('click', (e) => {
+  const rect = img.getBoundingClientRect();
+  const xPct = ((e.clientX - rect.left) / rect.width * 100).toFixed(2);
+  const yPct = ((e.clientY - rect.top) / rect.height * 100).toFixed(2);
+  const marker = document.createElement('div');
+  marker.className = 'marker';
+  marker.style.left = xPct + '%';
+  marker.style.top = yPct + '%';
+  container.appendChild(marker);
+  coords.innerHTML += `${xPct}%, ${yPct}%<br>`;
+  console.log(`${xPct}, ${yPct}`);
+});
+</script>
+</body></html>
