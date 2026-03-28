@@ -1,3 +1,6 @@
+https://www.youtube.com/watch?v=fJllMiVqL3U
+
+
 1. The Sample Module (Red Button)
 To enter this mode, press the Sample button. The red LED above it will illuminate.
 Option 1: Volume Unit (VU) Mode (Default)

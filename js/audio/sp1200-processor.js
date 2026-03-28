@@ -300,12 +300,12 @@ class Track {
 
 class Pattern {
   constructor() {
-    this.bars = 1;
-    this.totalTicks = PPQN * 4;
+    this.bars = 2; // SP-1200 default is 2 bars
+    this.totalTicks = PPQN * 4 * 2;
     this.tracks = Array.from({ length: NUM_PADS }, () => new Track());
   }
   setBars(bars) {
-    this.bars = Math.max(1, Math.min(4, bars));
+    this.bars = Math.max(1, Math.min(99, bars));
     this.totalTicks = PPQN * 4 * this.bars;
   }
   addEvent(trackIndex, event) {
@@ -956,7 +956,7 @@ class SP1200Processor extends AudioWorkletProcessor {
       }
       const totalTicks = pattern.bars * PPQN * 4;
       quantizedTick = quantizedTick % totalTicks;
-      pattern.addEvent(quantizedTick, pad, velocity);
+      pattern.addEvent(pad, new PatternEvent(quantizedTick, velocity));
     }
   }
 

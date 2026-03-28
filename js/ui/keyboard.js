@@ -5,19 +5,17 @@ export class KeyboardUI {
     this.faderValues = new Float32Array(8).fill(0.75);
     this.faderMode = 'volume';
     this._backtickHeld = false;
+    this._repeatInterval = null;
     this._bind();
     this._bindKeyup();
 
-    // Listen for fader mode changes
     document.addEventListener('fader-mode-change', (e) => {
       this.faderMode = e.detail.mode;
     });
   }
 
   _bind() {
-    // Fader up keys: Q W E R T Y U I → faders 1-8
-    const faderUpKeys = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i'];
-    // Fader down keys: A S D F G H J K → faders 1-8
+    const faderUpKeys = ['q', 'w', 'e', 'r', 't', 'z', 'u', 'i']; // z for German layout
     const faderDownKeys = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k'];
     const FADER_STEP = 0.03;
 
@@ -25,10 +23,16 @@ export class KeyboardUI {
       const key = e.key.toLowerCase();
       const code = e.code;
 
-      // ── Pads: 1-8 ──────────────────────────────────────────────
+      // ── Pads: 1-8 (single hit, no repeat on hold) ──────────────
       const num = parseInt(e.key, 10);
-      if (num >= 1 && num <= 8 && !e.ctrlKey && !e.altKey && !e.shiftKey && !this._isNumpad(e)) {
+      if (num >= 1 && num <= 8 && !e.ctrlKey && !e.shiftKey && !this._isNumpad(e)) {
         e.preventDefault();
+        if (e.altKey) {
+          // Alt+number → start repeating this pad at autocorrect rate
+          if (!e.repeat) this._startRepeat(num - 1);
+          return;
+        }
+        if (e.repeat) return; // Don't retrigger on held keys
         this.engine.trigger(num - 1, 100);
         document.dispatchEvent(new CustomEvent('pad-trigger', { detail: { pad: num - 1 } }));
         return;
@@ -37,6 +41,7 @@ export class KeyboardUI {
       // ── Numpad 0-9 → SP-1200 keypad ────────────────────────────
       if (this._isNumpad(e) && e.key >= '0' && e.key <= '9') {
         e.preventDefault();
+        if (e.repeat) return;
         const keyBtn = document.querySelector(`.key[data-key="${e.key}"]`);
         if (keyBtn) keyBtn.click();
         return;
@@ -49,29 +54,29 @@ export class KeyboardUI {
         return;
       }
 
-      // ── [ → Performance mode cycling (Tune/Mix/Multi) ─────────
-      if (key === '[' || code === 'BracketLeft') {
+      // ── y → Performance mode cycling (Tune/Mix/Multi) ──────────
+      if (key === 'y' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        if (e.repeat) return;
         e.preventDefault();
         document.getElementById('btn-mode')?.click();
         return;
       }
 
-      // ── ] → Bank cycling (A/B/C/D) ────────────────────────────
-      if (key === ']' || code === 'BracketRight') {
+      // ── <> key → Bank cycling (IntlBackslash on German keyboards) ─
+      if (code === 'IntlBackslash' || (key === '<' && !e.shiftKey) || (key === '>' && e.shiftKey)) {
+        if (e.repeat) return;
         e.preventDefault();
         document.getElementById('btn-bank')?.click();
         return;
       }
 
-      // ── ArrowUp → Shift+Up also works for mode cycling ────────
-      if (e.key === 'ArrowUp' && e.shiftKey) {
+      // ── [ ] also work for mode/bank ────────────────────────────
+      if ((key === '[' || code === 'BracketLeft') && !e.repeat) {
         e.preventDefault();
         document.getElementById('btn-mode')?.click();
         return;
       }
-
-      // ── ArrowDown → Shift+Down also works for bank cycling ────
-      if (e.key === 'ArrowDown' && e.shiftKey) {
+      if ((key === ']' || code === 'BracketRight') && !e.repeat) {
         e.preventDefault();
         document.getElementById('btn-bank')?.click();
         return;
@@ -90,27 +95,27 @@ export class KeyboardUI {
       }
 
       // ── Space → Run/Stop ───────────────────────────────────────
-      if (code === 'Space' && !e.ctrlKey) {
+      if (code === 'Space' && !e.ctrlKey && !e.repeat) {
         e.preventDefault();
         document.getElementById('btn-run-stop')?.click();
         return;
       }
 
       // ── Ctrl+Space → Record + Play ─────────────────────────────
-      if (code === 'Space' && e.ctrlKey) {
+      if (code === 'Space' && e.ctrlKey && !e.repeat) {
         e.preventDefault();
         document.getElementById('btn-record')?.click();
         return;
       }
 
       // ── F1-F4 → Set up, Disk, Sync, Sample ────────────────────
-      if (code === 'F1') { e.preventDefault(); document.getElementById('btn-setup')?.click(); return; }
-      if (code === 'F2') { e.preventDefault(); document.getElementById('btn-disk')?.click(); return; }
-      if (code === 'F3') { e.preventDefault(); document.getElementById('btn-sync')?.click(); return; }
-      if (code === 'F4') { e.preventDefault(); document.getElementById('btn-sample')?.click(); return; }
+      if (code === 'F1' && !e.repeat) { e.preventDefault(); document.getElementById('btn-setup')?.click(); return; }
+      if (code === 'F2' && !e.repeat) { e.preventDefault(); document.getElementById('btn-disk')?.click(); return; }
+      if (code === 'F3' && !e.repeat) { e.preventDefault(); document.getElementById('btn-sync')?.click(); return; }
+      if (code === 'F4' && !e.repeat) { e.preventDefault(); document.getElementById('btn-sample')?.click(); return; }
 
       // ── Tab → Programming Song/Segment toggle ──────────────────
-      if (code === 'Tab') {
+      if (code === 'Tab' && !e.repeat) {
         e.preventDefault();
         document.getElementById('prog-1')?.click();
         return;
@@ -128,21 +133,16 @@ export class KeyboardUI {
         return;
       }
 
-      // ── Backtick/Tilde → Tap tempo (also triggers repeat mode) ──
-      if (code === 'Backquote') {
+      // ── Backtick → Tap tempo + hold for repeat ─────────────────
+      if (code === 'Backquote' && !e.repeat) {
         e.preventDefault();
-        // Simulate tap/repeat mousedown for repeat functionality
-        const tapBtn = document.getElementById('btn-tap-tempo');
-        if (tapBtn) {
-          tapBtn.dispatchEvent(new MouseEvent('mousedown'));
-          // Track that backtick is held
-          this._backtickHeld = true;
-        }
+        document.getElementById('btn-tap-tempo')?.dispatchEvent(new MouseEvent('mousedown'));
+        this._backtickHeld = true;
         return;
       }
 
-      // ── Home (Pos1) → Tempo button ─────────────────────────────
-      if (code === 'Home') {
+      // ── Home → Tempo button ────────────────────────────────────
+      if (code === 'Home' && !e.repeat) {
         e.preventDefault();
         document.getElementById('btn-tempo')?.click();
         return;
@@ -155,14 +155,14 @@ export class KeyboardUI {
         return;
       }
 
-      // ── Alt or \ (backslash) → Tap/Repeat ──────────────────────
-      if (code === 'Backslash' || (code === 'AltLeft' && e.preventDefault())) {
+      // ── Enter → Enter button ───────────────────────────────────
+      if (code === 'Enter' && !this._isNumpad(e) && !e.repeat) {
         e.preventDefault();
-        document.getElementById('btn-tap-tempo')?.click();
+        document.getElementById('btn-enter')?.click();
         return;
       }
 
-      // ── Faders up: Q W E R T Y U I ─────────────────────────────
+      // ── Faders up: Q W E R T Z U I ─────────────────────────────
       const upIdx = faderUpKeys.indexOf(key);
       if (upIdx !== -1 && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         e.preventDefault();
@@ -183,13 +183,6 @@ export class KeyboardUI {
         this._notifyDisplay();
         return;
       }
-
-      // ── Enter key → Enter button ───────────────────────────────
-      if (code === 'Enter' && !this._isNumpad(e)) {
-        e.preventDefault();
-        document.getElementById('btn-enter')?.click();
-        return;
-      }
     });
   }
 
@@ -198,10 +191,41 @@ export class KeyboardUI {
       // Release backtick → stop repeat
       if (e.code === 'Backquote' && this._backtickHeld) {
         this._backtickHeld = false;
-        const tapBtn = document.getElementById('btn-tap-tempo');
-        if (tapBtn) tapBtn.dispatchEvent(new MouseEvent('mouseup'));
+        document.getElementById('btn-tap-tempo')?.dispatchEvent(new MouseEvent('mouseup'));
+      }
+      // Release Alt → stop repeat
+      if (e.key === 'Alt') {
+        this._stopRepeat();
+      }
+      // Release number key → stop repeat for that pad
+      const num = parseInt(e.key, 10);
+      if (num >= 1 && num <= 8) {
+        this._stopRepeat();
       }
     });
+  }
+
+  _startRepeat(pad) {
+    this._stopRepeat();
+    this.engine.trigger(pad, 100);
+    document.dispatchEvent(new CustomEvent('pad-trigger', { detail: { pad } }));
+    // Get BPM and quantize from transport state via a custom event
+    const bpm = 90; // fallback
+    const grid = 24; // fallback 1/16
+    // Try to read from transport (dispatch request)
+    const msPerQuarter = 60000 / bpm;
+    const msPerStep = msPerQuarter * grid / 96;
+    this._repeatInterval = setInterval(() => {
+      this.engine.trigger(pad, 100);
+      document.dispatchEvent(new CustomEvent('pad-trigger', { detail: { pad } }));
+    }, Math.max(50, msPerStep));
+  }
+
+  _stopRepeat() {
+    if (this._repeatInterval) {
+      clearInterval(this._repeatInterval);
+      this._repeatInterval = null;
+    }
   }
 
   _isNumpad(e) {
