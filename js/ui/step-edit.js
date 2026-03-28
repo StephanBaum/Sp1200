@@ -72,20 +72,16 @@ export class StepEditUI {
   }
 
   _updateDisplay() {
-    const bar = Math.floor(this.currentStep / this.stepsPerBar) + 1;
-    const beatInBar = Math.floor((this.currentStep % this.stepsPerBar) / (this.stepsPerBar / 4)) + 1;
-    const subBeat = (this.currentStep % (this.stepsPerBar / 4)) + 1;
+    const stepsPerBeat = Math.floor(this.stepsPerBar / 4);
+    const measure = Math.floor(this.currentStep / this.stepsPerBar) + 1;
+    const stepInBar = this.currentStep % this.stepsPerBar;
+    const beat = Math.floor(stepInBar / stepsPerBeat) + 1;
+    const sub = (stepInBar % stepsPerBeat) + 1;
 
-    // Format like the real SP-1200: "MS:01 BT:1.1"
-    const line1 = 'MS:' + String(bar).padStart(2, '0') +
-                  ' BT:' + beatInBar + '.' + subBeat;
-
-    // Line 2: show autocorrect value and step indicator
     const gridNames = { 96: '1/4', 48: '1/8', 32: '1/8T', 24: '1/16', 16: '1/16T', 12: '1/32', 1: 'HiR' };
-    const gridName = gridNames[this.quantizeGrid] || '1/16';
-    const line2 = 'AC:' + gridName + ' Step';
+    const grid = gridNames[this.quantizeGrid] || '1/16';
 
-    this.display.setLine1(line1);
-    this.display.setLine2(line2);
+    this.display.setLine1('M:' + String(measure).padStart(2, '0') + ' B:' + String(beat).padStart(2, '0') + ' S:' + String(sub).padStart(2, '0'));
+    this.display.setLine2('AC:' + grid);
   }
 }
