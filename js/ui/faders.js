@@ -3,15 +3,15 @@ export class FadersUI {
     this.engine = engine;
     this.mode = 'volume';
 
-    // Stored parameter values per mode (the "real" values shown on display)
+    // Stored parameter values per mode (only updated when fader is touched)
     this.params = {
       volume: new Float32Array(8).fill(0.75),
       pitch: new Float32Array(8).fill(0.533), // center = 0 semitones
       decay: new Float32Array(8).fill(0.75),
     };
 
-    // Physical fader positions (where the thumb sits visually)
-    this.faderPos = new Float32Array(8).fill(0.5); // all start at center
+    // Physical fader positions (where the thumb sits)
+    this.faderPos = new Float32Array(8).fill(0.75);
 
     this.thumbs = document.querySelectorAll('.fader-thumb');
     this.tracks = document.querySelectorAll('.fader-track');
@@ -20,64 +20,42 @@ export class FadersUI {
     this._updateAllPositions();
   }
 
-  _bindKeyboard() {
-    document.addEventListener('fader-key', (e) => {
-      const { index, delta } = e.detail;
-      this.setValueFromKeyboard(index, delta);
-    });
-  }
-
   _bindDrag() {
     this.thumbs.forEach((thumb, index) => {
       let dragging = false;
-      let lastY = null;
       const track = this.tracks[index];
 
-      const startDrag = (e) => {
-        dragging = true;
-        const rect = track.getBoundingClientRect();
-        lastY = 1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
-        e.preventDefault();
-      };
-
-      thumb.addEventListener('mousedown', startDrag);
-      track.addEventListener('mousedown', (e) => {
-        // Click on track — move thumb there, then start dragging
-        const rect = track.getBoundingClientRect();
-        const newPos = 1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
-        this.faderPos[index] = newPos;
-        this._updatePosition(index);
-        lastY = newPos;
-        dragging = true;
-        e.preventDefault();
-      });
-
-      document.addEventListener('mousemove', (e) => {
+      const onMove = (e) => {
         if (!dragging) return;
         const rect = track.getBoundingClientRect();
-        const newPos = 1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
-
-        // Calculate delta from last position
-        const delta = newPos - (lastY ?? newPos);
-        lastY = newPos;
-
-        // Apply delta to the stored parameter value
-        const paramArr = this.params[this.mode];
-        paramArr[index] = Math.max(0, Math.min(1, paramArr[index] + delta));
-
-        // Update physical fader position
-        this.faderPos[index] = newPos;
+        const pos = 1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+        this.faderPos[index] = pos;
+        // Absolute: fader position IS the value, written on touch
+        this.params[this.mode][index] = pos;
         this._updatePosition(index);
-
-        // Send the actual parameter value to engine
         this._sendValue(index);
         this._notifyDisplay();
-      });
+      };
 
-      document.addEventListener('mouseup', () => {
-        dragging = false;
-        lastY = null;
+      thumb.addEventListener('mousedown', (e) => { dragging = true; e.preventDefault(); });
+      track.addEventListener('mousedown', (e) => {
+        dragging = true;
+        onMove(e);
       });
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', () => { dragging = false; });
+    });
+  }
+
+  _bindKeyboard() {
+    document.addEventListener('fader-key', (e) => {
+      const { index, delta } = e.detail;
+      const val = Math.max(0, Math.min(1, this.params[this.mode][index] + delta));
+      this.params[this.mode][index] = val;
+      this.faderPos[index] = val;
+      this._updatePosition(index);
+      this._sendValue(index);
+      this._notifyDisplay();
     });
   }
 
@@ -107,16 +85,7 @@ export class FadersUI {
   }
 
   _notifyDisplay() {
-    // Send the actual stored values to the display, not fader positions
     const vals = Array.from(this.params[this.mode]);
     document.dispatchEvent(new CustomEvent('fader-update', { detail: { values: vals, mode: this.mode } }));
-  }
-
-  // Called by keyboard UI when faders change via keys
-  setValueFromKeyboard(index, delta) {
-    const paramArr = this.params[this.mode];
-    paramArr[index] = Math.max(0, Math.min(1, paramArr[index] + delta));
-    this._sendValue(index);
-    this._notifyDisplay();
   }
 }
