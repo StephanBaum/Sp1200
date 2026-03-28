@@ -143,6 +143,11 @@ export function confirmEntry(s) {
   } else {
     // No numeric buffer — handle confirm for non-numeric editParam states
     switch (s.editParam) {
+      case 'truncate-edit':
+        // Enter → prompt for permanent truncation
+        s.editParam = 'truncate-confirm';
+        s.moduleDisplay('Make Truncation', 'Permanent? Y/N');
+        return;
       case 'sample-level':
         // Enter confirms gain, returns to VU mode
         s.editParam = 'vu-mode';
@@ -244,6 +249,7 @@ export function handleNav(s, dir) {
     }
     case 'threshold':
     case 'sample-length':
+    case 'default-decay':
       break;
     case 'disk-browse':
       if (s.diskFiles.length > 0) {

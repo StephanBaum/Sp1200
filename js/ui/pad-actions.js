@@ -75,6 +75,32 @@ export function bindPadActions(s) {
             s.pendingAction = null;
             s.moduleDisplay('Sampling ' + _padLabel(s, pad), 'Output Channel ' + ((s.channelAssign?.[pad] ?? pad) + 1));
             break;
+          case 'copy-sound-from':
+            s._pendingPad = pad;
+            s.editParam = 'select-pad';
+            s.pendingAction = 'copy-sound-to';
+            s.moduleDisplay('Copy ' + _padLabel(s, pad), 'Select Dest');
+            break;
+          case 'copy-sound-to':
+            s.engine.send({ type: 'copy-sound', from: s._pendingPad, to: pad });
+            s.display.flash('Copied', _padLabel(s, s._pendingPad) + ' > ' + _padLabel(s, pad));
+            s._pendingPad = null;
+            s.editParam = 'module-func';
+            s.pendingAction = null;
+            break;
+          case 'swap-sound-from':
+            s._pendingPad = pad;
+            s.editParam = 'select-pad';
+            s.pendingAction = 'swap-sound-to';
+            s.moduleDisplay('Swap ' + _padLabel(s, pad), 'Select Second');
+            break;
+          case 'swap-sound-to':
+            s.engine.send({ type: 'swap-sounds', padA: s._pendingPad, padB: pad });
+            s.display.flash('Swapped', _padLabel(s, s._pendingPad) + ' <> ' + _padLabel(s, pad));
+            s._pendingPad = null;
+            s.editParam = 'module-func';
+            s.pendingAction = null;
+            break;
           case 'load-sound-pad':
             s.display.flash('Load Sound', _padLabel(s, pad));
             s.editParam = 'module-func';

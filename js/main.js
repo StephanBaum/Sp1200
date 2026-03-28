@@ -152,6 +152,12 @@ async function init() {
       state.moduleDisplay('Length: ' + state.sampleLength.toFixed(1) + ' secs', 'Use Slider #1');
       return;
     }
+    if (state.editParam === 'default-decay') {
+      const decayVal = Math.round(slider1 * 31);
+      state.moduleDisplay('Default Decay', 'Value: ' + decayVal);
+      state.engine.send({ type: 'set-default-decay', value: decayVal });
+      return;
+    }
     if (state.editParam === 'disk-name') {
       // Slider 1 cycles through characters at cursor position
       const chars = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.';

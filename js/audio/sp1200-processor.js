@@ -252,6 +252,34 @@ class SP1200Processor extends AudioWorkletProcessor {
         this.metronomeVolume = Math.max(0, Math.min(1, msg.vol));
         break;
 
+      case 'song-set-start':
+        if (msg.song >= 0 && msg.song < 100) {
+          this.song.startStep = msg.step || 0;
+        }
+        break;
+
+      case 'clear-all':
+        for (let i = 0; i < NUM_PADS; i++) { this.voices[i].sample = null; }
+        for (let i = 0; i < MAX_PATTERNS; i++) this.patterns[i] = new Pattern();
+        this.port.postMessage({ type: 'all-cleared' });
+        break;
+
+      case 'clear-sounds':
+        for (let i = 0; i < NUM_PADS; i++) { this.voices[i].sample = null; }
+        this.port.postMessage({ type: 'sounds-cleared' });
+        break;
+
+      case 'clear-sequences':
+        for (let i = 0; i < MAX_PATTERNS; i++) this.patterns[i] = new Pattern();
+        this.port.postMessage({ type: 'sequences-cleared' });
+        break;
+
+      case 'set-default-decay':
+        for (let i = 0; i < NUM_PADS; i++) {
+          if (this.padModes[i] === 'tune') this.voices[i].setDecay(msg.value / 31);
+        }
+        break;
+
       default:
         break;
     }

@@ -22,6 +22,8 @@ export class SetupHandler {
       case 'copy-segment': return this._copySegment(msg);
       case 'truncate': return this._truncate(msg);
       case 'erase-track': return this._eraseTrack(msg);
+      case 'copy-sound': return this._copySound(msg);
+      case 'swap-sounds': return this._swapSounds(msg);
       default: return false;
     }
   }
@@ -194,6 +196,43 @@ export class SetupHandler {
       pat.tracks[msg.pad].events = pat.tracks[msg.pad].events.filter(
         e => Math.abs(e.tick - tick) > window
       );
+    }
+    return true;
+  }
+
+  _copySound(msg) {
+    const p = this.processor;
+    const from = msg.from;
+    const to = msg.to;
+    if (from >= 0 && from < p.voices.length && to >= 0 && to < p.voices.length) {
+      if (p.voices[from].sample) {
+        p.voices[to].loadSample(new Float32Array(p.voices[from].sample));
+      } else {
+        p.voices[to].sample = null;
+      }
+      p.port.postMessage({ type: 'sound-copied', from, to });
+    }
+    return true;
+  }
+
+  _swapSounds(msg) {
+    const p = this.processor;
+    const a = msg.padA;
+    const b = msg.padB;
+    if (a >= 0 && a < p.voices.length && b >= 0 && b < p.voices.length) {
+      const tmpSample = p.voices[a].sample;
+      p.voices[a].sample = p.voices[b].sample;
+      p.voices[b].sample = tmpSample;
+      // Update start/end points
+      if (p.voices[a].sample) {
+        p.voices[a].startPoint = 0;
+        p.voices[a].endPoint = p.voices[a].sample.length - 1;
+      }
+      if (p.voices[b].sample) {
+        p.voices[b].startPoint = 0;
+        p.voices[b].endPoint = p.voices[b].sample.length - 1;
+      }
+      p.port.postMessage({ type: 'sounds-swapped', padA: a, padB: b });
     }
     return true;
   }

@@ -141,7 +141,14 @@ export function handleModuleFunction(s, funcNum) {
         break;
       case 21:
         // Screenshot: "Song 01" / "First Step: 01"
-        s.moduleDisplay('Song 01', 'First Step: 01');
+        s.editParam = 'first-song-step';
+        s.numericBuffer = '';
+        s.moduleDisplay('Song ' + String(s.currentSong + 1).padStart(2, '0'), 'First Step: 01');
+        break;
+      case 23:
+        s.editParam = 'special-menu';
+        s.numericBuffer = '';
+        s.moduleDisplay('Special Menu', 'Enter function #');
         break;
       case 22:
         // Screenshot: "Midi Parameters" / "Basic Channel 01"
@@ -296,6 +303,55 @@ export function handleModuleFunction(s, funcNum) {
   // Keep module-func if nothing else was set
   if (!s.editParam) s.editParam = 'module-func';
   s.numericBuffer = '';
+}
+
+// ── Special Menu dispatch (Setup 23 sub-functions) ───────────────────────
+export function handleSpecialFunction(s, funcNum) {
+  switch (funcNum) {
+    case 11: // Catalog — show menu list
+      s.moduleDisplay('Special Funcs:', '11-22, 25');
+      break;
+    case 12: // Clear All Memory
+      s.editParam = 'clear-all-confirm';
+      s.moduleDisplay('Clear ALL mem?', 'YES/NO');
+      break;
+    case 13: // Memory Remaining
+      s.moduleDisplay('Sound Mem:', 'Seq Mem: Free');
+      break;
+    case 15: // Clear Sound Memory
+      s.editParam = 'clear-sounds-confirm';
+      s.moduleDisplay('Clear Sounds?', 'YES/NO');
+      break;
+    case 16: // Clear Sequence Memory
+      s.editParam = 'clear-seqs-confirm';
+      s.moduleDisplay('Clear Seqnces?', 'YES/NO');
+      break;
+    case 17: // Copy Sound
+      s.editParam = 'select-pad';
+      s.pendingAction = 'copy-sound-from';
+      s.moduleDisplay('Copy Sound', 'Select Source');
+      break;
+    case 18: // Swap Sounds
+      s.editParam = 'select-pad';
+      s.pendingAction = 'swap-sound-from';
+      s.moduleDisplay('Swap Sounds', 'Select First');
+      break;
+    case 19: // Default Decay
+      s.editParam = 'default-decay';
+      s.moduleDisplay('Default Decay', 'Use Slider #1');
+      break;
+    case 22: // Dynamic Allocation
+      s.editParam = 'dynamic-alloc-confirm';
+      s.moduleDisplay('Dyn Alloc', 'Yes=9 No=7');
+      break;
+    case 25: // Reverse Sound (same as Setup 25)
+      s.editParam = 'select-pad';
+      s.pendingAction = 'reverse-sound';
+      s.moduleDisplay('Reverse Sound', 'Select a pad');
+      break;
+    default:
+      s.moduleDisplay('Special ' + funcNum, 'Not available');
+  }
 }
 
 // ── Disk helpers ─────────────────────────────────────────────────────────

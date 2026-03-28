@@ -1,4 +1,4 @@
-import { handleModuleFunction, executeDiskOp } from './modules.js';
+import { handleModuleFunction, handleSpecialFunction, executeDiskOp } from './modules.js';
 import { confirmEntry } from './master-control.js';
 
 function _padLabel(s, pad) {
@@ -19,6 +19,33 @@ export function bindKeypad(s) {
           handleModuleFunction(s, parseInt(s.numericBuffer, 10));
         } else if (s.activeModule !== 'setup') {
           handleModuleFunction(s, parseInt(s.numericBuffer, 10));
+        }
+        return;
+      }
+
+      // ── Special Menu (Setup 23) — capture 2-digit sub-function ────────
+
+      if (s.editParam === 'special-menu') {
+        s.numericBuffer += key;
+        s.moduleDisplay('Special ' + s.numericBuffer, 'Enter function #');
+        if (s.numericBuffer.length >= 2) {
+          handleSpecialFunction(s, parseInt(s.numericBuffer, 10));
+          s.numericBuffer = '';
+        }
+        return;
+      }
+
+      // ── First Song Step (Setup 21) ────────────────────────────────────
+
+      if (s.editParam === 'first-song-step') {
+        s.numericBuffer += key;
+        s.moduleDisplay('Song ' + String(s.currentSong + 1).padStart(2, '0'),
+          'First Step: ' + s.numericBuffer.padStart(2, '0'));
+        if (s.numericBuffer.length >= 2) {
+          const step = parseInt(s.numericBuffer, 10);
+          s.engine.send({ type: 'song-set-start', song: s.currentSong, step });
+          s.editParam = 'module-func';
+          s.numericBuffer = '';
         }
         return;
       }
@@ -225,6 +252,57 @@ export function bindKeypad(s) {
           s.display.flash('Cancelled', '');
         }
         s._pendingPad = null;
+        s.editParam = 'module-func';
+        s.numericBuffer = '';
+        return;
+      }
+
+      // ── Clear All Memory (Special 12) ─────────────────────────────────
+
+      if (s.editParam === 'clear-all-confirm') {
+        if (key === '9') {
+          s.engine.send({ type: 'clear-all' });
+          s.display.flash('All Cleared', '');
+        } else if (key === '7') {
+          s.display.flash('Cancelled', '');
+        }
+        s.editParam = 'module-func';
+        s.numericBuffer = '';
+        return;
+      }
+
+      if (s.editParam === 'clear-sounds-confirm') {
+        if (key === '9') {
+          s.engine.send({ type: 'clear-sounds' });
+          s.display.flash('Sounds Cleared', '');
+        } else if (key === '7') {
+          s.display.flash('Cancelled', '');
+        }
+        s.editParam = 'module-func';
+        s.numericBuffer = '';
+        return;
+      }
+
+      if (s.editParam === 'clear-seqs-confirm') {
+        if (key === '9') {
+          s.engine.send({ type: 'clear-sequences' });
+          s.display.flash('Seqs Cleared', '');
+        } else if (key === '7') {
+          s.display.flash('Cancelled', '');
+        }
+        s.editParam = 'module-func';
+        s.numericBuffer = '';
+        return;
+      }
+
+      if (s.editParam === 'dynamic-alloc-confirm') {
+        if (key === '9') {
+          s.engine.send({ type: 'dynamic-alloc', enabled: true });
+          s.display.flash('Dyn Alloc', 'Enabled');
+        } else if (key === '7') {
+          s.engine.send({ type: 'dynamic-alloc', enabled: false });
+          s.display.flash('Dyn Alloc', 'Disabled');
+        }
         s.editParam = 'module-func';
         s.numericBuffer = '';
         return;
