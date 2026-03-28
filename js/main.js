@@ -182,11 +182,33 @@ async function init() {
   console.log('SP-1200 ready');
 }
 
-// ── VU Monitoring (mic input level display) ──────────────────────────────
+// ── Audio Input ──────────────────────────────────────────────────────────
+// Try system audio first (getDisplayMedia), fall back to mic (getUserMedia)
+async function getAudioInput() {
+  if (micStream) return micStream;
+  try {
+    // System audio capture — allows sampling audio playing on the computer
+    micStream = await navigator.mediaDevices.getDisplayMedia({ audio: true, video: true });
+    // Stop the video track — we only want audio
+    micStream.getVideoTracks().forEach(t => t.stop());
+  } catch (e) {
+    // Fall back to microphone
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      console.error('No audio input available:', err);
+      return null;
+    }
+  }
+  return micStream;
+}
+
+// ── VU Monitoring (input level display) ──────────────────────────────────
 async function startVUMonitoring() {
   try {
     if (!micStream) {
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await getAudioInput();
+      if (!stream) return;
     }
     const ctx = engine.context;
     micSource = ctx.createMediaStreamSource(micStream);
@@ -231,7 +253,8 @@ function stopVUMonitoring() {
 async function startForceRecording() {
   try {
     if (!micStream) {
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await getAudioInput();
+      if (!stream) return;
     }
     // Set up analyser for VU during recording
     if (!micAnalyser) {
