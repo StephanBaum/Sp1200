@@ -49,15 +49,19 @@ export class TransportUI {
     });
 
     document.getElementById('btn-record').addEventListener('click', () => {
-      this.recording = !this.recording;
-      if (this.recording) {
-        if (!this.playing) this._play();
+      if (this.playing) {
+        // Already playing — toggle recording on/off (overdub)
+        this.recording = !this.recording;
+        if (this.recording) this.engine.record();
+        document.getElementById('btn-record').classList.toggle('active', this.recording);
+        this._led('led-record', this.recording);
+      } else {
+        // Not playing — arm recording, then start playback
+        this.recording = true;
         this.engine.record();
         document.getElementById('btn-record').classList.add('active');
         this._led('led-record', true);
-      } else {
-        document.getElementById('btn-record').classList.remove('active');
-        this._led('led-record', false);
+        this._play();
       }
     });
 
