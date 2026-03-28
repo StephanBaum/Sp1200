@@ -77,6 +77,17 @@ async function init() {
     faders.mode = e.detail.mode;
   });
 
+  // Step edit activation
+  document.addEventListener('step-edit-toggle', (e) => {
+    if (e.detail.active) {
+      stepEdit.setQuantize(e.detail.quantize);
+      stepEdit.setSegmentLength(e.detail.bars);
+      stepEdit.activate();
+    } else {
+      stepEdit.deactivate();
+    }
+  });
+
   // Track selected pad
   document.querySelectorAll('.pad').forEach(el => {
     el.addEventListener('mousedown', () => {

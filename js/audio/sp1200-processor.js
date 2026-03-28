@@ -330,30 +330,142 @@ class Pattern {
 
 // ---------------------------------------------------------------------------
 // Song (from js/sequencer/song.js)
+// 100 songs (0-99), each with up to 99 steps.
+// Step types: segment, end, tempo-change, mix-change, sub-song,
+//             repeat-start, repeat-end, trigger
 // ---------------------------------------------------------------------------
-class SongEntry {
-  constructor(pattern, repeats = 1) {
-    this.pattern = pattern;
-    this.repeats = Math.max(1, repeats);
-  }
-}
-
 class Song {
-  constructor() { this.entries = []; this.currentIndex = 0; this.currentRepeat = 0; }
-  addEntry(entry) { if (this.entries.length < MAX_SONG_ENTRIES) this.entries.push(entry); }
-  removeEntry(index) { if (index >= 0 && index < this.entries.length) this.entries.splice(index, 1); }
-  start() { this.currentIndex = 0; this.currentRepeat = 0; }
-  currentPattern() { if (this.isFinished()) return -1; return this.entries[this.currentIndex].pattern; }
-  advanceRepeat() {
-    if (this.isFinished()) return;
-    this.currentRepeat++;
-    if (this.currentRepeat >= this.entries[this.currentIndex].repeats) {
-      this.currentIndex++;
-      this.currentRepeat = 0;
+  constructor() {
+    this.songs = Array.from({ length: 100 }, () => ({
+      steps: [],
+      tempo: 120,
+    }));
+    this.currentSong = 0;
+    this.currentStep = 0;
+    this.repeatStack = [];
+  }
+
+  addStep(songNum, stepIndex, stepData) {
+    // stepData: { type: 'segment'|'end'|'tempo-change'|'mix-change'|'sub-song'|'repeat-start'|'repeat-end'|'trigger', value: ... }
+    if (songNum < 0 || songNum >= 100) return;
+    const song = this.songs[songNum];
+    if (song.steps.length >= MAX_SONG_ENTRIES) return;
+    if (stepIndex >= song.steps.length) {
+      song.steps.push(stepData);
+    } else {
+      song.steps.splice(stepIndex, 0, stepData);
     }
   }
-  isFinished() { return this.currentIndex >= this.entries.length; }
-  getPosition() { return { entryIndex: this.currentIndex, repeat: this.currentRepeat, pattern: this.currentPattern() }; }
+
+  deleteStep(songNum, stepIndex) {
+    if (songNum < 0 || songNum >= 100) return;
+    const song = this.songs[songNum];
+    if (stepIndex >= 0 && stepIndex < song.steps.length) {
+      song.steps.splice(stepIndex, 1);
+    }
+  }
+
+  setTempo(songNum, bpm) {
+    if (songNum < 0 || songNum >= 100) return;
+    this.songs[songNum].tempo = Math.max(BPM_MIN, Math.min(BPM_MAX, bpm));
+  }
+
+  start(songNum) {
+    if (songNum >= 0 && songNum < 100) this.currentSong = songNum;
+    this.currentStep = 0;
+    this.repeatStack = [];
+  }
+
+  getNextSegment() {
+    // Returns the next actionable item, or null if song ended
+    const song = this.songs[this.currentSong];
+    while (this.currentStep < song.steps.length) {
+      const step = song.steps[this.currentStep];
+      this.currentStep++;
+
+      switch (step.type) {
+        case 'segment':
+          return { segment: step.value };
+        case 'end':
+          return null; // song ended
+        case 'tempo-change':
+          return { tempoChange: step.value }; // { accel: true/false, amount: bpm, beats: duration }
+        case 'mix-change':
+          return { mixChange: step.value }; // slot number
+        case 'trigger':
+          return { trigger: step.value }; // { pad, velocity }
+        case 'sub-song':
+          // Push current position, play sub-song inline
+          this.repeatStack.push({ song: this.currentSong, step: this.currentStep });
+          this.currentSong = step.value;
+          this.currentStep = 0;
+          return this.getNextSegment();
+        case 'repeat-start':
+          this.repeatStack.push({
+            song: this.currentSong,
+            step: this.currentStep,
+            count: step.value || 1,
+          });
+          continue;
+        case 'repeat-end': {
+          if (this.repeatStack.length > 0) {
+            const top = this.repeatStack[this.repeatStack.length - 1];
+            if (top.count !== undefined && top.count > 0) {
+              top.count--;
+              this.currentStep = top.step;
+            } else {
+              this.repeatStack.pop();
+            }
+          }
+          continue;
+        }
+        default:
+          continue;
+      }
+    }
+
+    // Check if we're in a sub-song and need to return to parent
+    if (this.repeatStack.length > 0) {
+      const parent = this.repeatStack.pop();
+      this.currentSong = parent.song;
+      this.currentStep = parent.step;
+      return this.getNextSegment();
+    }
+
+    return null; // song ended
+  }
+
+  // Legacy compat: return current segment index or -1 if finished
+  currentPattern() {
+    const song = this.songs[this.currentSong];
+    if (this.currentStep >= song.steps.length) return -1;
+    // Peek at current step — if it's a segment, return its value
+    const step = song.steps[this.currentStep];
+    return step && step.type === 'segment' ? step.value : -1;
+  }
+
+  // Legacy compat: advance after a segment finishes playing
+  advanceRepeat() {
+    this.getNextSegment();
+  }
+
+  isFinished() {
+    const song = this.songs[this.currentSong];
+    return this.currentStep >= song.steps.length && this.repeatStack.length === 0;
+  }
+
+  getPosition() {
+    return {
+      songIndex: this.currentSong,
+      stepIndex: this.currentStep,
+      pattern: this.currentPattern(),
+    };
+  }
+
+  reset() {
+    this.currentStep = 0;
+    this.repeatStack = [];
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -484,12 +596,64 @@ class SP1200Processor extends AudioWorkletProcessor {
       }
 
       case 'song-chain': {
-        // { entries: [{pattern, repeats}] }
-        this.song = new Song();
+        // Legacy: { entries: [{pattern, repeats}] } — converts to new step format
+        const songNum = msg.song ?? 0;
+        this.song.songs[songNum].steps = [];
         if (Array.isArray(msg.entries)) {
           for (const e of msg.entries) {
-            this.song.addEntry(new SongEntry(e.pattern, e.repeats ?? 1));
+            const repeats = e.repeats ?? 1;
+            if (repeats > 1) {
+              this.song.addStep(songNum, 999, { type: 'repeat-start', value: repeats - 1 });
+            }
+            this.song.addStep(songNum, 999, { type: 'segment', value: e.pattern });
+            if (repeats > 1) {
+              this.song.addStep(songNum, 999, { type: 'repeat-end' });
+            }
           }
+          this.song.addStep(songNum, 999, { type: 'end' });
+        }
+        break;
+      }
+
+      case 'song-add-step': {
+        // { song, step, stepType, value }
+        this.song.addStep(msg.song, msg.step, { type: msg.stepType, value: msg.value });
+        break;
+      }
+
+      case 'song-delete-step': {
+        // { song, step }
+        this.song.deleteStep(msg.song, msg.step);
+        break;
+      }
+
+      case 'song-set-tempo': {
+        // { song, bpm }
+        this.song.setTempo(msg.song, msg.bpm);
+        break;
+      }
+
+      case 'song-play': {
+        // { song } — start playing a song from step 0
+        this.mode = 'song';
+        this.song.start(msg.song);
+        this.clock.setBpm(this.song.songs[msg.song].tempo);
+        this.isPlaying = true;
+        this.isRecording = false;
+        this.songPlaying = true;
+        this.patternTick = 0;
+        this.clock.start();
+        // Advance to the first segment
+        const first = this.song.getNextSegment();
+        if (first && first.segment !== undefined) {
+          this.currentPatternIndex = first.segment;
+          this.port.postMessage({ type: 'song-position', ...this.song.getPosition() });
+        } else {
+          // Empty or immediate end
+          this.isPlaying = false;
+          this.songPlaying = false;
+          this.clock.stop();
+          this.port.postMessage({ type: 'song-end' });
         }
         break;
       }
@@ -694,7 +858,16 @@ class SP1200Processor extends AudioWorkletProcessor {
         this.clock.start();
         if (this.mode === 'song') {
           this.songPlaying = true;
-          this.song.start();
+          this.song.start(this.song.currentSong);
+          // Set tempo from song
+          this.clock.setBpm(this.song.songs[this.song.currentSong].tempo);
+          // Advance to first segment
+          const firstSeg = this.song.getNextSegment();
+          if (firstSeg && firstSeg.segment !== undefined) {
+            this.currentPatternIndex = firstSeg.segment;
+          } else if (firstSeg && firstSeg.tempoChange) {
+            this.clock.setBpm(firstSeg.tempoChange.amount || firstSeg.tempoChange);
+          }
         }
         break;
 
@@ -827,16 +1000,40 @@ class SP1200Processor extends AudioWorkletProcessor {
       this.port.postMessage({ type: 'pattern-end', patternIndex });
 
       if (this.mode === 'song' && this.songPlaying) {
-        this.song.advanceRepeat();
-        if (this.song.isFinished()) {
+        // Advance to next step in song
+        let next = this.song.getNextSegment();
+        // Process non-segment steps (tempo changes, mix changes, triggers) until we get a segment or end
+        while (next !== null && next.segment === undefined) {
+          if (next.tempoChange) {
+            const tc = next.tempoChange;
+            this.clock.setBpm(typeof tc === 'number' ? tc : (tc.amount || this.clock.bpm));
+          } else if (next.mixChange !== undefined) {
+            // Apply mix snapshot
+            const slot = next.mixChange;
+            if (slot >= 0 && slot < 8) {
+              for (let ch = 0; ch < NUM_PADS; ch++) {
+                this.mixer.setVolume(ch, this.mixSnapshots[slot][ch]);
+              }
+            }
+          } else if (next.trigger) {
+            // Fire a trigger event
+            const t = next.trigger;
+            this._triggerVoice(t.pad, t.velocity ?? 127);
+          }
+          next = this.song.getNextSegment();
+        }
+
+        if (next === null) {
+          // Song finished
           this.isPlaying = false;
           this.songPlaying = false;
           this.clock.stop();
           this.port.postMessage({ type: 'song-end' });
           return;
         }
-        const pos = this.song.getPosition();
-        this.port.postMessage({ type: 'song-position', ...pos });
+        // next.segment is the pattern index to play
+        this.currentPatternIndex = next.segment;
+        this.port.postMessage({ type: 'song-position', ...this.song.getPosition() });
       } else if (!this.autoRepeat) {
         this.isPlaying = false;
         this.clock.stop();

@@ -309,11 +309,17 @@ export class TransportUI {
         btn.classList.toggle('active');
         break;
 
-      case 'swing':
-        this.editParam = 'swing';
-        this.numericBuffer = '';
-        this.display.flash('Swing: ' + this.swingAmount + '%', 'Use +/- or keys');
+      case 'swing': {
+        // SP-1200 specific swing values: 50, 54, 58, 63, 67, 71
+        const SW = [50, 54, 58, 63, 67, 71];
+        let si = SW.indexOf(this.swingAmount);
+        if (si === -1) si = 0;
+        si = (si + 1) % SW.length;
+        this.swingAmount = SW[si];
+        this.engine.setSwing(this.swingAmount);
+        this.display.flash('Swing: ' + this.swingAmount + '%', this.swingAmount === 50 ? 'No swing' : 'Swing active');
         break;
+      }
 
       case 'tabsong':
         this.display.setMode('TABSONG');
@@ -392,10 +398,11 @@ export class TransportUI {
         if (this.stepProgramMode) {
           this.mode = 'step-edit';
           this.engine.setMode('step-edit');
-          this.display.setMode('step');
+          document.dispatchEvent(new CustomEvent('step-edit-toggle', { detail: { active: true, quantize: this.quantizeGrid, bars: this.segmentLength } }));
         } else {
           this.mode = 'segment';
           this.engine.setMode('segment');
+          document.dispatchEvent(new CustomEvent('step-edit-toggle', { detail: { active: false } }));
           this.display.setMode('segment');
         }
         break;
@@ -556,11 +563,16 @@ export class TransportUI {
         this.engine.setBpm(this.bpm);
         this.display.flash('Tempo: ' + this.bpm, 'BPM');
         break;
-      case 'swing':
-        this.swingAmount = Math.max(50, Math.min(75, this.swingAmount + dir));
+      case 'swing': {
+        const SW = [50, 54, 58, 63, 67, 71];
+        let si = SW.indexOf(this.swingAmount);
+        if (si === -1) si = 0;
+        si = Math.max(0, Math.min(SW.length - 1, si + dir));
+        this.swingAmount = SW[si];
         this.engine.setSwing(this.swingAmount);
-        this.display.flash('Swing: ' + this.swingAmount + '%', 'Use +/- or Enter');
+        this.display.flash('Swing: ' + this.swingAmount + '%', this.swingAmount === 50 ? 'No swing' : 'Swing active');
         break;
+      }
       case 'quantize':
         this.quantizeIndex = Math.max(0, Math.min(QUANT_GRIDS.length - 1, this.quantizeIndex + dir));
         this.quantizeGrid = QUANT_GRIDS[this.quantizeIndex];
