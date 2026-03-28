@@ -386,23 +386,33 @@ export class TransportUI {
     this.numericBuffer = '';
   }
 
-  // ── Programming buttons (9 dual-function toggles) ──────────────────────
+  // ── Programming buttons (dual-function: upper label / lower label) ─────
+  // Each click toggles which function fires. The active function stays
+  // until another prog button is pressed or the same button is pressed again.
   _bindProgramming() {
-    // Initialize Segment LED as active (segment mode is the default)
     this._led('led-segment', true);
 
     document.querySelectorAll('.prog').forEach(btn => {
       const upper = btn.dataset.upper;
       const lower = btn.dataset.lower;
-      this.progStates[btn.id] = 'upper';
+      this.progStates[btn.id] = 'lower'; // start on lower so first click → upper
 
       btn.addEventListener('click', () => {
+        // Clear previous edit state
+        if (this.editParam && this.editParam !== 'module-func') {
+          this.editParam = null;
+          this.display.unlock();
+        }
+
+        // Toggle which function
         const state = this.progStates[btn.id];
         const newState = state === 'upper' ? 'lower' : 'upper';
         this.progStates[btn.id] = newState;
         const func = newState === 'upper' ? upper : lower;
 
-        btn.classList.toggle('active');
+        // Clear all prog active states, set this one
+        document.querySelectorAll('.prog').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
 
         // Toggle Song/Segment LEDs for prog-1
         if (btn.id === 'prog-1') {
