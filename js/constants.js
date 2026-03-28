@@ -43,3 +43,5 @@ export const BANK_NAMES = ['A', 'B', 'C', 'D'];
 export const FILTER_DYNAMIC = [0, 1];
 export const FILTER_FIXED = [2, 3, 4, 5];
 export const FILTER_NONE = [6, 7];
+
+export const BASE_PITCH_STEP = SP_SAMPLE_RATE / OUTPUT_SAMPLE_RATE;

@@ -2,6 +2,7 @@ import { NUM_PADS } from '../constants.js';
 
 export class Mixer {
   constructor() {
+    this.masterVolume = 0.75;
     this.channels = Array.from({ length: NUM_PADS }, () => ({
       volume: 1.0,
       pan: 0,

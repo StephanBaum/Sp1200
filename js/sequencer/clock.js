@@ -1,9 +1,9 @@
-import { PPQN } from '../constants.js';
+import { PPQN, BPM_DEFAULT, BPM_MIN, BPM_MAX } from '../constants.js';
 
 export class Clock {
   constructor(sampleRate) {
     this.sampleRate = sampleRate;
-    this.bpm = 90;
+    this.bpm = BPM_DEFAULT;
     this.samplesPerTick = 0;
     this.sampleCounter = 0;
     this.tick = 0;
@@ -14,7 +14,7 @@ export class Clock {
     this.samplesPerTick = (this.sampleRate * 60) / (this.bpm * PPQN);
   }
   setBpm(bpm) {
-    this.bpm = Math.max(30, Math.min(250, bpm));
+    this.bpm = Math.max(BPM_MIN, Math.min(BPM_MAX, bpm));
     this._calcSamplesPerTick();
   }
   start() { this.playing = true; this.tick = 0; this.sampleCounter = 0; }

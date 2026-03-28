@@ -3,9 +3,9 @@ import { Pattern, PatternEvent } from '../../js/sequencer/pattern.js';
 import { PPQN, NUM_PADS } from '../../js/constants.js';
 
 describe('Pattern', () => {
-  it('creates empty pattern with default 1 bar', () => {
+  it('creates empty pattern with default 2 bars', () => {
     const p = new Pattern();
-    expect(p.bars).toBe(1);
+    expect(p.bars).toBe(2);
     expect(p.tracks.length).toBe(NUM_PADS);
     expect(p.tracks[0].events.length).toBe(0);
   });
