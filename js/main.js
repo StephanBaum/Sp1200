@@ -196,19 +196,18 @@ async function startVUMonitoring() {
 
     const dataArray = new Uint8Array(micAnalyser.frequencyBinCount);
     function drawVU() {
+      if (!micAnalyser) return;
       vuAnimFrame = requestAnimationFrame(drawVU);
       micAnalyser.getByteTimeDomainData(dataArray);
-      // Calculate RMS level
       let sum = 0;
       for (let i = 0; i < dataArray.length; i++) {
         const v = (dataArray[i] - 128) / 128;
         sum += v * v;
       }
       const rms = Math.sqrt(sum / dataArray.length);
-      const level = Math.min(1, rms * 4); // Scale for visibility
+      const level = Math.min(1, rms * 4);
       display.showVU(level);
 
-      // If armed, check threshold
       if (sampleArmed && level > 0.05) {
         sampleArmed = false;
         startForceRecording();

@@ -12,10 +12,11 @@ export class SP1200Engine {
   send(message) { if (this.ready) this.node.port.postMessage(message); }
   onMessage(callback) { if (this.node) this.node.port.onmessage = (e) => callback(e.data); }
   loadSample(pad, buffer) { this.send({ type: 'load-sample', pad, buffer: buffer.buffer }); }
-  trigger(pad, velocity = 127) { this.send({ type: 'trigger', pad, velocity }); }
-  play() { this.send({ type: 'transport', action: 'play' }); }
+  trigger(pad, velocity = 127) { this._ensureRunning(); this.send({ type: 'trigger', pad, velocity }); }
+  play() { this._ensureRunning(); this.send({ type: 'transport', action: 'play' }); }
   stop() { this.send({ type: 'transport', action: 'stop' }); }
-  record() { this.send({ type: 'transport', action: 'record' }); }
+  record() { this._ensureRunning(); this.send({ type: 'transport', action: 'record' }); }
+  _ensureRunning() { if (this.context?.state === 'suspended') this.context.resume(); }
   setBpm(bpm) { this.send({ type: 'set-bpm', bpm }); }
   setSwing(amount) { this.send({ type: 'set-swing', amount }); }
   setQuantize(grid) { this.send({ type: 'set-quantize', grid }); }
