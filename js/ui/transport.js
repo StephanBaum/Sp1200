@@ -432,7 +432,7 @@ export class TransportUI {
         this.engine.setMode('segment');
         this.editParam = 'segment';
         this.numericBuffer = '';
-        this.display.flash('Segment Mode', 'Seg ' + String(this.currentSegment + 1).padStart(2, '0'));
+        this.display.setMode('segment'); // shows Seg XX + BPM
         break;
 
       case 'trigger':
@@ -452,17 +452,10 @@ export class TransportUI {
         btn.classList.toggle('active');
         break;
 
-      case 'swing': {
-        // SP-1200 specific swing values: 50, 54, 58, 63, 67, 71
-        const SW = [50, 54, 58, 63, 67, 71];
-        let si = SW.indexOf(this.swingAmount);
-        if (si === -1) si = 0;
-        si = (si + 1) % SW.length;
-        this.swingAmount = SW[si];
-        this.engine.setSwing(this.swingAmount);
-        this.display.flash('Swing: ' + this.swingAmount + '%', this.swingAmount === 50 ? 'No swing' : 'Swing active');
+      case 'swing':
+        this.editParam = 'swing';
+        this._moduleDisplay('Swing ' + this.swingAmount + '%', 'Use +/- arrows');
         break;
-      }
 
       case 'tabsong':
         this.display.setMode('TABSONG');
@@ -471,7 +464,7 @@ export class TransportUI {
       case 'copy':
         this.editParam = 'copy';
         this.numericBuffer = '';
-        this.display.flash('Copy to?', 'Enter seg number');
+        this._moduleDisplay('Copy to?', 'Enter seg number');
         break;
 
       case 'end':
@@ -482,7 +475,7 @@ export class TransportUI {
       case 'time-sig':
         this.editParam = 'time-sig';
         this.numericBuffer = '';
-        this.display.flash('Time Sig', this.timeSig);
+        this._moduleDisplay('Time Sig', this.timeSig);
         break;
 
       case 'insert':
@@ -493,7 +486,7 @@ export class TransportUI {
       case 'seg-length':
         this.editParam = 'seg-length';
         this.numericBuffer = '';
-        this.display.flash('Seg Length', this.segmentLength + ' Bars');
+        this._moduleDisplay('Seg Length', this.segmentLength + ' Bars');
         break;
 
       case 'delete':
@@ -503,34 +496,28 @@ export class TransportUI {
 
       case 'erase':
         if (this.playing) {
-          // Real-time erase: hold erase + tap pad to remove that sound's events
           this.eraseMode = !this.eraseMode;
-          this.display.flash(
+          this._moduleDisplay(
             this.eraseMode ? 'Erase On' : 'Erase Off',
-            this.eraseMode ? 'Tap pad to erase' : ''
+            this.eraseMode ? 'Hold pad' : ''
           );
         } else {
-          // Stopped: prompt for segment number to erase
           this.editParam = 'erase-seg';
           this.numericBuffer = '';
-          this.display.flash('Erase Seg?', 'Enter seg number');
+          this._moduleDisplay('Erase Seg?', 'Enter seg number');
         }
         break;
 
       case 'tempo-change':
         this.editParam = 'bpm';
         this.numericBuffer = '';
-        this.display.flash('Tempo ' + Math.round(this.bpm), 'Use +/- or keys');
+        this._moduleDisplay('Tempo ' + Math.round(this.bpm), 'Use +/- or keys');
         break;
 
-      case 'auto-correct': {
-        // Cycle through quantize values on each press
-        this.quantizeIndex = (this.quantizeIndex + 1) % QUANT_GRIDS.length;
-        this.quantizeGrid = QUANT_GRIDS[this.quantizeIndex];
-        this.engine.setQuantize(this.quantizeGrid);
-        this.display.flash('Auto-Correct', QUANT_LABELS[this.quantizeIndex]);
+      case 'auto-correct':
+        this.editParam = 'quantize';
+        this._moduleDisplay('Auto-Correct', QUANT_LABELS[this.quantizeIndex]);
         break;
-      }
 
       case 'mix-change':
         this.display.setMode('MIX CHG');
@@ -558,10 +545,13 @@ export class TransportUI {
 
   _flashDisplay() {
     setTimeout(() => {
-      if (this.activeModule) return; // Don't override module display
-      if (!this.editParam) {
-        this.display.setMode(this.mode === 'song' ? 'song' : this.mode === 'step-edit' ? 'step' : 'segment');
+      if (this.activeModule) return;
+      if (this.editParam) {
+        // Still in an edit mode — don't override
+        return;
       }
+      this.display.unlock();
+      this.display.setMode(this.mode === 'song' ? 'song' : this.mode === 'step-edit' ? 'step' : 'segment');
     }, 800);
   }
 
@@ -608,6 +598,7 @@ export class TransportUI {
 
       switch (this.editParam) {
         case 'bpm':
+          this.display.unlock();
           if (val >= 30 && val <= 250) {
             this.bpm = val;
             this.engine.setBpm(this.bpm);
@@ -620,6 +611,7 @@ export class TransportUI {
 
         case 'segment':
         case 'pattern':
+          this.display.unlock();
           if (val >= 0 && val <= 99) {
             this.currentSegment = val;
             this.engine.selectPattern(this.currentSegment);
@@ -631,6 +623,7 @@ export class TransportUI {
           break;
 
         case 'seg-length':
+          this.display.unlock();
           if (val >= 1 && val <= 99) {
             this.segmentLength = val;
             this.engine.send({ type: 'set-bars', bars: val });
@@ -641,6 +634,7 @@ export class TransportUI {
           break;
 
         case 'copy':
+          this.display.unlock();
           if (val >= 0 && val <= 99) {
             this.engine.send({ type: 'copy-segment', from: this.currentSegment, to: val });
             this.display.flash('Copied', 'Seg ' + (this.currentSegment + 1) + ' > ' + (val + 1));
@@ -650,6 +644,7 @@ export class TransportUI {
           break;
 
         case 'erase-seg':
+          this.display.unlock();
           if (val >= 0 && val <= 99) {
             this.engine.send({ type: 'erase-segment', segment: val });
             this.display.flash('Erased', 'Seg ' + (val + 1));
@@ -659,6 +654,7 @@ export class TransportUI {
           break;
 
         case 'swing':
+          this.display.unlock();
           if (val >= 50 && val <= 75) {
             this.swingAmount = val;
             this.engine.setSwing(this.swingAmount);
@@ -669,12 +665,14 @@ export class TransportUI {
           break;
 
         case 'define-mix':
+          this.display.unlock();
           if (val >= 1 && val <= 8) {
             this.engine.send({ type: 'define-mix', slot: val - 1 });
             this.display.flash('Mix ' + val, 'Saved');
           }
           break;
         case 'select-mix':
+          this.display.unlock();
           if (val >= 1 && val <= 8) {
             this.engine.send({ type: 'select-mix', slot: val - 1 });
             this.display.flash('Mix ' + val, 'Recalled');
@@ -753,7 +751,7 @@ export class TransportUI {
         this.bpm = Math.max(30, Math.min(250, this.bpm + dir));
         this.engine.setBpm(this.bpm);
         this.display.setBpm(this.bpm);
-        this.display.flash('Tempo ' + Math.round(this.bpm), 'BPM');
+        this._moduleDisplay('Tempo ' + Math.round(this.bpm), 'BPM');
         break;
       case 'swing': {
         const SW = [50, 54, 58, 63, 67, 71];
@@ -762,26 +760,26 @@ export class TransportUI {
         si = Math.max(0, Math.min(SW.length - 1, si + dir));
         this.swingAmount = SW[si];
         this.engine.setSwing(this.swingAmount);
-        this.display.flash('Swing: ' + this.swingAmount + '%', this.swingAmount === 50 ? 'No swing' : 'Swing active');
+        this._moduleDisplay('Swing ' + this.swingAmount + '%', this.swingAmount === 50 ? 'No swing' : 'Swing active');
         break;
       }
       case 'quantize':
         this.quantizeIndex = Math.max(0, Math.min(QUANT_GRIDS.length - 1, this.quantizeIndex + dir));
         this.quantizeGrid = QUANT_GRIDS[this.quantizeIndex];
         this.engine.setQuantize(this.quantizeGrid);
-        this.display.flash('Auto-Correct', QUANT_LABELS[this.quantizeIndex]);
+        this._moduleDisplay('Auto-Correct', QUANT_LABELS[this.quantizeIndex]);
         break;
       case 'seg-length':
         this.segmentLength = Math.max(1, Math.min(99, this.segmentLength + dir));
         this.engine.send({ type: 'set-bars', bars: this.segmentLength });
-        this.display.flash('Seg Length', this.segmentLength + ' Bars');
+        this._moduleDisplay('Seg Length', this.segmentLength + ' Bars');
         break;
       case 'time-sig': {
         const curIdx = TIME_SIGS.indexOf(this.timeSig);
         const newIdx = Math.max(0, Math.min(TIME_SIGS.length - 1, (curIdx === -1 ? 0 : curIdx) + dir));
         this.timeSig = TIME_SIGS[newIdx];
         this.engine.send({ type: 'set-time-sig', timeSig: this.timeSig });
-        this.display.flash('Time Sig', this.timeSig);
+        this._moduleDisplay('Time Sig', this.timeSig);
         break;
       }
       case 'sample-level': {
@@ -922,21 +920,21 @@ export class TransportUI {
         // Normal numeric entry
         this.numericBuffer += key;
         if (this.editParam === 'bpm') {
-          this.display.flash('Tempo ' + this.numericBuffer, 'Enter to confirm');
+          this._moduleDisplay('Tempo ' + this.numericBuffer, 'Enter to confirm');
           if (this.numericBuffer.length >= 3) this._confirmEntry();
         } else if (this.editParam === 'segment' || this.editParam === 'copy' || this.editParam === 'erase-seg') {
-          this.display.flash('Seg ' + this.numericBuffer, 'Enter to confirm');
+          this._moduleDisplay('Seg ' + this.numericBuffer, 'Enter to confirm');
           if (this.numericBuffer.length >= 2) this._confirmEntry();
         } else if (this.editParam === 'seg-length') {
-          this.display.flash('Bars: ' + this.numericBuffer, 'Enter to confirm');
+          this._moduleDisplay('Bars: ' + this.numericBuffer, 'Enter to confirm');
           if (this.numericBuffer.length >= 2) this._confirmEntry();
         } else if (this.editParam === 'swing') {
-          this.display.flash('Swing: ' + this.numericBuffer + '%', 'Enter to confirm');
+          this._moduleDisplay('Swing ' + this.numericBuffer + '%', 'Enter to confirm');
           if (this.numericBuffer.length >= 2) this._confirmEntry();
         } else {
           // No active edit — treat as segment selection
           if (!this.editParam) this.editParam = 'segment';
-          this.display.flash('Seg ' + this.numericBuffer, '');
+          this._moduleDisplay('Seg ' + this.numericBuffer, '');
           if (this.numericBuffer.length >= 2) this._confirmEntry();
         }
       });
