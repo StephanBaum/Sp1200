@@ -102,20 +102,20 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 0 3%;
+  padding: 0 2px;
   gap: 0;
   overflow: hidden;
 }
 
 .lcd-line {
   font-family: 'Courier New', monospace;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: bold;
   color: #1a2a08;
   text-shadow: 0 0 1px rgba(26, 42, 8, 0.5);
   letter-spacing: 0;
   white-space: pre;
-  line-height: 1.4;
+  line-height: 1.35;
   overflow: hidden;
 }
 
