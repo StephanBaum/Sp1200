@@ -100,3 +100,12 @@ export class SP1200Storage {
     });
   }
 }
+
+export const ProjectStore = {
+  serialize(project) {
+    return JSON.stringify(project);
+  },
+  deserialize(json) {
+    return JSON.parse(json);
+  }
+};
