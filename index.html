@@ -142,6 +142,70 @@
   </div>
 
   <input type="file" id="file-input" accept="audio/*" style="display:none">
+
+  <!-- Keyboard help overlay -->
+  <button id="kb-help-btn" title="Keyboard shortcuts">?</button>
+  <div id="kb-help" style="display:none">
+    <div class="kb-header">Keyboard Mapping <button id="kb-close">&times;</button></div>
+    <div class="kb-body">
+      <div class="kb-section">
+        <div class="kb-title">Pads</div>
+        <div class="kb-row"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><kbd>5</kbd><kbd>6</kbd><kbd>7</kbd><kbd>8</kbd></div>
+        <div class="kb-hint">Alt+number = repeat at auto-correct rate</div>
+      </div>
+      <div class="kb-section">
+        <div class="kb-title">Faders Up</div>
+        <div class="kb-row"><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd><kbd>T</kbd><kbd>Z</kbd><kbd>U</kbd><kbd>I</kbd></div>
+      </div>
+      <div class="kb-section">
+        <div class="kb-title">Faders Down</div>
+        <div class="kb-row"><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><kbd>F</kbd><kbd>G</kbd><kbd>H</kbd><kbd>J</kbd><kbd>K</kbd></div>
+      </div>
+      <div class="kb-section">
+        <div class="kb-title">Transport</div>
+        <div class="kb-grid">
+          <kbd>Space</kbd><span>Run / Stop</span>
+          <kbd>Ctrl+Space</kbd><span>Record + Play</span>
+          <kbd>`</kbd><span>Tap tempo (hold = repeat)</span>
+          <kbd>Home</kbd><span>Tempo edit</span>
+        </div>
+      </div>
+      <div class="kb-section">
+        <div class="kb-title">Navigation</div>
+        <div class="kb-grid">
+          <kbd>&larr; &rarr;</kbd><span>Navigate / adjust</span>
+          <kbd>Enter</kbd><span>Confirm</span>
+          <kbd>Numpad 0-9</kbd><span>SP-1200 keypad</span>
+        </div>
+      </div>
+      <div class="kb-section">
+        <div class="kb-title">Modules</div>
+        <div class="kb-grid">
+          <kbd>F1</kbd><span>Set Up</span>
+          <kbd>F2</kbd><span>Disk</span>
+          <kbd>F3</kbd><span>Sync</span>
+          <kbd>F4</kbd><span>Sample</span>
+        </div>
+      </div>
+      <div class="kb-section">
+        <div class="kb-title">Mode / Bank</div>
+        <div class="kb-grid">
+          <kbd>Y</kbd><span>Mode (Mix / Tune)</span>
+          <kbd>[ ]</kbd><span>Mode / Bank cycle</span>
+          <kbd>Tab</kbd><span>Song / Segment</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="/js/main.js"></script>
+  <script>
+    document.getElementById('kb-help-btn').addEventListener('click', () => {
+      document.getElementById('kb-help').style.display = 'block';
+    });
+    document.getElementById('kb-close').addEventListener('click', () => {
+      document.getElementById('kb-help').style.display = 'none';
+    });
+  </script>
 </body>
 </html>
