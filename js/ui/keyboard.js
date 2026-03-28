@@ -4,7 +4,9 @@ export class KeyboardUI {
     this.display = display;
     this.faderValues = new Float32Array(8).fill(0.75);
     this.faderMode = 'volume';
+    this._backtickHeld = false;
     this._bind();
+    this._bindKeyup();
 
     // Listen for fader mode changes
     document.addEventListener('fader-mode-change', (e) => {
@@ -126,10 +128,16 @@ export class KeyboardUI {
         return;
       }
 
-      // ── Backtick/Tilde → Tap tempo ─────────────────────────────
+      // ── Backtick/Tilde → Tap tempo (also triggers repeat mode) ──
       if (code === 'Backquote') {
         e.preventDefault();
-        document.getElementById('btn-tap-tempo')?.click();
+        // Simulate tap/repeat mousedown for repeat functionality
+        const tapBtn = document.getElementById('btn-tap-tempo');
+        if (tapBtn) {
+          tapBtn.dispatchEvent(new MouseEvent('mousedown'));
+          // Track that backtick is held
+          this._backtickHeld = true;
+        }
         return;
       }
 
@@ -181,6 +189,17 @@ export class KeyboardUI {
         e.preventDefault();
         document.getElementById('btn-enter')?.click();
         return;
+      }
+    });
+  }
+
+  _bindKeyup() {
+    document.addEventListener('keyup', (e) => {
+      // Release backtick → stop repeat
+      if (e.code === 'Backquote' && this._backtickHeld) {
+        this._backtickHeld = false;
+        const tapBtn = document.getElementById('btn-tap-tempo');
+        if (tapBtn) tapBtn.dispatchEvent(new MouseEvent('mouseup'));
       }
     });
   }

@@ -752,14 +752,16 @@ export class TransportUI {
         } else if (this.tapRepeatHeld) {
           // Tap/Repeat held + pad → retrigger at autocorrect rate
           const repeatPad = pad;
-          const msPerBeat = 60000 / this.bpm;
-          const msPerStep = msPerBeat / (96 / this.quantizeGrid);
-          this.engine.trigger(repeatPad, 100);
+          // Calculate interval: one autocorrect step duration in ms
+          // quarterNote = 60000/bpm, step = quarterNote * (quantizeGrid / 96)
+          const msPerQuarter = 60000 / this.bpm;
+          const msPerStep = msPerQuarter * this.quantizeGrid / 96;
+          // Don't re-trigger immediately (pad already plays from the click)
           if (this._repeatInterval) clearInterval(this._repeatInterval);
           this._repeatInterval = setInterval(() => {
             if (!this.tapRepeatHeld) { clearInterval(this._repeatInterval); this._repeatInterval = null; return; }
             this.engine.trigger(repeatPad, 100);
-          }, msPerStep);
+          }, Math.max(30, msPerStep)); // minimum 30ms to avoid audio overload
         } else if (this.activeModule && !this.pendingAction) {
           // Pad clicked while module active but no pending action → exit module
           this._exitModule();
