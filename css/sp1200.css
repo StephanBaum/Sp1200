@@ -293,6 +293,36 @@ body {
   box-shadow: 0 0 5px 2px rgba(255,40,0,0.7), 0 0 12px rgba(255,40,0,0.35);
 }
 
+/* ── LCD bar graph overlay ──────────────────────────────────────────────── */
+.lcd-bars {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 4% 3%;
+}
+.lcd-bars-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 55%;
+  gap: 2%;
+}
+.lcd-bar {
+  flex: 1;
+  background: #1a2a08;
+  border-radius: 1px;
+  height: 75%; /* set via JS */
+  transition: height 0.08s;
+}
+.lcd-bars-labels {
+  text-align: center;
+  margin-top: 1px;
+  font-size: clamp(5px, 0.6vw, 10px) !important;
+  letter-spacing: 0.3em !important;
+}
+
 /* ── Scrollbar ──────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: #111; }

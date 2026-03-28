@@ -110,6 +110,8 @@ export class TransportUI {
           document.getElementById(btnId).classList.remove('active');
           this.editParam = null;
           this.numericBuffer = '';
+          this.pendingAction = null;
+          this.display.unlock();
           this.display.setMode('segment');
         } else {
           // Deactivate previous module
@@ -125,7 +127,8 @@ export class TransportUI {
           document.getElementById(btnId).classList.add('active');
           this.editParam = 'module-func';
           this.numericBuffer = '';
-          // Show module name persistently (not flash)
+          // Show module name persistently (lock display)
+          this.display.lock();
           this.display.setLine1(mod.label);
           this.display.setLine2('Enter option #');
 
@@ -149,6 +152,8 @@ export class TransportUI {
     this.activeModule = null;
     this.editParam = null;
     this.numericBuffer = '';
+    this.pendingAction = null;
+    this.display.unlock();
     this.display.setMode('segment');
   }
 

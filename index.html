@@ -12,8 +12,22 @@
 
     <!-- LCD — authentic 2-line 16-char display -->
     <div class="lcd-overlay" id="lcd-overlay">
-      <div class="lcd-line" id="lcd-line1">Seg:01  J=090.0</div>
+      <div class="lcd-line" id="lcd-line1">Seg:01   090.0</div>
       <div class="lcd-line" id="lcd-line2">&nbsp;</div>
+      <!-- Bar graph overlay for fader display -->
+      <div class="lcd-bars" id="lcd-bars" style="display:none">
+        <div class="lcd-bars-row">
+          <div class="lcd-bar" id="bar-0"></div>
+          <div class="lcd-bar" id="bar-1"></div>
+          <div class="lcd-bar" id="bar-2"></div>
+          <div class="lcd-bar" id="bar-3"></div>
+          <div class="lcd-bar" id="bar-4"></div>
+          <div class="lcd-bar" id="bar-5"></div>
+          <div class="lcd-bar" id="bar-6"></div>
+          <div class="lcd-bar" id="bar-7"></div>
+        </div>
+        <div class="lcd-line lcd-bars-labels">1 2 3 4 5 6 7 8</div>
+      </div>
     </div>
 
     <!-- ═══ LED INDICATORS ═══ -->

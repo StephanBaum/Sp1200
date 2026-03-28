@@ -15,6 +15,7 @@ export class DisplayUI {
     this.mode = 'segment'; // segment | song | step
     this._flashTimer = null;
     this._knobTimer = null;
+    this.locked = false; // when true, fader/knob updates won't override
     this._refresh();
   }
 
@@ -77,11 +78,30 @@ export class DisplayUI {
     this.setLine2(detail || 'Use + and -');
   }
 
-  // ── Mix bar graph (8 channels) — uses digits 0-9 for level ─────────────
+  // ── Mix bar graph (8 channels) — CSS bars + numeric values ─────────────
   showMixLevels(values) {
-    const levels = values.map(v => Math.round(v * 9));
-    this.setLine1(levels.join(' '));
-    this.setLine2('1 2 3 4 5 6 7 8');
+    if (this.locked) return;
+    const barsEl = document.getElementById('lcd-bars');
+    if (!barsEl) return;
+    // Show bars overlay, hide text lines
+    barsEl.style.display = 'flex';
+    this.line1El.style.display = 'none';
+    this.line2El.style.display = 'none';
+    // Update bar heights
+    for (let i = 0; i < 8; i++) {
+      const bar = document.getElementById('bar-' + i);
+      if (bar) bar.style.height = Math.round(values[i] * 100) + '%';
+    }
+    // Auto-hide bars after 2 seconds of no updates
+    clearTimeout(this._barTimer);
+    this._barTimer = setTimeout(() => this._hideBars(), 2000);
+  }
+
+  _hideBars() {
+    const barsEl = document.getElementById('lcd-bars');
+    if (barsEl) barsEl.style.display = 'none';
+    this.line1El.style.display = '';
+    this.line2El.style.display = '';
   }
 
   // ── Tune display ───────────────────────────────────────────────────────
@@ -102,10 +122,15 @@ export class DisplayUI {
 
   // ── Knob value (temporary) ─────────────────────────────────────────────
   showKnobValue(name, value) {
+    if (this.locked) return;
     clearTimeout(this._knobTimer);
     this.setLine2(name + ': ' + Math.round(value * 100) + '%');
     this._knobTimer = setTimeout(() => this._refresh(), 1500);
   }
+
+  // ── Lock/unlock (prevent fader/knob from overriding module display) ────
+  lock() { this.locked = true; this._hideBars(); }
+  unlock() { this.locked = false; }
 
   // ── Pad 16 chars ───────────────────────────────────────────────────────
   _pad(str) {
