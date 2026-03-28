@@ -113,47 +113,80 @@ export class DisplayUI {
     this.line2El.style.display = '';
   }
 
-  // ── Tune display — center-line bars: up=pitch up, down=pitch down ───────
+  // ── Tune display — numbers centered, bars extend up/down from center ────
   showTuneLevels(values) {
     if (this.locked) return;
     const barsEl = document.getElementById('lcd-bars');
     const barsRow = barsEl?.querySelector('.lcd-bars-row');
+    const labels = barsEl?.querySelector('.lcd-bars-labels');
     if (!barsEl || !barsRow) return;
     barsEl.style.display = 'flex';
     this.line1El.style.display = 'none';
     this.line2El.style.display = 'none';
-    // Switch to center-aligned mode
-    barsRow.style.alignItems = 'center';
+    // Position bars-row to fill full height, labels centered
+    barsRow.style.position = 'relative';
+    barsRow.style.height = '100%';
+    barsRow.style.alignItems = 'stretch';
+    if (labels) {
+      labels.style.position = 'absolute';
+      labels.style.top = '50%';
+      labels.style.left = '0';
+      labels.style.right = '0';
+      labels.style.transform = 'translateY(-50%)';
+      labels.style.zIndex = '1';
+    }
     for (let i = 0; i < 8; i++) {
       const bar = document.getElementById('bar-' + i);
       if (bar) {
-        // value 0.533 = center (0 semitones)
-        const offset = values[i] - 0.533; // -0.53 to +0.47
+        const offset = values[i] - 0.533; // center = 0 semitones
         const pct = Math.round(Math.abs(offset) * 2 * 100);
-        bar.style.height = Math.max(2, pct) + '%';
+        bar.style.position = 'absolute';
+        bar.style.width = (100 / 8 - 1.5) + '%';
+        bar.style.left = (i * 100 / 8 + 0.75) + '%';
+        bar.style.height = Math.max(1, pct / 2) + '%';
         if (offset >= 0) {
-          // Pitch up — bar grows upward from center
-          bar.style.alignSelf = 'flex-end';
-          bar.style.marginBottom = '50%';
-          bar.style.marginTop = '0';
+          bar.style.bottom = '50%';
+          bar.style.top = 'auto';
         } else {
-          // Pitch down — bar grows downward from center
-          bar.style.alignSelf = 'flex-start';
-          bar.style.marginTop = '50%';
-          bar.style.marginBottom = '0';
+          bar.style.top = '50%';
+          bar.style.bottom = 'auto';
         }
       }
     }
     clearTimeout(this._barTimer);
     this._barTimer = setTimeout(() => {
       this._hideBars();
-      // Reset bar alignment
-      if (barsRow) barsRow.style.alignItems = 'flex-end';
-      for (let i = 0; i < 8; i++) {
-        const bar = document.getElementById('bar-' + i);
-        if (bar) { bar.style.alignSelf = ''; bar.style.marginBottom = ''; bar.style.marginTop = ''; }
-      }
+      this._resetBarStyles(barsRow, labels);
     }, 2000);
+  }
+
+  _resetBarStyles(barsRow, labels) {
+    if (barsRow) {
+      barsRow.style.position = '';
+      barsRow.style.height = '55%';
+      barsRow.style.alignItems = 'flex-end';
+    }
+    if (labels) {
+      labels.style.position = '';
+      labels.style.top = '';
+      labels.style.left = '';
+      labels.style.right = '';
+      labels.style.transform = '';
+      labels.style.zIndex = '';
+    }
+    for (let i = 0; i < 8; i++) {
+      const bar = document.getElementById('bar-' + i);
+      if (bar) {
+        bar.style.position = '';
+        bar.style.width = '';
+        bar.style.left = '';
+        bar.style.top = '';
+        bar.style.bottom = '';
+        bar.style.alignSelf = '';
+        bar.style.marginBottom = '';
+        bar.style.marginTop = '';
+      }
+    }
   }
 
   // ── VU meter for sampling ──────────────────────────────────────────────
