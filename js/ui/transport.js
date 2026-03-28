@@ -24,6 +24,11 @@ export class TransportUI {
     this.currentBank = 0;
     this.dynamicButtons = false;
     this.pendingAction = null;
+    this._pendingPad = null;
+    this.sampleGainIndex = 0;
+    this.selectedSamplePad = 0;
+    this.smpteIndex = 0;
+    this.currentSong = 0;
 
     this._bindTransport();
     this._bindModules();
@@ -174,108 +179,188 @@ export class TransportUI {
     this.display.setMode('segment');
   }
 
+  _moduleDisplay(line1, line2) {
+    this.display.lock();
+    this.display.setLine1(line1);
+    this.display.setLine2(line2 || '');
+  }
+
   _handleModuleFunction(funcNum) {
     const mod = this.activeModule;
     if (!mod) return;
 
-    // Setup module functions
     if (mod === 'setup') {
       switch (funcNum) {
-        case 11: // Multi-pitch
+        case 11:
           this.editParam = 'select-pad';
           this.pendingAction = 'multi-pitch';
-          this.display.flash('Multi Pitch', 'Select a pad');
+          this._moduleDisplay('Multi Pitch', 'Select a pad');
           break;
-        case 12: // Multi-level
+        case 12:
           this.editParam = 'select-pad';
           this.pendingAction = 'multi-level';
-          this.display.flash('Multi Level', 'Select a pad');
+          this._moduleDisplay('Multi Level', 'Select a pad');
           break;
-        case 13: // Exit multi
+        case 13:
           this.engine.send({ type: 'exit-multi' });
           this.display.flash('Exit Multi', 'Done');
           break;
-        case 14: // Dynamic buttons
-          this.dynamicButtons = !this.dynamicButtons;
-          this.engine.send({ type: 'dynamic-buttons', enabled: this.dynamicButtons });
-          this.display.flash('Dynamic Btns', this.dynamicButtons ? 'On' : 'Off');
+        case 14:
+          this.editParam = 'dynamic-confirm';
+          this._moduleDisplay('Dynamic Btns', 'Yes=9 No=7');
           break;
-        case 15: // Define mix
+        case 15:
           this.editParam = 'define-mix';
           this.numericBuffer = '';
-          this.display.flash('Define Mix', 'Enter slot 1-8');
+          this._moduleDisplay('Define Mix', 'Enter slot 1-8');
           break;
-        case 16: // Select mix
+        case 16:
           this.editParam = 'select-mix';
           this.numericBuffer = '';
-          this.display.flash('Select Mix', 'Enter slot 1-8');
+          this._moduleDisplay('Select Mix', 'Enter slot 1-8');
           break;
-        case 17: // Channel assign
+        case 17:
           this.editParam = 'select-pad';
           this.pendingAction = 'channel-assign';
-          this.display.flash('Channel Assign', 'Select a pad');
+          this._moduleDisplay('Channel Assign', 'Select a pad');
           break;
-        case 18: // Decay/tune select
+        case 18:
           this.editParam = 'select-pad';
           this.pendingAction = 'decay-tune';
-          this.display.flash('Decay/Tune Sel', 'Select a pad');
+          this._moduleDisplay('Decay/Tune Sel', 'Select a pad');
           break;
-        case 19: // Loop/Truncate
+        case 19:
           this.editParam = 'select-pad';
           this.pendingAction = 'truncate';
-          this.display.flash('Loop/Truncate', 'Select a pad');
+          this._moduleDisplay('Loop/Truncate', 'Select a pad');
           break;
-        case 20: // Delete sound
+        case 20:
           this.editParam = 'select-pad';
           this.pendingAction = 'delete-sound';
-          this.display.flash('Delete Sound', 'Select a pad');
+          this._moduleDisplay('Delete Sound', 'Select a pad');
           break;
-        case 23: // Special menu
+        case 22:
+          this.editParam = 'dynamic-alloc-confirm';
+          this._moduleDisplay('Dyn Alloc', 'Yes=9 No=7');
+          break;
+        case 23:
           this.editParam = 'special-menu';
           this.numericBuffer = '';
-          this.display.flash('Special Menu', 'Enter function #');
+          this._moduleDisplay('Special Menu', 'Enter function #');
+          break;
+        case 25:
+          this.editParam = 'select-pad';
+          this.pendingAction = 'reverse-sound';
+          this._moduleDisplay('Reverse Sound', 'Select a pad');
           break;
         default:
           this.display.flash('Setup ' + funcNum, 'Not available');
       }
     }
-    // Sample module
     else if (mod === 'sample') {
       switch (funcNum) {
         case 1:
-          this.display.flash('VU Mode', 'Monitor input');
+          this.editParam = null;
+          this._moduleDisplay('VU Mode', this._vuPadLabel());
           break;
         case 2:
-          this.editParam = 'assign-voice';
-          this.numericBuffer = '';
-          this.display.flash('Assign Voice', 'Select Bank+Pad');
+          this.editParam = 'select-pad';
+          this.pendingAction = 'assign-voice';
+          this._moduleDisplay('Assign Voice', 'Select a pad');
           break;
         case 3:
           this.editParam = 'sample-level';
-          this.display.flash('Input Level', 'Use +/- keys');
+          this._moduleDisplay('Input Level', this._gainLabel());
+          break;
+        case 4:
+          this.editParam = 'threshold';
+          this._moduleDisplay('Arm Threshold', 'Use Slider #1');
+          break;
+        case 5:
+          this.editParam = 'sample-length';
+          this._moduleDisplay('Sample Length', '2.5s Slider #1');
+          break;
+        case 6:
+          this.display.flash('Resample', 'Last pad');
           break;
         case 7:
-          this.display.flash('Arm Sampling', 'Waiting...');
+          this._moduleDisplay('Sample Armed', 'Waiting...');
           break;
         case 9:
-          this.display.flash('Force Sample', 'Recording...');
+          this.display.flash('Sampling...', 'Force start');
           break;
         default:
-          this.display.flash('Sample ' + funcNum, 'Active');
+          this.display.flash('Sample ' + funcNum, 'Not available');
       }
     }
-    // Sync module
     else if (mod === 'sync') {
-      const labels = { 1: 'Internal', 2: 'MIDI', 3: 'SMPTE', 4: 'Click' };
-      const details = { 1: 'Int clock', 2: 'MIDI sync', 3: 'Use +/- rate', 4: 'Ext clock' };
-      this.engine.send({ type: 'set-sync', mode: funcNum });
-      this.display.flash('Sync: ' + (labels[funcNum] || funcNum), details[funcNum] || '');
+      switch (funcNum) {
+        case 1:
+          this.engine.send({ type: 'set-sync', mode: 1 });
+          this._moduleDisplay('Select', 'Internal');
+          break;
+        case 2:
+          this.engine.send({ type: 'set-sync', mode: 2 });
+          this._moduleDisplay('Select', 'MIDI');
+          break;
+        case 3:
+          this.editParam = 'smpte-rate';
+          this._moduleDisplay('SMPTE Format is', this._smpteLabel());
+          break;
+        case 4:
+          this.editParam = 'click-divisor';
+          this.numericBuffer = '';
+          this._moduleDisplay('Click Divisor', 'Enter value');
+          break;
+        default:
+          this.display.flash('Sync ' + funcNum, 'Not available');
+      }
     }
-    // Disk module
     else if (mod === 'disk') {
-      const labels = { 0: 'Load All', 1: 'Save Sequences', 2: 'Save Sounds', 3: 'Load Sequences', 4: 'Load Segment#', 5: 'Load Sounds', 6: 'Load Sound#', 7: 'Cat Sequences', 8: 'Cat Sounds', 9: 'Save All As' };
-      this.display.flash('Disk: ' + (labels[funcNum] || funcNum), 'Processing...');
-      // Disk operations would need IndexedDB integration
+      switch (funcNum) {
+        case 0:
+          this._moduleDisplay('Load All', 'Select file +/-');
+          this.editParam = 'disk-browse';
+          break;
+        case 1:
+          this._moduleDisplay('Save Sequences', 'Processing...');
+          break;
+        case 2:
+          this._moduleDisplay('Save Sounds', 'Processing...');
+          break;
+        case 3:
+          this._moduleDisplay('Load Sequences', 'Select file +/-');
+          this.editParam = 'disk-browse';
+          break;
+        case 4:
+          this.editParam = 'disk-seg-num';
+          this.numericBuffer = '';
+          this._moduleDisplay('Load Segment #', 'Enter 2-digit #');
+          break;
+        case 5:
+          this._moduleDisplay('Load Sounds', 'Select file +/-');
+          this.editParam = 'disk-browse';
+          break;
+        case 6:
+          this.editParam = 'select-pad';
+          this.pendingAction = 'load-sound-pad';
+          this._moduleDisplay('Load Sound #', 'Select a pad');
+          break;
+        case 7:
+          this._moduleDisplay('Cat Sequences', 'Use +/- browse');
+          this.editParam = 'disk-browse';
+          break;
+        case 8:
+          this._moduleDisplay('Cat Sounds', 'Use +/- browse');
+          this.editParam = 'disk-browse';
+          break;
+        case 9:
+          this.editParam = 'disk-name';
+          this._moduleDisplay('Save All As', 'Use slider name');
+          break;
+        default:
+          this.display.flash('Disk ' + funcNum, 'Not available');
+      }
     }
 
     this.editParam = this.editParam || null;
@@ -319,7 +404,8 @@ export class TransportUI {
       case 'song':
         this.mode = 'song';
         this.engine.setMode('song');
-        this.display.flash('Song Mode', 'Use + and -');
+        this.display.setSong(this.currentSong);
+        this.display.setMode('song');
         break;
 
       case 'segment':
@@ -572,6 +658,35 @@ export class TransportUI {
           }
           break;
 
+        case 'channel-assign-num':
+          if (this.numericBuffer.length > 0) {
+            const ch = parseInt(this.numericBuffer, 10);
+            if (ch >= 1 && ch <= 6) {
+              this.engine.send({ type: 'channel-assign', pad: this._pendingPad, channel: ch });
+              this.display.flash('Ch ' + ch, 'Pad ' + (this._pendingPad + 1));
+            }
+          }
+          this._pendingPad = null;
+          this.editParam = 'module-func';
+          break;
+
+        case 'click-divisor':
+          if (this.numericBuffer.length > 0) {
+            const div = parseInt(this.numericBuffer, 10);
+            this.engine.send({ type: 'set-click-divisor', divisor: div });
+            this.display.flash('Click Div', div.toString());
+          }
+          this.editParam = 'module-func';
+          break;
+
+        case 'disk-seg-num':
+          if (this.numericBuffer.length > 0) {
+            const segNum = parseInt(this.numericBuffer, 10);
+            this.display.flash('Load Seg', String(segNum).padStart(2, '0'));
+          }
+          this.editParam = 'module-func';
+          break;
+
         default:
           // No active edit param — treat as segment selection
           if (val >= 0 && val <= 99) {
@@ -585,7 +700,8 @@ export class TransportUI {
       this.numericBuffer = '';
     }
 
-    this.editParam = null;
+    // Only clear editParam if not reassigned inside the switch (e.g., back to 'module-func')
+    if (this.editParam !== 'module-func') this.editParam = null;
     const tempoBtn = document.getElementById('btn-tempo');
     if (tempoBtn) tempoBtn.classList.remove('active');
     this._flashDisplay();
@@ -631,11 +747,32 @@ export class TransportUI {
         this.display.flash('Time Sig', this.timeSig);
         break;
       }
+      case 'sample-level': {
+        const gains = ['0dB', '+20dB', '+40dB'];
+        this.sampleGainIndex = Math.max(0, Math.min(gains.length - 1, this.sampleGainIndex + dir));
+        this._moduleDisplay('Input Level', 'Gain: ' + gains[this.sampleGainIndex]);
+        break;
+      }
+      case 'smpte-rate': {
+        const rates = ['24fps', '25fps', '30fps', '30-drop'];
+        this.smpteIndex = Math.max(0, Math.min(rates.length - 1, this.smpteIndex + dir));
+        this._moduleDisplay('SMPTE Format is', rates[this.smpteIndex]);
+        break;
+      }
+      case 'threshold':
+      case 'sample-length':
+      case 'disk-browse':
+      case 'disk-name':
+        break;
       default:
-        // Default: navigate segments
-        this.currentSegment = Math.max(0, Math.min(99, this.currentSegment + dir));
-        this.engine.selectPattern(this.currentSegment);
-        this.display.setPattern(this.currentSegment);
+        if (this.mode === 'song') {
+          this.currentSong = Math.max(0, Math.min(99, this.currentSong + dir));
+          this.display.setSong(this.currentSong);
+        } else {
+          this.currentSegment = Math.max(0, Math.min(99, this.currentSegment + dir));
+          this.engine.selectPattern(this.currentSegment);
+          this.display.setPattern(this.currentSegment);
+        }
         break;
     }
   }
@@ -657,6 +794,91 @@ export class TransportUI {
           } else if (this.activeModule !== 'setup') {
             this._handleModuleFunction(parseInt(this.numericBuffer, 10));
           }
+          return;
+        }
+
+        // Yes/No confirmation flows (Key 9 = Yes, Key 7 = No)
+        if (this.editParam === 'dynamic-confirm') {
+          if (key === '9') {
+            this.dynamicButtons = true;
+            this.engine.send({ type: 'dynamic-buttons', enabled: true });
+            this.display.flash('Dynamic Btns', 'On');
+          } else if (key === '7') {
+            this.dynamicButtons = false;
+            this.engine.send({ type: 'dynamic-buttons', enabled: false });
+            this.display.flash('Dynamic Btns', 'Off');
+          }
+          this.editParam = 'module-func';
+          this.numericBuffer = '';
+          return;
+        }
+
+        if (this.editParam === 'dynamic-alloc-confirm') {
+          if (key === '9') {
+            this.engine.send({ type: 'dynamic-alloc', enabled: true });
+            this.display.flash('Dyn Alloc', 'On');
+          } else if (key === '7') {
+            this.engine.send({ type: 'dynamic-alloc', enabled: false });
+            this.display.flash('Dyn Alloc', 'Off');
+          }
+          this.editParam = 'module-func';
+          this.numericBuffer = '';
+          return;
+        }
+
+        if (this.editParam === 'reverse-confirm') {
+          if (key === '9') {
+            this.engine.send({ type: 'reverse-sound', pad: this._pendingPad });
+            this.display.flash('Reversed', 'Pad ' + (this._pendingPad + 1));
+          } else if (key === '7') {
+            this.display.flash('Cancelled', '');
+          }
+          this._pendingPad = null;
+          this.editParam = 'module-func';
+          this.numericBuffer = '';
+          return;
+        }
+
+        if (this.editParam === 'decay-tune-select') {
+          if (key === '1') {
+            this.engine.send({ type: 'set-pad-mode', pad: this._pendingPad, mode: 'tune' });
+            this.display.flash('Pad ' + (this._pendingPad + 1), 'Tune');
+          } else if (key === '2') {
+            this.engine.send({ type: 'set-pad-mode', pad: this._pendingPad, mode: 'decay' });
+            this.display.flash('Pad ' + (this._pendingPad + 1), 'Decay');
+          }
+          this._pendingPad = null;
+          this.editParam = 'module-func';
+          this.numericBuffer = '';
+          return;
+        }
+
+        if (this.editParam === 'channel-assign-num') {
+          if (key >= '1' && key <= '6') {
+            this.numericBuffer = key;
+            this._moduleDisplay('Ch ' + key + ' assigned', 'Pad ' + (this._pendingPad + 1));
+          }
+          return;
+        }
+
+        if (this.editParam === 'sample-level' || this.editParam === 'smpte-rate' || this.editParam === 'threshold' || this.editParam === 'sample-length') {
+          return;
+        }
+
+        if (this.editParam === 'click-divisor') {
+          this.numericBuffer += key;
+          this._moduleDisplay('Click Divisor', this.numericBuffer);
+          return;
+        }
+
+        if (this.editParam === 'disk-browse' || this.editParam === 'disk-name') {
+          return;
+        }
+
+        if (this.editParam === 'disk-seg-num') {
+          this.numericBuffer += key;
+          this._moduleDisplay('Load Segment #', this.numericBuffer);
+          if (this.numericBuffer.length >= 2) this._confirmEntry();
           return;
         }
 
@@ -738,19 +960,41 @@ export class TransportUI {
               this.display.flash('Deleted', 'Pad ' + (pad + 1));
               break;
             case 'decay-tune':
-              // Toggle between tune and decay for this pad
-              this.engine.send({ type: 'decay-tune-toggle', pad });
-              this.display.flash('Pad ' + (pad + 1), 'Toggled');
+              this._pendingPad = pad;
+              this.editParam = 'decay-tune-select';
+              this.pendingAction = null;
+              this._moduleDisplay('Pad ' + (pad + 1), '1=Tune 2=Decay');
               break;
             case 'truncate':
               this.display.flash('Truncate', 'Pad ' + (pad + 1) + ' Use faders');
               break;
             case 'channel-assign':
-              this.display.flash('Ch Assign', 'Pad ' + (pad + 1) + ' Enter ch');
+              this._pendingPad = pad;
+              this.editParam = 'channel-assign-num';
+              this.pendingAction = null;
+              this._moduleDisplay('Pad ' + (pad + 1), 'Enter ch 1-6');
+              break;
+            case 'reverse-sound':
+              this._pendingPad = pad;
+              this.editParam = 'reverse-confirm';
+              this.pendingAction = null;
+              this._moduleDisplay('Reverse ' + ['A','B','C','D'][this.currentBank] + (pad + 1), 'Yes=9 No=7');
+              break;
+            case 'assign-voice':
+              this.selectedSamplePad = pad;
+              this.display.flash('Sampling', ['A','B','C','D'][this.currentBank] + (pad + 1));
+              this.editParam = 'module-func';
+              this.pendingAction = null;
+              break;
+            case 'load-sound-pad':
+              this.display.flash('Load Sound', 'Pad ' + (pad + 1));
+              this.editParam = 'module-func';
+              this.pendingAction = null;
               break;
           }
-          this.editParam = null;
-          this.pendingAction = null;
+          // Only clear if not reassigned inside the switch
+          if (this.editParam === 'select-pad') this.editParam = null;
+          if (this.pendingAction && !this.editParam) this.pendingAction = null;
         } else if (this.tapRepeatHeld) {
           // Tap/Repeat held + pad → retrigger at autocorrect rate
           const repeatPad = pad;
@@ -770,6 +1014,24 @@ export class TransportUI {
         }
       });
     });
+  }
+
+  _vuPadLabel() {
+    const bank = ['A', 'B', 'C', 'D'][this.currentBank];
+    const pad = (this.selectedSamplePad || 0) + 1;
+    const gains = ['0dB', '+20dB', '+40dB'];
+    const gain = gains[this.sampleGainIndex || 0];
+    return bank + pad + '     ' + gain;
+  }
+
+  _gainLabel() {
+    const gains = ['0dB', '+20dB', '+40dB'];
+    return 'Gain: ' + gains[this.sampleGainIndex || 0];
+  }
+
+  _smpteLabel() {
+    const rates = ['24fps', '25fps', '30fps', '30-drop'];
+    return rates[this.smpteIndex || 0];
   }
 
   _bindBtn(id, handler) {
