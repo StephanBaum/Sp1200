@@ -2,7 +2,6 @@ export class KeyboardUI {
   constructor(engine, display) {
     this.engine = engine;
     this.display = display;
-    this.faderValues = new Float32Array(8).fill(0.75);
     this.faderMode = 'volume';
     this._backtickHeld = false;
     this._repeatInterval = null;
@@ -162,14 +161,11 @@ export class KeyboardUI {
         return;
       }
 
-      // ── Faders up: Q W E R T Z U I ─────────────────────────────
+      // ── Faders up: Q W E R T Z U I — send delta via event ──────
       const upIdx = faderUpKeys.indexOf(key);
       if (upIdx !== -1 && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         e.preventDefault();
-        this.faderValues[upIdx] = Math.min(1, this.faderValues[upIdx] + FADER_STEP);
-        this._sendFader(upIdx);
-        this._updateFaderThumb(upIdx);
-        this._notifyDisplay();
+        document.dispatchEvent(new CustomEvent('fader-key', { detail: { index: upIdx, delta: FADER_STEP } }));
         return;
       }
 
@@ -177,10 +173,7 @@ export class KeyboardUI {
       const downIdx = faderDownKeys.indexOf(key);
       if (downIdx !== -1 && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         e.preventDefault();
-        this.faderValues[downIdx] = Math.max(0, this.faderValues[downIdx] - FADER_STEP);
-        this._sendFader(downIdx);
-        this._updateFaderThumb(downIdx);
-        this._notifyDisplay();
+        document.dispatchEvent(new CustomEvent('fader-key', { detail: { index: downIdx, delta: -FADER_STEP } }));
         return;
       }
     });
@@ -230,27 +223,4 @@ export class KeyboardUI {
     return e.code && e.code.startsWith('Numpad');
   }
 
-  _sendFader(index) {
-    const val = this.faderValues[index];
-    if (this.faderMode === 'volume') {
-      this.engine.setParam('volume', index, val);
-    } else if (this.faderMode === 'pitch') {
-      const semitones = (val * 15) - 8; // -8 to +7
-      this.engine.setParam('pitch', index, semitones);
-    } else {
-      this.engine.setParam('decay', index, val);
-    }
-  }
-
-  _updateFaderThumb(index) {
-    const thumbs = document.querySelectorAll('.fader-thumb');
-    if (thumbs[index]) {
-      const minTop = 5, maxTop = 95;
-      thumbs[index].style.top = `${maxTop - this.faderValues[index] * (maxTop - minTop)}%`;
-    }
-  }
-
-  _notifyDisplay() {
-    document.dispatchEvent(new CustomEvent('fader-update', { detail: { values: Array.from(this.faderValues), mode: this.faderMode } }));
-  }
 }
