@@ -140,7 +140,7 @@ body {
   position: absolute;
   left: 50%;
   transform: translate(-50%, -50%) rotate(90deg);
-  width: 70%;
+  width: 40%;
   height: auto;
   cursor: ns-resize;
   top: 25%;
