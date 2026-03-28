@@ -106,12 +106,19 @@ export class DisplayUI {
 
   // ── Tune display ───────────────────────────────────────────────────────
   showTuneLevels(values) {
-    const vals = values.map(v => {
-      const st = Math.round((v - 0.5) * 15) - 8;
-      return (st >= 0 ? '+' : '') + st;
-    });
-    this.setLine1(vals.join(' '));
-    this.setLine2('1  2  3  4  5  6  7  8');
+    if (this.locked) return;
+    // Show using bars overlay but in "tune" style
+    const barsEl = document.getElementById('lcd-bars');
+    if (!barsEl) return;
+    barsEl.style.display = 'flex';
+    this.line1El.style.display = 'none';
+    this.line2El.style.display = 'none';
+    for (let i = 0; i < 8; i++) {
+      const bar = document.getElementById('bar-' + i);
+      if (bar) bar.style.height = Math.round(values[i] * 100) + '%';
+    }
+    clearTimeout(this._barTimer);
+    this._barTimer = setTimeout(() => this._hideBars(), 2000);
   }
 
   // ── VU meter for sampling ──────────────────────────────────────────────

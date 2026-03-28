@@ -76,9 +76,9 @@ body {
 /* ── LCD overlay — SOLID background, covers the photo LCD completely ───── */
 .lcd-overlay {
   position: absolute;
-  left: 72.8%;
+  left: 72.5%;
   top: 22.8%;
-  width: 16.2%;
+  width: 16.8%;
   height: 5.8%;
   z-index: 15;
   pointer-events: none;
