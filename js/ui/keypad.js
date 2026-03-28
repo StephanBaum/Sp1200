@@ -1,4 +1,4 @@
-import { handleModuleFunction } from './modules.js';
+import { handleModuleFunction, executeDiskOp } from './modules.js';
 import { confirmEntry } from './master-control.js';
 
 function _padLabel(s, pad) {
@@ -244,7 +244,24 @@ export function bindKeypad(s) {
         return;
       }
 
-      if (s.editParam === 'disk-browse' || s.editParam === 'disk-name') {
+      if (s.editParam === 'disk-browse') {
+        return;
+      }
+
+      if (s.editParam === 'disk-name') {
+        if (key === '7') {
+          // Backspace
+          if (s.diskNameBuffer.length > 0) {
+            s.diskNameBuffer = s.diskNameBuffer.slice(0, -1);
+            if (s.diskNameCursor > s.diskNameBuffer.length) {
+              s.diskNameCursor = s.diskNameBuffer.length;
+            }
+          }
+        } else {
+          s.diskNameBuffer += key;
+          s.diskNameCursor = s.diskNameBuffer.length;
+        }
+        s.moduleDisplay('Save All As', s.diskNameBuffer.substring(0, 16) || '_');
         return;
       }
 

@@ -37,6 +37,14 @@ export class SP1200State {
     for (let i = 0; i < 8; i++) this.channelAssign[i] = i;
     this.tapRepeatHeld = false;
     this._repeatInterval = null;
+    // Disk module state
+    this.storage = null; // set from main.js
+    this.diskFiles = []; // list of saved disk names
+    this.diskFileIndex = 0; // current browsing position
+    this.diskCurrentFile = ''; // selected file name
+    this.diskNameBuffer = ''; // for naming files (Save All As)
+    this.diskNameCursor = 0; // cursor position in name
+    this._diskOperation = null; // current disk operation
   }
 
   led(id, on) {

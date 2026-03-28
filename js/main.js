@@ -1,4 +1,5 @@
 import { SP1200Engine } from './audio/engine-node.js';
+import { SP1200Storage } from './storage/indexeddb.js';
 import { PadsUI } from './ui/pads.js';
 import { FadersUI } from './ui/faders.js';
 import { DisplayUI } from './ui/display.js';
@@ -17,6 +18,7 @@ import { loadSampleFromFile, SampleMemory } from './audio/sample-loader.js';
 import { BANK_SAMPLE_TIME } from './constants.js';
 
 const engine = new SP1200Engine();
+const storage = new SP1200Storage();
 const sampleMemory = new SampleMemory();
 let display, pads, faders, state, keyboard, stepEdit;
 let currentBank = 0;
@@ -35,12 +37,14 @@ let sampleArmed = false;
 async function init() {
   if (initialized) return;
   await engine.init();
+  await storage.init();
   initialized = true;
 
   display = new DisplayUI();
   pads = new PadsUI(engine);
   faders = new FadersUI(engine);
   state = new SP1200State(engine, display);
+  state.storage = storage;
   bindTransport(state);
   bindModules(state);
   bindProgramming(state);
@@ -146,6 +150,18 @@ async function init() {
       // Map 0-1 to 0.1-2.5 seconds
       state.sampleLength = Math.round((0.1 + slider1 * 2.4) * 10) / 10;
       state.moduleDisplay('Length: ' + state.sampleLength.toFixed(1) + ' secs', 'Use Slider #1');
+      return;
+    }
+    if (state.editParam === 'disk-name') {
+      // Slider 1 cycles through characters at cursor position
+      const chars = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.';
+      const charIdx = Math.floor(slider1 * (chars.length - 1));
+      const ch = chars[charIdx];
+      const buf = state.diskNameBuffer.split('');
+      while (buf.length <= state.diskNameCursor) buf.push(' ');
+      buf[state.diskNameCursor] = ch;
+      state.diskNameBuffer = buf.join('');
+      state.moduleDisplay('Save All As', state.diskNameBuffer.substring(0, 16));
       return;
     }
 

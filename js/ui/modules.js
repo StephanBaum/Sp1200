@@ -214,22 +214,22 @@ export function handleModuleFunction(s, funcNum) {
   }
   else if (mod === 'sync') {
     switch (funcNum) {
-      case 1:
+      case 1: // "Select Internal"
         s.engine.send({ type: 'set-sync', mode: 1 });
-        s.moduleDisplay('Select', 'Internal');
+        s.moduleDisplay('Select Internal', '');
         break;
-      case 2:
+      case 2: // "Select MIDI"
         s.engine.send({ type: 'set-sync', mode: 2 });
-        s.moduleDisplay('Select', 'MIDI');
+        s.moduleDisplay('Select MIDI', '');
         break;
-      case 3:
+      case 3: // "SMPTE Format is:" / "24fps" — arrows select, Enter confirms
         s.editParam = 'smpte-rate';
-        s.moduleDisplay('SMPTE Format is', s.smpteLabel());
+        s.moduleDisplay('SMPTE Format is:', s.smpteLabel());
         break;
-      case 4:
+      case 4: // "Click Divisor:" / value — keypad enters, Enter confirms
         s.editParam = 'click-divisor';
         s.numericBuffer = '';
-        s.moduleDisplay('Click Divisor', 'Enter value');
+        s.moduleDisplay('Click Divisor:', 'Enter value');
         break;
       default:
         s.moduleDisplay('Sync ' + funcNum, 'Not available');
@@ -238,18 +238,24 @@ export function handleModuleFunction(s, funcNum) {
   else if (mod === 'disk') {
     switch (funcNum) {
       case 0:
-        s.moduleDisplay('Load All', 'Select file +/-');
         s.editParam = 'disk-browse';
+        s._diskOperation = 'load-all';
+        _loadDiskList(s);
         break;
       case 1:
-        s.moduleDisplay('Save Sequences', 'Processing...');
+        s.editParam = 'disk-browse';
+        s._diskOperation = 'save-sequences';
+        _loadDiskList(s);
         break;
       case 2:
-        s.moduleDisplay('Save Sounds', 'Processing...');
+        s.editParam = 'disk-browse';
+        s._diskOperation = 'save-sounds';
+        _loadDiskList(s);
         break;
       case 3:
-        s.moduleDisplay('Load Sequences', 'Select file +/-');
         s.editParam = 'disk-browse';
+        s._diskOperation = 'load-sequences';
+        _loadDiskList(s);
         break;
       case 4:
         s.editParam = 'disk-seg-num';
@@ -257,8 +263,9 @@ export function handleModuleFunction(s, funcNum) {
         s.moduleDisplay('Load Segment #', 'Enter 2-digit #');
         break;
       case 5:
-        s.moduleDisplay('Load Sounds', 'Select file +/-');
         s.editParam = 'disk-browse';
+        s._diskOperation = 'load-sounds';
+        _loadDiskList(s);
         break;
       case 6:
         s.editParam = 'select-pad';
@@ -266,16 +273,20 @@ export function handleModuleFunction(s, funcNum) {
         s.moduleDisplay('Load Sound #', 'Select a pad');
         break;
       case 7:
-        s.moduleDisplay('Cat Sequences', 'Use +/- browse');
         s.editParam = 'disk-browse';
+        s._diskOperation = 'cat-sequences';
+        _loadDiskList(s);
         break;
       case 8:
-        s.moduleDisplay('Cat Sounds', 'Use +/- browse');
         s.editParam = 'disk-browse';
+        s._diskOperation = 'cat-sounds';
+        _loadDiskList(s);
         break;
       case 9:
         s.editParam = 'disk-name';
-        s.moduleDisplay('Save All As', 'Use slider name');
+        s.diskNameBuffer = 'UNTITLED';
+        s.diskNameCursor = 0;
+        s.moduleDisplay('Save All As', s.diskNameBuffer);
         break;
       default:
         s.moduleDisplay('Disk ' + funcNum, 'Not available');
@@ -285,4 +296,107 @@ export function handleModuleFunction(s, funcNum) {
   // Keep module-func if nothing else was set
   if (!s.editParam) s.editParam = 'module-func';
   s.numericBuffer = '';
+}
+
+// ── Disk helpers ─────────────────────────────────────────────────────────
+
+async function _loadDiskList(s) {
+  try {
+    s.diskFiles = await s.storage.listDisks();
+    s.diskFileIndex = 0;
+    if (s.diskFiles.length > 0) {
+      s.diskCurrentFile = s.diskFiles[0];
+      s.moduleDisplay(s.diskCurrentFile, 'Use +/- Enter');
+    } else {
+      s.moduleDisplay('No files', 'Save first (9)');
+    }
+  } catch (e) {
+    s.moduleDisplay('Disk Error', e.message?.substring(0, 16) || 'Unknown');
+  }
+}
+
+export async function executeDiskOp(s, op, filename) {
+  try {
+    switch (op) {
+      case 'load-all': {
+        const disk = await s.storage.loadAll(filename);
+        if (disk && disk.data) {
+          if (disk.data.sounds) {
+            for (const snd of disk.data.sounds) {
+              if (snd.buffer) {
+                s.engine.send({ type: 'load-sample', pad: snd.pad, buffer: snd.buffer });
+              }
+            }
+          }
+          s.moduleDisplay('Loaded', filename);
+        } else {
+          s.moduleDisplay('File Empty', filename);
+        }
+        break;
+      }
+      case 'save-all': {
+        const data = { sounds: [], sequences: [], timestamp: Date.now() };
+        await s.storage.saveAll(filename, data);
+        s.moduleDisplay('Saved', filename);
+        break;
+      }
+      case 'save-sequences': {
+        await s.storage.saveSequences(filename, []);
+        s.moduleDisplay('Seq Saved', filename);
+        break;
+      }
+      case 'save-sounds': {
+        await s.storage.saveSounds(filename, []);
+        s.moduleDisplay('Snd Saved', filename);
+        break;
+      }
+      case 'load-sequences': {
+        const disk = await s.storage.loadAll(filename);
+        if (disk?.data?.sequences) {
+          s.moduleDisplay('Seq Loaded', filename);
+        } else {
+          s.moduleDisplay('No Sequences', filename);
+        }
+        break;
+      }
+      case 'load-sounds': {
+        const disk = await s.storage.loadAll(filename);
+        if (disk?.data?.sounds) {
+          for (const snd of disk.data.sounds) {
+            if (snd.buffer) {
+              s.engine.send({ type: 'load-sample', pad: snd.pad, buffer: snd.buffer });
+            }
+          }
+          s.moduleDisplay('Snd Loaded', filename);
+        } else {
+          s.moduleDisplay('No Sounds', filename);
+        }
+        break;
+      }
+      case 'cat-sequences':
+      case 'cat-sounds': {
+        // Catalog just displays file info, no loading
+        const disk = await s.storage.loadAll(filename);
+        if (disk?.data) {
+          const sndCount = disk.data.sounds?.length || 0;
+          const seqCount = disk.data.sequences?.length || 0;
+          s.moduleDisplay(filename, sndCount + ' Snd ' + seqCount + ' Seq');
+        } else {
+          s.moduleDisplay(filename, 'Empty');
+        }
+        break;
+      }
+    }
+  } catch (e) {
+    s.moduleDisplay('Disk Error', e.message?.substring(0, 16) || 'Failed');
+  }
+
+  // Return to module-func after 1.5s
+  setTimeout(() => {
+    if (s.activeModule === 'disk') {
+      s.editParam = 'module-func';
+      s.numericBuffer = '';
+      s.moduleDisplay('DISK', 'Enter option #');
+    }
+  }, 1500);
 }

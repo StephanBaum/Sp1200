@@ -1,3 +1,5 @@
+import { executeDiskOp } from './modules.js';
+
 export function bindMasterControl(s) {
   s.bindBtn('btn-tempo', () => {
     s.editParam = 'bpm';
@@ -163,6 +165,18 @@ export function confirmEntry(s) {
         s.editParam = 'module-func';
         s.display.flash('SMPTE Set', s.smpteLabel());
         break;
+      case 'disk-browse': {
+        if (!s.diskCurrentFile || s.diskFiles.length === 0) break;
+        const op = s._diskOperation;
+        executeDiskOp(s, op, s.diskCurrentFile);
+        return;
+      }
+      case 'disk-name': {
+        if (s.diskNameBuffer.trim()) {
+          executeDiskOp(s, 'save-all', s.diskNameBuffer.trim());
+        }
+        return;
+      }
     }
   }
 
@@ -225,14 +239,25 @@ export function handleNav(s, dir) {
     case 'smpte-rate': {
       const rates = ['24fps', '25fps', '30fps', '30-drop'];
       s.smpteIndex = Math.max(0, Math.min(rates.length - 1, s.smpteIndex + dir));
-      s.moduleDisplay('SMPTE Format is', rates[s.smpteIndex]);
+      s.moduleDisplay('SMPTE Format is:', rates[s.smpteIndex]);
       break;
     }
     case 'threshold':
     case 'sample-length':
-    case 'disk-browse':
-    case 'disk-name':
       break;
+    case 'disk-browse':
+      if (s.diskFiles.length > 0) {
+        s.diskFileIndex = Math.max(0, Math.min(s.diskFiles.length - 1, s.diskFileIndex + dir));
+        s.diskCurrentFile = s.diskFiles[s.diskFileIndex];
+        s.moduleDisplay(s.diskCurrentFile, (s.diskFileIndex + 1) + '/' + s.diskFiles.length);
+      }
+      break;
+    case 'disk-name': {
+      s.diskNameCursor = Math.max(0, Math.min(s.diskNameBuffer.length, s.diskNameCursor + dir));
+      const displayName = s.diskNameBuffer.substring(0, s.diskNameCursor) + '_' + s.diskNameBuffer.substring(s.diskNameCursor);
+      s.moduleDisplay('Save All As', displayName.substring(0, 16));
+      break;
+    }
     default:
       if (s.mode === 'song') {
         s.currentSong = Math.max(0, Math.min(99, s.currentSong + dir));
