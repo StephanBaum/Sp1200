@@ -251,6 +251,11 @@ export function handleNav(s, dir) {
     case 'sample-length':
     case 'default-decay':
       break;
+    case 'tabsong':
+      s._tabSongStep = Math.max(0, (s._tabSongStep || 0) + dir);
+      s.moduleDisplay('Song ' + String(s.currentSong + 1).padStart(2, '0'),
+        'Step ' + String(s._tabSongStep + 1).padStart(2, '0'));
+      break;
     case 'disk-browse':
       if (s.diskFiles.length > 0) {
         s.diskFileIndex = Math.max(0, Math.min(s.diskFiles.length - 1, s.diskFileIndex + dir));

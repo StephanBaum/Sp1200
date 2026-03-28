@@ -4,7 +4,7 @@ export function bindProgramming(s) {
   document.querySelectorAll('.prog').forEach(btn => {
     const upper = btn.dataset.upper;
     const lower = btn.dataset.lower;
-    s.progStates[btn.id] = 'lower'; // start on lower so first click → upper
+    s.progStates[btn.id] = 'lower';
 
     btn.addEventListener('click', () => {
       // Clear previous edit state
@@ -13,17 +13,14 @@ export function bindProgramming(s) {
         s.display.unlock();
       }
 
-      // Toggle which function
       const state = s.progStates[btn.id];
       const newState = state === 'upper' ? 'lower' : 'upper';
       s.progStates[btn.id] = newState;
       const func = newState === 'upper' ? upper : lower;
 
-      // Clear all prog active states, set this one
       document.querySelectorAll('.prog').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
-      // Toggle Song/Segment LEDs for prog-1
       if (btn.id === 'prog-1') {
         s.led('led-song', newState === 'upper');
         s.led('led-segment', newState === 'lower');
@@ -77,18 +74,31 @@ export function execProgFunction(s, func, btn) {
       break;
 
     case 'tabsong':
-      s.display.setMode('TABSONG');
+      // Tab Song — view/edit song arrangement (list of segments)
+      if (s.mode === 'song') {
+        s.editParam = 'tabsong';
+        s._tabSongStep = 0;
+        s.moduleDisplay('Song ' + String(s.currentSong + 1).padStart(2, '0'),
+          'Step 01: Seg ' + String(s.currentSegment + 1).padStart(2, '0'));
+      } else {
+        s.display.flash('Song Mode', 'Required');
+      }
       break;
 
     case 'copy':
       s.editParam = 'copy';
       s.numericBuffer = '';
-      s.moduleDisplay('Copy to?', 'Enter seg number');
+      s.moduleDisplay('Copy Seg ' + String(s.currentSegment + 1).padStart(2, '0'), 'To seg #?');
       break;
 
     case 'end':
-      s.engine.send({ type: 'song-end-mark' });
-      s.display.flash('End Mark', 'Song end set');
+      // End mark — only in song mode
+      if (s.mode === 'song') {
+        s.engine.send({ type: 'song-end-mark', song: s.currentSong });
+        s.display.flash('End Mark', 'Song end set');
+      } else {
+        s.display.flash('Song Mode', 'Required');
+      }
       break;
 
     case 'time-sig':
@@ -98,8 +108,13 @@ export function execProgFunction(s, func, btn) {
       break;
 
     case 'insert':
-      s.engine.send({ type: 'song-insert', segment: s.currentSegment });
-      s.display.flash('Insert', 'Seg inserted');
+      // Insert — only in song mode
+      if (s.mode === 'song') {
+        s.engine.send({ type: 'song-insert', song: s.currentSong, segment: s.currentSegment });
+        s.display.flash('Insert', 'Seg inserted');
+      } else {
+        s.display.flash('Song Mode', 'Required');
+      }
       break;
 
     case 'seg-length':
@@ -109,18 +124,25 @@ export function execProgFunction(s, func, btn) {
       break;
 
     case 'delete':
-      s.engine.send({ type: 'song-delete' });
-      s.display.flash('Delete', 'Step removed');
+      // Delete — only in song mode
+      if (s.mode === 'song') {
+        s.engine.send({ type: 'song-delete', song: s.currentSong });
+        s.display.flash('Delete', 'Step removed');
+      } else {
+        s.display.flash('Song Mode', 'Required');
+      }
       break;
 
     case 'erase':
       if (s.playing) {
+        // Real-time erase: hold erase + hold pad to delete hits as playhead passes
         s.eraseMode = !s.eraseMode;
         s.moduleDisplay(
           s.eraseMode ? 'Erase On' : 'Erase Off',
           s.eraseMode ? 'Hold pad' : ''
         );
       } else {
+        // Stopped: prompt for segment number to erase
         s.editParam = 'erase-seg';
         s.numericBuffer = '';
         s.moduleDisplay('Erase Seg?', 'Enter seg number');
@@ -139,7 +161,14 @@ export function execProgFunction(s, func, btn) {
       break;
 
     case 'mix-change':
-      s.display.setMode('MIX CHG');
+      // Mix Change — in song mode, insert a mix-change step
+      if (s.mode === 'song') {
+        s.editParam = 'mix-change';
+        s.numericBuffer = '';
+        s.moduleDisplay('Mix Change', 'Enter mix # 1-8');
+      } else {
+        s.display.flash('Song Mode', 'Required');
+      }
       break;
 
     case 'step-program':

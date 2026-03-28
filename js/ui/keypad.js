@@ -308,6 +308,33 @@ export function bindKeypad(s) {
         return;
       }
 
+      // ── Mix Change (song mode) ────────────────────────────────────────
+      if (s.editParam === 'mix-change') {
+        if (key >= '1' && key <= '8') {
+          s.engine.send({ type: 'song-add-step', song: s.currentSong, step: 999, stepType: 'mix-change', value: parseInt(key, 10) });
+          s.display.flash('Mix ' + key, 'Step added');
+        }
+        s.editParam = null;
+        s.numericBuffer = '';
+        return;
+      }
+
+      // ── Tab Song step entry (song mode) ───────────────────────────────
+      if (s.editParam === 'tabsong-entry') {
+        s.numericBuffer += key;
+        s.moduleDisplay('Add Step:', 'Seg ' + s.numericBuffer.padStart(2, '0'));
+        if (s.numericBuffer.length >= 2) {
+          const seg = parseInt(s.numericBuffer, 10);
+          if (seg >= 0 && seg <= 99) {
+            s.engine.send({ type: 'song-add-step', song: s.currentSong, step: 999, stepType: 'segment', value: seg });
+            s.display.flash('Added', 'Seg ' + String(seg + 1).padStart(2, '0'));
+          }
+          s.editParam = 'tabsong';
+          s.numericBuffer = '';
+        }
+        return;
+      }
+
       // ── Passthrough: modes that use arrows only ───────────────────────
 
       if (s.editParam === 'sample-level' || s.editParam === 'smpte-rate' ||
