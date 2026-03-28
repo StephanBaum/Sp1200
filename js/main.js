@@ -129,8 +129,8 @@ async function init() {
   document.querySelectorAll('.knob').forEach(knob => {
     let dragging = false, startY = 0, startAngle = 60;
     let angle = 60;
-    const pointer = knob.querySelector('.knob-indicator');
-    if (pointer) pointer.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+    // Rotate the whole knob element (sprite has the indicator baked in)
+    knob.style.transform = `rotate(${angle}deg)`;
     const initVal = 0.75;
     if (knob.id === 'knob-gain') engine.setParam('gain', 0, initVal);
     if (knob.id === 'knob-mix-vol') engine.setParam('mix-volume', 0, initVal);
@@ -141,7 +141,7 @@ async function init() {
       if (!dragging) return;
       const delta = (startY - e.clientY) * 1.5;
       angle = Math.max(-120, Math.min(120, startAngle + delta));
-      pointer.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+      knob.style.transform = `rotate(${angle}deg)`;
       const normalized = (angle + 120) / 240;
       if (knob.id === 'knob-gain') engine.setParam('gain', 0, normalized);
       if (knob.id === 'knob-mix-vol') engine.setParam('mix-volume', 0, normalized);
