@@ -942,10 +942,22 @@ class SP1200Processor extends AudioWorkletProcessor {
   // -------------------------------------------------------------------------
   // Trigger a voice (also used from sequencer)
   // -------------------------------------------------------------------------
-  _triggerVoice(pad, velocity) {
+  _triggerVoice(pad, velocity, fromSequencer = false) {
     if (pad < 0 || pad >= NUM_PADS) return;
     this.voices[pad].trigger(velocity);
     this.port.postMessage({ type: 'trigger-visual', pad, velocity });
+
+    // Record into current pattern if recording (only user-triggered, not from sequencer playback)
+    if (!fromSequencer && this.isRecording && this.isPlaying) {
+      const pattern = this.patterns[this.currentPatternIndex];
+      let quantizedTick = this.patternTick;
+      if (this.quantizeGrid > 1) {
+        quantizedTick = Math.round(this.patternTick / this.quantizeGrid) * this.quantizeGrid;
+      }
+      const totalTicks = pattern.bars * PPQN * 4;
+      quantizedTick = quantizedTick % totalTicks;
+      pattern.addEvent(quantizedTick, pad, velocity);
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -971,10 +983,10 @@ class SP1200Processor extends AudioWorkletProcessor {
     // Apply swing to pattern tick lookup
     const swungTick = applySwing(this.patternTick, this.swingPercent);
 
-    // Fire events at this tick
+    // Fire events at this tick (from sequencer, not user)
     const events = pattern.getEventsAtTick(swungTick);
     for (const ev of events) {
-      this._triggerVoice(ev.track, ev.velocity);
+      this._triggerVoice(ev.track, ev.velocity, true);
     }
 
     // Metronome click on quarter-note boundaries

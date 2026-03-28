@@ -46,15 +46,16 @@ export class DisplayUI {
   _refresh() {
     const seg = String(this.pattern + 1).padStart(2, '0');
     const bpm = this.bpm.toFixed ? this.bpm.toFixed(1) : this.bpm + '.0';
+    const bpmStr = String(bpm).padStart(5, ' ');
 
     if (this.mode === 'segment' || this.mode === 'pattern') {
-      this.setLine1('Seg:' + seg + ' J=' + bpm);
+      this.setLine1('Seg:' + seg + '  ' + bpmStr);
       this.setLine2(' ');
     } else if (this.mode === 'song') {
-      this.setLine1('Song    J=' + bpm);
+      this.setLine1('Song:01  ' + bpmStr);
       this.setLine2(' ');
     } else if (this.mode === 'step') {
-      this.setLine1('StepPgm J=' + bpm);
+      this.setLine1('StepPgm  ' + bpmStr);
       this.setLine2(' ');
     } else {
       // Custom mode text (from module activation etc.)
@@ -76,11 +77,10 @@ export class DisplayUI {
     this.setLine2(detail || 'Use + and -');
   }
 
-  // ── Mix bar graph (8 channels) ─────────────────────────────────────────
+  // ── Mix bar graph (8 channels) — uses digits 0-9 for level ─────────────
   showMixLevels(values) {
-    const bars = [' ', '\u2581', '\u2582', '\u2583', '\u2584', '\u2585', '\u2586', '\u2587', '\u2588'];
-    const top = values.map(v => bars[Math.round(v * 8)]).join(' ');
-    this.setLine1(top);
+    const levels = values.map(v => Math.round(v * 9));
+    this.setLine1(levels.join(' '));
     this.setLine2('1 2 3 4 5 6 7 8');
   }
 

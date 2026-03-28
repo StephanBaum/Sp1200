@@ -125,15 +125,31 @@ export class TransportUI {
           document.getElementById(btnId).classList.add('active');
           this.editParam = 'module-func';
           this.numericBuffer = '';
-          this.display.setMode(mod.label);
+          // Show module name persistently (not flash)
+          this.display.setLine1(mod.label);
+          this.display.setLine2('Enter option #');
 
           // Sample module auto-enters VU mode (function 1)
           if (mod.name === 'sample') {
-            this.display.setMode('VU MODE');
+            this.display.setLine1('VU Mode');
+            this.display.setLine2('A1     0dB');
           }
         }
       });
     }
+  }
+
+  _exitModule() {
+    if (!this.activeModule) return;
+    const moduleIds = { 'setup': 'btn-setup', 'disk': 'btn-disk', 'sync': 'btn-sync', 'sample': 'btn-sample' };
+    const ledIds = { 'setup': 'led-setup', 'disk': 'led-disk', 'sync': 'led-sync', 'sample': 'led-sample' };
+    this._led(ledIds[this.activeModule], false);
+    const btnId = moduleIds[this.activeModule];
+    if (btnId) document.getElementById(btnId)?.classList.remove('active');
+    this.activeModule = null;
+    this.editParam = null;
+    this.numericBuffer = '';
+    this.display.setMode('segment');
   }
 
   _handleModuleFunction(funcNum) {
@@ -411,6 +427,7 @@ export class TransportUI {
 
   _flashDisplay() {
     setTimeout(() => {
+      if (this.activeModule) return; // Don't override module display
       if (!this.editParam) {
         this.display.setMode(this.mode === 'song' ? 'song' : this.mode === 'step-edit' ? 'step' : 'segment');
       }
@@ -712,6 +729,9 @@ export class TransportUI {
           }
           this.editParam = null;
           this.pendingAction = null;
+        } else if (this.activeModule && !this.pendingAction) {
+          // Pad clicked while module active but no pending action → exit module
+          this._exitModule();
         }
       });
     });
