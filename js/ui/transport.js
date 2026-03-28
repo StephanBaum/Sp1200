@@ -56,7 +56,22 @@ export class TransportUI {
       }
     });
 
-    document.getElementById('btn-tap-tempo').addEventListener('click', () => this._handleTapTempo());
+    // Tap/Repeat: click = tap tempo, hold + pad = retrigger at autocorrect rate
+    const tapBtn = document.getElementById('btn-tap-tempo');
+    this.tapRepeatHeld = false;
+    this._repeatInterval = null;
+    tapBtn.addEventListener('mousedown', () => {
+      this.tapRepeatHeld = true;
+      this._handleTapTempo();
+    });
+    tapBtn.addEventListener('mouseup', () => {
+      this.tapRepeatHeld = false;
+      if (this._repeatInterval) { clearInterval(this._repeatInterval); this._repeatInterval = null; }
+    });
+    tapBtn.addEventListener('mouseleave', () => {
+      this.tapRepeatHeld = false;
+      if (this._repeatInterval) { clearInterval(this._repeatInterval); this._repeatInterval = null; }
+    });
 
     // Keyboard shortcuts handled in keyboard.js
   }
@@ -734,6 +749,17 @@ export class TransportUI {
           }
           this.editParam = null;
           this.pendingAction = null;
+        } else if (this.tapRepeatHeld) {
+          // Tap/Repeat held + pad → retrigger at autocorrect rate
+          const repeatPad = pad;
+          const msPerBeat = 60000 / this.bpm;
+          const msPerStep = msPerBeat / (96 / this.quantizeGrid);
+          this.engine.trigger(repeatPad, 100);
+          if (this._repeatInterval) clearInterval(this._repeatInterval);
+          this._repeatInterval = setInterval(() => {
+            if (!this.tapRepeatHeld) { clearInterval(this._repeatInterval); this._repeatInterval = null; return; }
+            this.engine.trigger(repeatPad, 100);
+          }, msPerStep);
         } else if (this.activeModule && !this.pendingAction) {
           // Pad clicked while module active but no pending action → exit module
           this._exitModule();

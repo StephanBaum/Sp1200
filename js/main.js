@@ -31,6 +31,20 @@ async function init() {
     switch (msg.type) {
       case 'tick':
         display.setBar(msg.bar);
+        // Show position on line 2 during playback
+        if (msg.bar !== undefined && msg.beat !== undefined) {
+          const barNum = (msg.bar || 0) + 1;
+          const beatNum = (msg.beat || 0) + 1;
+          if (!display.locked) display.setLine2('Bar:' + barNum + ' Beat:' + beatNum);
+          // Flicker Run LED on segment loop (bar resets to 0)
+          if (msg.bar === 0 && msg.beat === 0) {
+            const runLed = document.getElementById('led-run');
+            if (runLed) {
+              runLed.classList.remove('on');
+              setTimeout(() => runLed.classList.add('on'), 80);
+            }
+          }
+        }
         break;
       case 'trigger-visual':
         pads.flashPad(msg.pad);
