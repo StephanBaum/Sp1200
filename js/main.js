@@ -29,9 +29,39 @@ async function init() {
 
   engine.onMessage((msg) => {
     switch (msg.type) {
-      case 'tick': display.setBar(msg.bar); break;
-      case 'trigger-visual': pads.flashPad(msg.pad); break;
-      case 'song-end': document.getElementById('btn-run-stop').click(); break;
+      case 'tick':
+        display.setBar(msg.bar);
+        break;
+      case 'trigger-visual':
+        pads.flashPad(msg.pad);
+        break;
+      case 'song-end':
+        document.getElementById('btn-run-stop').click();
+        break;
+      case 'segment-erased':
+        display.flash('Erased', 'Seg ' + (msg.segment + 1));
+        break;
+      case 'segment-copied':
+        display.flash('Copied', 'Done');
+        break;
+      case 'sound-deleted':
+        display.flash('Deleted', 'Pad ' + (msg.pad + 1));
+        break;
+      case 'reverse-toggled':
+        display.flash('Pad ' + (msg.pad + 1), msg.reversed ? 'Reversed' : 'Normal');
+        break;
+      case 'multi-exit':
+        display.flash('Multi Mode', 'Exited');
+        break;
+      case 'mix-defined':
+        display.flash('Mix ' + (msg.slot + 1), 'Saved');
+        break;
+      case 'mix-selected':
+        display.flash('Mix ' + (msg.slot + 1), 'Recalled');
+        break;
+      case 'pad-mode':
+        display.flash('Pad ' + (msg.pad + 1), msg.mode === 'decay' ? 'Decay' : 'Tune');
+        break;
     }
   });
 

@@ -412,6 +412,14 @@ class SP1200Processor extends AudioWorkletProcessor {
     // Pending events scheduled (tick → [{pad, velocity}])
     this._pendingEvents = new Map();
 
+    // Setup module state
+    this.mixSnapshots = Array.from({ length: 8 }, () => new Float32Array(8).fill(0.75));
+    this.dynamicButtons = false;
+    this.padModes = new Array(8).fill('tune'); // 'tune' or 'decay' per pad
+    this._multiBackup = null; // backup before multi-pitch/multi-level
+    this.channelAssign = new Uint8Array(8); // output routing per pad (0-7)
+    for (let i = 0; i < 8; i++) this.channelAssign[i] = i;
+
     this.port.onmessage = (e) => this._handleMessage(e.data);
   }
 
@@ -501,6 +509,173 @@ class SP1200Processor extends AudioWorkletProcessor {
       case 'set-metronome-vol':
         this.metronomeVolume = Math.max(0, Math.min(1, msg.vol));
         break;
+
+      // -------------------------------------------------------------------
+      // Setup module messages (functions 11–25)
+      // -------------------------------------------------------------------
+
+      case 'multi-pitch': {
+        // Copy sample from source pad to all 8 pads at different pitch offsets
+        const src = msg.pad;
+        if (src >= 0 && src < NUM_PADS && this.voices[src].sample) {
+          // Backup current state before multi-mode
+          this._multiBackup = this.voices.map(v => ({
+            sample: v.sample,
+            pitch: v.pitch,
+            velocity: v.velocity,
+          }));
+          const sampleRef = this.voices[src].sample;
+          for (let i = 0; i < NUM_PADS; i++) {
+            this.voices[i].loadSample(sampleRef);
+            // Spread across pads: pad0 = -8, pad1 = -6, ... pad7 = +6 semitones
+            // (15 semitone range / 7 intervals ≈ 2 semitones per pad)
+            const semitones = -8 + (i * 15 / 7); // linear spread -8 to +7
+            this.voices[i].setPitch(BASE_PITCH_STEP * Math.pow(2, semitones / 12));
+          }
+          this.port.postMessage({ type: 'multi-pitch-active', sourcePad: src });
+        }
+        break;
+      }
+
+      case 'multi-level': {
+        // Copy sample from source pad to all 8 pads at different volume levels
+        const src = msg.pad;
+        if (src >= 0 && src < NUM_PADS && this.voices[src].sample) {
+          this._multiBackup = this.voices.map(v => ({
+            sample: v.sample,
+            pitch: v.pitch,
+            velocity: v.velocity,
+          }));
+          const sampleRef = this.voices[src].sample;
+          for (let i = 0; i < NUM_PADS; i++) {
+            this.voices[i].loadSample(sampleRef);
+            this.voices[i].setPitch(BASE_PITCH_STEP); // normal pitch
+            // Volume levels: 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0
+            this.mixer.setVolume(i, (i + 1) / NUM_PADS);
+          }
+          this.port.postMessage({ type: 'multi-level-active', sourcePad: src });
+        }
+        break;
+      }
+
+      case 'exit-multi': {
+        // Restore original voice state from before multi-pitch/multi-level
+        if (this._multiBackup) {
+          for (let i = 0; i < NUM_PADS; i++) {
+            const bk = this._multiBackup[i];
+            if (bk.sample) {
+              this.voices[i].loadSample(bk.sample);
+            } else {
+              this.voices[i].sample = null;
+            }
+            this.voices[i].pitch = bk.pitch;
+          }
+          this._multiBackup = null;
+          this.port.postMessage({ type: 'multi-exit' });
+        }
+        break;
+      }
+
+      case 'dynamic-buttons':
+        this.dynamicButtons = !!msg.enabled;
+        this.port.postMessage({ type: 'dynamic-buttons', enabled: this.dynamicButtons });
+        break;
+
+      case 'define-mix': {
+        // Save current mixer volumes to a snapshot slot (0-7)
+        const slot = msg.slot;
+        if (slot >= 0 && slot < 8) {
+          for (let i = 0; i < NUM_PADS; i++) {
+            this.mixSnapshots[slot][i] = this.mixer.channels[i].volume;
+          }
+          this.port.postMessage({ type: 'mix-defined', slot });
+        }
+        break;
+      }
+
+      case 'select-mix': {
+        // Restore mixer volumes from a snapshot slot (0-7)
+        const slot = msg.slot;
+        if (slot >= 0 && slot < 8) {
+          for (let i = 0; i < NUM_PADS; i++) {
+            this.mixer.setVolume(i, this.mixSnapshots[slot][i]);
+          }
+          this.port.postMessage({ type: 'mix-selected', slot });
+        }
+        break;
+      }
+
+      case 'channel-assign': {
+        // Set output routing for a pad (0-7)
+        const pad = msg.pad;
+        const ch = msg.channel;
+        if (pad >= 0 && pad < NUM_PADS && ch >= 0 && ch < 8) {
+          this.channelAssign[pad] = ch;
+        }
+        break;
+      }
+
+      case 'decay-tune-select': {
+        // Toggle between 'tune' and 'decay' mode per pad
+        const pad = msg.pad;
+        if (pad >= 0 && pad < NUM_PADS) {
+          this.padModes[pad] = msg.mode === 'decay' ? 'decay' : 'tune';
+          this.port.postMessage({ type: 'pad-mode', pad, mode: this.padModes[pad] });
+        }
+        break;
+      }
+
+      case 'delete-sound': {
+        // Clear voice sample for a pad
+        const pad = msg.pad;
+        if (pad >= 0 && pad < NUM_PADS) {
+          this.voices[pad].sample = null;
+          this.voices[pad].active = false;
+          this.voices[pad].position = 0;
+          this.port.postMessage({ type: 'sound-deleted', pad });
+        }
+        break;
+      }
+
+      case 'reverse-sound': {
+        // Toggle reverse on a voice
+        const pad = msg.pad;
+        if (pad >= 0 && pad < NUM_PADS) {
+          const voice = this.voices[pad];
+          voice.reversed = !voice.reversed;
+          this.port.postMessage({ type: 'reverse-toggled', pad, reversed: voice.reversed });
+        }
+        break;
+      }
+
+      case 'erase-segment': {
+        // Clear pattern data for a segment (pattern index)
+        const seg = msg.segment;
+        if (seg >= 0 && seg < MAX_PATTERNS) {
+          this.patterns[seg].clear();
+          this.port.postMessage({ type: 'segment-erased', segment: seg });
+        }
+        break;
+      }
+
+      case 'copy-segment': {
+        // Copy pattern data from one segment to another
+        const from = msg.from;
+        const to = msg.to;
+        if (from >= 0 && from < MAX_PATTERNS && to >= 0 && to < MAX_PATTERNS && from !== to) {
+          const srcPat = this.patterns[from];
+          const dstPat = this.patterns[to];
+          dstPat.clear();
+          dstPat.setBars(srcPat.bars);
+          for (let t = 0; t < NUM_PADS; t++) {
+            for (const ev of srcPat.tracks[t].events) {
+              dstPat.addEvent(t, new PatternEvent(ev.tick, ev.velocity, ev.pitchOffset));
+            }
+          }
+          this.port.postMessage({ type: 'segment-copied', from, to });
+        }
+        break;
+      }
 
       default:
         break;

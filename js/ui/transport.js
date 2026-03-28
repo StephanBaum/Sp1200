@@ -22,6 +22,8 @@ export class TransportUI {
     this.progStates = {};
     this.activeModule = null; // 'setup' | 'disk' | 'sync' | 'sample' | null
     this.currentBank = 0;
+    this.dynamicButtons = false;
+    this.pendingAction = null;
 
     this._bindTransport();
     this._bindModules();
@@ -32,6 +34,7 @@ export class TransportUI {
     this._bindQuantize();
     this._bindSwing();
     this._bindBanks();
+    this._bindPadActions();
   }
 
   // ── Transport: Run/Stop, Record, Tap Tempo ─────────────────────────────
@@ -107,8 +110,7 @@ export class TransportUI {
           document.getElementById(btnId).classList.remove('active');
           this.editParam = null;
           this.numericBuffer = '';
-          this.display.setMode('PATTERN');
-          this.display.setMode('PATTERN');
+          this.display.setMode('segment');
         } else {
           // Deactivate previous module
           if (this.activeModule) {
@@ -124,7 +126,6 @@ export class TransportUI {
           this.editParam = 'module-func';
           this.numericBuffer = '';
           this.display.setMode(mod.label);
-          this.display.setMode('PATTERN');
 
           // Sample module auto-enters VU mode (function 1)
           if (mod.name === 'sample') {
@@ -139,27 +140,114 @@ export class TransportUI {
     const mod = this.activeModule;
     if (!mod) return;
 
-    const menus = {
-      sample: { 1: 'VU Mode', 2: 'Assign Voice', 3: 'Level', 4: 'Threshold', 5: 'Sample Length', 6: 'Resample', 7: 'Arm Sampling', 9: 'Force Sample' },
-      sync: { 1: 'Internal', 2: 'MIDI', 3: 'SMPTE', 4: 'Click' },
-      disk: { 0: 'Load All', 1: 'Save Sequences', 2: 'Save Sounds', 3: 'Load Sequences', 4: 'Load Segment#', 5: 'Load Sounds', 6: 'Load Sound#', 7: 'Cat Sequences', 8: 'Cat Sounds', 9: 'Save All As' },
-      setup: { 11: 'Multi Pitch', 12: 'Multi Level', 13: 'Exit Multi', 14: 'Dynamic Btns', 15: 'Define Mix', 16: 'Select Mix', 17: 'Channel Assign', 18: 'Decay/Tune Sel', 19: 'Loop/Truncate', 20: 'Delete Sound', 21: '1st Song Step', 22: 'MIDI Params', 23: 'Special' }
-    };
-
-    const funcName = menus[mod]?.[funcNum];
-    if (funcName) {
-      this.display.showModuleFunc(mod.charAt(0).toUpperCase() + mod.slice(1), funcName);
-    } else {
-      this.display.flash(mod.toUpperCase() + ' ' + funcNum, 'Invalid option');
+    // Setup module functions
+    if (mod === 'setup') {
+      switch (funcNum) {
+        case 11: // Multi-pitch
+          this.editParam = 'select-pad';
+          this.pendingAction = 'multi-pitch';
+          this.display.flash('Multi Pitch', 'Select a pad');
+          break;
+        case 12: // Multi-level
+          this.editParam = 'select-pad';
+          this.pendingAction = 'multi-level';
+          this.display.flash('Multi Level', 'Select a pad');
+          break;
+        case 13: // Exit multi
+          this.engine.send({ type: 'exit-multi' });
+          this.display.flash('Exit Multi', 'Done');
+          break;
+        case 14: // Dynamic buttons
+          this.dynamicButtons = !this.dynamicButtons;
+          this.engine.send({ type: 'dynamic-buttons', enabled: this.dynamicButtons });
+          this.display.flash('Dynamic Btns', this.dynamicButtons ? 'On' : 'Off');
+          break;
+        case 15: // Define mix
+          this.editParam = 'define-mix';
+          this.numericBuffer = '';
+          this.display.flash('Define Mix', 'Enter slot 1-8');
+          break;
+        case 16: // Select mix
+          this.editParam = 'select-mix';
+          this.numericBuffer = '';
+          this.display.flash('Select Mix', 'Enter slot 1-8');
+          break;
+        case 17: // Channel assign
+          this.editParam = 'select-pad';
+          this.pendingAction = 'channel-assign';
+          this.display.flash('Channel Assign', 'Select a pad');
+          break;
+        case 18: // Decay/tune select
+          this.editParam = 'select-pad';
+          this.pendingAction = 'decay-tune';
+          this.display.flash('Decay/Tune Sel', 'Select a pad');
+          break;
+        case 19: // Loop/Truncate
+          this.editParam = 'select-pad';
+          this.pendingAction = 'truncate';
+          this.display.flash('Loop/Truncate', 'Select a pad');
+          break;
+        case 20: // Delete sound
+          this.editParam = 'select-pad';
+          this.pendingAction = 'delete-sound';
+          this.display.flash('Delete Sound', 'Select a pad');
+          break;
+        case 23: // Special menu
+          this.editParam = 'special-menu';
+          this.numericBuffer = '';
+          this.display.flash('Special Menu', 'Enter function #');
+          break;
+        default:
+          this.display.flash('Setup ' + funcNum, 'Not available');
+      }
     }
-    this.editParam = null;
+    // Sample module
+    else if (mod === 'sample') {
+      switch (funcNum) {
+        case 1:
+          this.display.flash('VU Mode', 'Monitor input');
+          break;
+        case 2:
+          this.editParam = 'assign-voice';
+          this.numericBuffer = '';
+          this.display.flash('Assign Voice', 'Select Bank+Pad');
+          break;
+        case 3:
+          this.editParam = 'sample-level';
+          this.display.flash('Input Level', 'Use +/- keys');
+          break;
+        case 7:
+          this.display.flash('Arm Sampling', 'Waiting...');
+          break;
+        case 9:
+          this.display.flash('Force Sample', 'Recording...');
+          break;
+        default:
+          this.display.flash('Sample ' + funcNum, 'Active');
+      }
+    }
+    // Sync module
+    else if (mod === 'sync') {
+      const labels = { 1: 'Internal', 2: 'MIDI', 3: 'SMPTE', 4: 'Click' };
+      const details = { 1: 'Int clock', 2: 'MIDI sync', 3: 'Use +/- rate', 4: 'Ext clock' };
+      this.engine.send({ type: 'set-sync', mode: funcNum });
+      this.display.flash('Sync: ' + (labels[funcNum] || funcNum), details[funcNum] || '');
+    }
+    // Disk module
+    else if (mod === 'disk') {
+      const labels = { 0: 'Load All', 1: 'Save Sequences', 2: 'Save Sounds', 3: 'Load Sequences', 4: 'Load Segment#', 5: 'Load Sounds', 6: 'Load Sound#', 7: 'Cat Sequences', 8: 'Cat Sounds', 9: 'Save All As' };
+      this.display.flash('Disk: ' + (labels[funcNum] || funcNum), 'Processing...');
+      // Disk operations would need IndexedDB integration
+    }
+
+    this.editParam = this.editParam || null;
     this.numericBuffer = '';
   }
 
   // ── Programming buttons (9 dual-function toggles) ──────────────────────
   _bindProgramming() {
-    // Initialize Song LED as active (default = song/segment in upper mode)
-    this._led('led-song', true);
+    // Initialize Segment LED as active (segment mode is the default)
+    this._led('led-segment', true);
 
     document.querySelectorAll('.prog').forEach(btn => {
       const upper = btn.dataset.upper;
@@ -425,6 +513,19 @@ export class TransportUI {
           }
           break;
 
+        case 'define-mix':
+          if (val >= 1 && val <= 8) {
+            this.engine.send({ type: 'define-mix', slot: val - 1 });
+            this.display.flash('Mix ' + val, 'Saved');
+          }
+          break;
+        case 'select-mix':
+          if (val >= 1 && val <= 8) {
+            this.engine.send({ type: 'select-mix', slot: val - 1 });
+            this.display.flash('Mix ' + val, 'Recalled');
+          }
+          break;
+
         default:
           // No active edit param — treat as segment selection
           if (val >= 0 && val <= 99) {
@@ -444,15 +545,48 @@ export class TransportUI {
     this._flashDisplay();
   }
 
-  _cycleQuantize(dir) {
-    const grids = [96, 48, 32, 24, 16, 12];
-    const labels = ['1/4', '1/8', '1/8T', '1/16', '1/16T', '1/32'];
-    let idx = grids.indexOf(this.quantizeGrid);
-    if (idx === -1) idx = 3;
-    idx = Math.max(0, Math.min(grids.length - 1, idx + dir));
-    this.quantizeGrid = grids[idx];
-    this.engine.setQuantize(this.quantizeGrid);
-    this.display.setMode('Q ' + labels[idx]);
+  _handleNav(dir) {
+    const QUANT_GRIDS  = [96, 48, 32, 24, 16, 12, 1];
+    const QUANT_LABELS = ['1/4', '1/8', '1/8T', '1/16', '1/16T', '1/32', 'HiRes'];
+    const TIME_SIGS = ['4/4', '3/4', '6/8', '5/4', '7/8'];
+
+    switch (this.editParam) {
+      case 'bpm':
+        this.bpm = Math.max(30, Math.min(250, this.bpm + dir));
+        this.engine.setBpm(this.bpm);
+        this.display.flash('Tempo: ' + this.bpm, 'BPM');
+        break;
+      case 'swing':
+        this.swingAmount = Math.max(50, Math.min(75, this.swingAmount + dir));
+        this.engine.setSwing(this.swingAmount);
+        this.display.flash('Swing: ' + this.swingAmount + '%', 'Use +/- or Enter');
+        break;
+      case 'quantize':
+        this.quantizeIndex = Math.max(0, Math.min(QUANT_GRIDS.length - 1, this.quantizeIndex + dir));
+        this.quantizeGrid = QUANT_GRIDS[this.quantizeIndex];
+        this.engine.setQuantize(this.quantizeGrid);
+        this.display.flash('Auto-Correct', QUANT_LABELS[this.quantizeIndex]);
+        break;
+      case 'seg-length':
+        this.segmentLength = Math.max(1, Math.min(99, this.segmentLength + dir));
+        this.engine.send({ type: 'set-bars', bars: this.segmentLength });
+        this.display.flash('Seg Length', this.segmentLength + ' Bars');
+        break;
+      case 'time-sig': {
+        const curIdx = TIME_SIGS.indexOf(this.timeSig);
+        const newIdx = Math.max(0, Math.min(TIME_SIGS.length - 1, (curIdx === -1 ? 0 : curIdx) + dir));
+        this.timeSig = TIME_SIGS[newIdx];
+        this.engine.send({ type: 'set-time-sig', timeSig: this.timeSig });
+        this.display.flash('Time Sig', this.timeSig);
+        break;
+      }
+      default:
+        // Default: navigate segments
+        this.currentSegment = Math.max(0, Math.min(99, this.currentSegment + dir));
+        this.engine.selectPattern(this.currentSegment);
+        this.display.setPattern(this.currentSegment);
+        break;
+    }
   }
 
   // ── Numeric Keypad ─────────────────────────────────────────────────────
@@ -478,14 +612,21 @@ export class TransportUI {
         // Normal numeric entry
         this.numericBuffer += key;
         if (this.editParam === 'bpm') {
-          this.display.setBpm(parseInt(this.numericBuffer, 10) || 0);
+          this.display.flash('Tempo: ' + this.numericBuffer, 'Enter to confirm');
           if (this.numericBuffer.length >= 3) this._confirmEntry();
-        } else if (this.editParam === 'pattern' || this.editParam === 'copy') {
-          this.display.setPattern((parseInt(this.numericBuffer, 10) || 1) - 1);
+        } else if (this.editParam === 'segment' || this.editParam === 'copy' || this.editParam === 'erase-seg') {
+          this.display.flash('Seg: ' + this.numericBuffer, 'Enter to confirm');
+          if (this.numericBuffer.length >= 2) this._confirmEntry();
+        } else if (this.editParam === 'seg-length') {
+          this.display.flash('Bars: ' + this.numericBuffer, 'Enter to confirm');
+          if (this.numericBuffer.length >= 2) this._confirmEntry();
+        } else if (this.editParam === 'swing') {
+          this.display.flash('Swing: ' + this.numericBuffer + '%', 'Enter to confirm');
           if (this.numericBuffer.length >= 2) this._confirmEntry();
         } else {
-          if (!this.editParam) this.editParam = 'pattern';
-          this.display.setMode(this.numericBuffer);
+          // No active edit — treat as segment selection
+          if (!this.editParam) this.editParam = 'segment';
+          this.display.flash('Seg: ' + this.numericBuffer, '');
           if (this.numericBuffer.length >= 2) this._confirmEntry();
         }
       });
@@ -525,6 +666,43 @@ export class TransportUI {
         this._led(bankLeds[currentBank], true);
       });
     }
+  }
+
+  _bindPadActions() {
+    document.querySelectorAll('.pad').forEach(el => {
+      el.addEventListener('mousedown', () => {
+        const pad = parseInt(el.dataset.pad, 10);
+        if (this.editParam === 'select-pad' && this.pendingAction) {
+          switch (this.pendingAction) {
+            case 'multi-pitch':
+              this.engine.send({ type: 'multi-pitch', pad });
+              this.display.flash('Multi Pitch', 'Pad ' + (pad + 1));
+              break;
+            case 'multi-level':
+              this.engine.send({ type: 'multi-level', pad });
+              this.display.flash('Multi Level', 'Pad ' + (pad + 1));
+              break;
+            case 'delete-sound':
+              this.engine.send({ type: 'delete-sound', pad });
+              this.display.flash('Deleted', 'Pad ' + (pad + 1));
+              break;
+            case 'decay-tune':
+              // Toggle between tune and decay for this pad
+              this.engine.send({ type: 'decay-tune-toggle', pad });
+              this.display.flash('Pad ' + (pad + 1), 'Toggled');
+              break;
+            case 'truncate':
+              this.display.flash('Truncate', 'Pad ' + (pad + 1) + ' Use faders');
+              break;
+            case 'channel-assign':
+              this.display.flash('Ch Assign', 'Pad ' + (pad + 1) + ' Enter ch');
+              break;
+          }
+          this.editParam = null;
+          this.pendingAction = null;
+        }
+      });
+    });
   }
 
   _bindBtn(id, handler) {
