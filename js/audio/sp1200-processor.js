@@ -521,9 +521,6 @@ class SP1200Processor extends AudioWorkletProcessor {
     this.metronomeVolume = 0.7;
     this.metronomeClick = new MetronomeClick();
 
-    // Pending events scheduled (tick → [{pad, velocity}])
-    this._pendingEvents = new Map();
-
     // Setup module state
     this.mixSnapshots = Array.from({ length: 8 }, () => new Float32Array(8).fill(0.75));
     this.dynamicButtons = false;

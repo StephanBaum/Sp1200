@@ -12,6 +12,7 @@ export class KeyboardUI {
     document.addEventListener('fader-mode-change', (e) => {
       this.faderMode = e.detail.mode;
     });
+    window.addEventListener('blur', () => this._stopRepeat());
   }
 
   _bind() {
@@ -33,8 +34,7 @@ export class KeyboardUI {
           return;
         }
         if (e.repeat) return; // Don't retrigger on held keys
-        this.engine.trigger(num - 1, 100);
-        document.dispatchEvent(new CustomEvent('pad-trigger', { detail: { pad: num - 1 } }));
+        this._firePad(num - 1);
         return;
       }
 
@@ -205,20 +205,18 @@ export class KeyboardUI {
     });
   }
 
-  _startRepeat(pad) {
-    this._stopRepeat();
+  _firePad(pad) {
     this.engine.trigger(pad, 100);
     document.dispatchEvent(new CustomEvent('pad-trigger', { detail: { pad } }));
-    // Get BPM and quantize from transport state via a custom event
-    const bpm = 90; // fallback
-    const grid = 24; // fallback 1/16
-    // Try to read from transport (dispatch request)
-    const msPerQuarter = 60000 / bpm;
-    const msPerStep = msPerQuarter * grid / 96;
-    this._repeatInterval = setInterval(() => {
-      this.engine.trigger(pad, 100);
-      document.dispatchEvent(new CustomEvent('pad-trigger', { detail: { pad } }));
-    }, Math.max(50, msPerStep));
+  }
+
+  _startRepeat(pad) {
+    this._stopRepeat();
+    this._firePad(pad);
+    const bpm = this.display.bpm || 90;
+    const grid = 24; // 1/16 note
+    const msPerStep = (60000 / bpm) * grid / 96;
+    this._repeatInterval = setInterval(() => this._firePad(pad), Math.max(50, msPerStep));
   }
 
   _stopRepeat() {
