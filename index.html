@@ -56,7 +56,7 @@
     <button class="hit" id="btn-setup" style="left:11.5%;top:25.2%;width:2.6%;height:2.6%" title="Set up"></button>
     <button class="hit" id="btn-disk" style="left:28.3%;top:25.2%;width:2.6%;height:2.6%" title="Disk"></button>
     <button class="hit" id="btn-sync" style="left:45.9%;top:25.2%;width:2.6%;height:2.6%" title="Sync"></button>
-    <button class="hit" id="btn-sample" style="left:54.6%;top:25.2%;width:2.6%;height:2.6%" title="Sample"></button>
+    <button class="hit rec" id="btn-sample" style="left:54.6%;top:25.2%;width:2.6%;height:2.6%" title="Sample"></button>
 
     <!-- ═══ MASTER CONTROL ═══ -->
     <button class="hit" id="btn-tempo" style="left:72.8%;top:34%;width:2.6%;height:2.6%" title="Tempo"></button>
@@ -64,17 +64,17 @@
     <button class="hit" id="btn-nav-right" style="left:81.8%;top:34%;width:2.6%;height:2.6%" title="►"></button>
     <button class="hit" id="btn-enter" style="left:86.3%;top:34%;width:2.6%;height:2.6%" title="Enter"></button>
 
-    <!-- ═══ NUMERIC KEYPAD (0-9 only, Enter confirms) ═══ -->
-    <button class="hit key" data-key="1" style="left:75.6%;top:48%;width:2.6%;height:2.6%">1</button>
-    <button class="hit key" data-key="2" style="left:79.5%;top:48%;width:2.6%;height:2.6%">2</button>
-    <button class="hit key" data-key="3" style="left:83.5%;top:48%;width:2.6%;height:2.6%">3</button>
-    <button class="hit key" data-key="4" style="left:75.6%;top:51.9%;width:2.6%;height:2.6%">4</button>
-    <button class="hit key" data-key="5" style="left:79.5%;top:51.9%;width:2.6%;height:2.6%">5</button>
-    <button class="hit key" data-key="6" style="left:83.5%;top:51.9%;width:2.6%;height:2.6%">6</button>
-    <button class="hit key" data-key="7" style="left:75.6%;top:55.9%;width:2.6%;height:2.6%">7</button>
-    <button class="hit key" data-key="8" style="left:79.5%;top:55.9%;width:2.6%;height:2.6%">8</button>
-    <button class="hit key" data-key="9" style="left:83.5%;top:55.9%;width:2.6%;height:2.6%">9</button>
-    <button class="hit key" data-key="0" style="left:79.5%;top:59.8%;width:2.6%;height:2.6%">0</button>
+    <!-- ═══ NUMERIC KEYPAD (0-9, labels on faceplate) ═══ -->
+    <button class="hit key" data-key="1" style="left:75.6%;top:48%;width:2.6%;height:2.6%"></button>
+    <button class="hit key" data-key="2" style="left:79.5%;top:48%;width:2.6%;height:2.6%"></button>
+    <button class="hit key" data-key="3" style="left:83.5%;top:48%;width:2.6%;height:2.6%"></button>
+    <button class="hit key" data-key="4" style="left:75.6%;top:51.9%;width:2.6%;height:2.6%"></button>
+    <button class="hit key" data-key="5" style="left:79.5%;top:51.9%;width:2.6%;height:2.6%"></button>
+    <button class="hit key" data-key="6" style="left:83.5%;top:51.9%;width:2.6%;height:2.6%"></button>
+    <button class="hit key" data-key="7" style="left:75.6%;top:55.9%;width:2.6%;height:2.6%"></button>
+    <button class="hit key" data-key="8" style="left:79.5%;top:55.9%;width:2.6%;height:2.6%"></button>
+    <button class="hit key" data-key="9" style="left:83.5%;top:55.9%;width:2.6%;height:2.6%"></button>
+    <button class="hit key" data-key="0" style="left:79.5%;top:59.8%;width:2.6%;height:2.6%"></button>
 
     <!-- ═══ PROGRAMMING (9 dual-function toggles) ═══ -->
     <button class="hit prog" id="prog-1" data-upper="song" data-lower="segment" style="left:11.5%;top:40.6%;width:2.6%;height:2.6%" title="Song / Segment"></button>
@@ -104,15 +104,15 @@
     <!-- ═══ BANK: ONE cycling button ═══ -->
     <button class="hit bank-btn" id="btn-bank" style="left:11.5%;top:69.6%;width:2.6%;height:2.4%" title="Bank (cycles A→B→C→D)"></button>
 
-    <!-- ═══ 8 FADERS — exact from mapper: tracks at x centers 22.75/28.71/34.55/40.54/46.38/52.38/58.21/64.25, y=50.7-63.7% ═══ -->
-    <div class="fader-hit" style="left:20.2%;top:50%;width:5%;height:14.5%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
-    <div class="fader-hit" style="left:26.2%;top:50%;width:5%;height:14.5%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
-    <div class="fader-hit" style="left:32.0%;top:50%;width:5%;height:14.5%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
-    <div class="fader-hit" style="left:38.0%;top:50%;width:5%;height:14.5%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
-    <div class="fader-hit" style="left:43.9%;top:50%;width:5%;height:14.5%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
-    <div class="fader-hit" style="left:49.9%;top:50%;width:5%;height:14.5%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
-    <div class="fader-hit" style="left:55.7%;top:50%;width:5%;height:14.5%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
-    <div class="fader-hit" style="left:61.7%;top:50%;width:5%;height:14.5%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
+    <!-- ═══ 8 FADERS — img-based track + cap ═══ -->
+    <div class="fader-hit" style="left:20.2%;top:50%;width:5%;height:14.5%"><img src="/assets/fader.png" class="fader-img" draggable="false"><div class="fader-track"><img src="/assets/fader-cap.png" class="fader-thumb" draggable="false"></div></div>
+    <div class="fader-hit" style="left:26.2%;top:50%;width:5%;height:14.5%"><img src="/assets/fader.png" class="fader-img" draggable="false"><div class="fader-track"><img src="/assets/fader-cap.png" class="fader-thumb" draggable="false"></div></div>
+    <div class="fader-hit" style="left:32.0%;top:50%;width:5%;height:14.5%"><img src="/assets/fader.png" class="fader-img" draggable="false"><div class="fader-track"><img src="/assets/fader-cap.png" class="fader-thumb" draggable="false"></div></div>
+    <div class="fader-hit" style="left:38.0%;top:50%;width:5%;height:14.5%"><img src="/assets/fader.png" class="fader-img" draggable="false"><div class="fader-track"><img src="/assets/fader-cap.png" class="fader-thumb" draggable="false"></div></div>
+    <div class="fader-hit" style="left:43.9%;top:50%;width:5%;height:14.5%"><img src="/assets/fader.png" class="fader-img" draggable="false"><div class="fader-track"><img src="/assets/fader-cap.png" class="fader-thumb" draggable="false"></div></div>
+    <div class="fader-hit" style="left:49.9%;top:50%;width:5%;height:14.5%"><img src="/assets/fader.png" class="fader-img" draggable="false"><div class="fader-track"><img src="/assets/fader-cap.png" class="fader-thumb" draggable="false"></div></div>
+    <div class="fader-hit" style="left:55.7%;top:50%;width:5%;height:14.5%"><img src="/assets/fader.png" class="fader-img" draggable="false"><div class="fader-track"><img src="/assets/fader-cap.png" class="fader-thumb" draggable="false"></div></div>
+    <div class="fader-hit" style="left:61.7%;top:50%;width:5%;height:14.5%"><img src="/assets/fader.png" class="fader-img" draggable="false"><div class="fader-track"><img src="/assets/fader-cap.png" class="fader-thumb" draggable="false"></div></div>
 
     <!-- ═══ 8 PADS — exact from mapper clicks ═══ -->
     <button class="pad" data-pad="0" style="left:20.5%;top:68.6%;width:4.2%;height:4.2%"></button>
