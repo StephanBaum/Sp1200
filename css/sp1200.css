@@ -87,13 +87,12 @@ body {
 /* ── LCD overlay — SOLID background, covers the photo LCD completely ───── */
 .lcd-overlay {
   position: absolute;
-  left: 73.8%;
-  top: 15.6%;
-  width: 17.2%;
-  height: 6.6%;
+  left: 75.6%;
+  top: 17.6%;
+  width: 13.52%;
+  height: 4.5%;
   z-index: 15;
   pointer-events: none;
-  /* Authentic LCD — green backlit with dark pixel characters */
   background: #4a6a28;
   border: 2px solid #5a5a30;
   border-radius: 4px;
@@ -103,18 +102,18 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 2% 4%;
+  padding: 0 3%;
   gap: 0;
   overflow: hidden;
 }
 
 .lcd-line {
   font-family: 'Courier New', monospace;
-  font-size: clamp(8px, 1vw, 16px);
+  font-size: clamp(6px, 0.65vw, 12px);
   font-weight: bold;
   color: #1a2a08;
   text-shadow: 0 0 1px rgba(26, 42, 8, 0.5);
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
   white-space: pre;
   line-height: 1.4;
   overflow: hidden;
