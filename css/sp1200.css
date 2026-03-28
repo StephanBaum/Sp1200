@@ -87,36 +87,36 @@ body {
 /* ── LCD overlay — SOLID background, covers the photo LCD completely ───── */
 .lcd-overlay {
   position: absolute;
-  left: 73.6%;
-  top: 15.26%;
-  width: 17.61%;
-  height: 7.41%;
+  left: 73.8%;
+  top: 15.6%;
+  width: 17.2%;
+  height: 6.6%;
   z-index: 15;
   pointer-events: none;
   /* Authentic LCD — green backlit with dark pixel characters */
   background: #4a6a28;
   border: 2px solid #5a5a30;
-  border-radius: 5px;
+  border-radius: 4px;
   box-shadow:
-    inset 0 0 12px rgba(0, 0, 0, 0.3),
-    inset 0 0 30px rgba(80, 140, 40, 0.15);
+    inset 0 0 8px rgba(0, 0, 0, 0.3),
+    inset 0 0 20px rgba(80, 140, 40, 0.15);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 1% 2%;
+  padding: 2% 4%;
   gap: 0;
   overflow: hidden;
 }
 
 .lcd-line {
   font-family: 'Courier New', monospace;
-  font-size: clamp(6px, 0.78vw, 13px);
+  font-size: clamp(8px, 1vw, 16px);
   font-weight: bold;
   color: #1a2a08;
   text-shadow: 0 0 1px rgba(26, 42, 8, 0.5);
-  letter-spacing: 0;
+  letter-spacing: 0.02em;
   white-space: pre;
-  line-height: 1.5;
+  line-height: 1.4;
   overflow: hidden;
 }
 
@@ -239,14 +239,16 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 4% 3%;
+  padding: 6% 5%;
+  background: #4a6a28;
+  z-index: 2;
 }
 .lcd-bars-row {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  height: 55%;
-  gap: 2%;
+  flex: 1;
+  gap: 3%;
 }
 .lcd-bar {
   flex: 1;
@@ -257,9 +259,10 @@ body {
 }
 .lcd-bars-labels {
   text-align: center;
-  margin-top: 1px;
-  font-size: clamp(5px, 0.6vw, 10px) !important;
-  letter-spacing: 0.3em !important;
+  margin-top: 2px;
+  font-size: clamp(6px, 0.7vw, 11px) !important;
+  letter-spacing: 0.35em !important;
+  color: #1a2a08;
 }
 
 /* ── Scrollbar ──────────────────────────────────────────────────────────── */
