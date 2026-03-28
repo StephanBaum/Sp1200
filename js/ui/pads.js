@@ -1,12 +1,9 @@
-const PAD_KEYS = ['z', 'x', 'c', 'v', 'a', 's', 'd', 'f'];
-
 export class PadsUI {
   constructor(engine) {
     this.engine = engine;
     this.padElements = document.querySelectorAll('.pad');
     this.currentBank = 0;
     this._bindMouse();
-    this._bindKeyboard();
   }
   _bindMouse() {
     this.padElements.forEach((el) => {
@@ -16,15 +13,6 @@ export class PadsUI {
         this.engine.trigger(pad, velocity);
         this._flash(pad);
       });
-    });
-  }
-  _bindKeyboard() {
-    document.addEventListener('keydown', (e) => {
-      if (e.repeat) return;
-      const padIndex = PAD_KEYS.indexOf(e.key.toLowerCase());
-      if (padIndex === -1) return;
-      this.engine.trigger(padIndex, 100);
-      this._flash(padIndex);
     });
   }
   _velocityFromClick(event, element) {

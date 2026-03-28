@@ -1,19 +1,114 @@
 import { BANK_NAMES, BPM_DEFAULT } from '../constants.js';
 
+/**
+ * SP-1200 LCD Display — 2 lines, 16 characters each.
+ * Context-dependent: shows different info based on current mode.
+ */
 export class DisplayUI {
   constructor() {
-    this.modeEl = document.getElementById('display-mode');
-    this.bpmEl = document.getElementById('display-bpm');
-    this.patternEl = document.getElementById('display-pattern');
-    this.barEl = document.getElementById('display-bar');
-    this.bankEl = document.getElementById('display-bank');
-    this.memoryEl = document.getElementById('display-memory');
-    this.setBpm(BPM_DEFAULT);
+    this.line1El = document.getElementById('lcd-line1');
+    this.line2El = document.getElementById('lcd-line2');
+    this.bpm = BPM_DEFAULT;
+    this.pattern = 0;
+    this.bank = 0;
+    this.bar = 0;
+    this.mode = 'segment'; // segment | song | step
+    this._flashTimer = null;
+    this._knobTimer = null;
+    this._refresh();
   }
-  setMode(mode) { this.modeEl.textContent = mode.toUpperCase(); }
-  setBpm(bpm) { this.bpmEl.textContent = String(bpm).padStart(3, '0'); }
-  setPattern(num) { this.patternEl.textContent = String(num + 1).padStart(2, '0'); }
-  setBar(bar) { this.barEl.textContent = String(bar + 1); }
-  setBank(bank) { this.bankEl.textContent = BANK_NAMES[bank] || 'A'; }
-  setMemory(seconds) { this.memoryEl.textContent = seconds.toFixed(1) + 's'; }
+
+  // ── Primary setters ────────────────────────────────────────────────────
+  setBpm(bpm) { this.bpm = bpm; this._refresh(); }
+  setPattern(num) { this.pattern = num; this._refresh(); }
+  setBar(bar) { this.bar = bar; }
+  setBank(bank) { this.bank = bank; this._refresh(); }
+  setMemory(seconds) { this.memory = seconds; }
+
+  setMode(mode) {
+    // Known modes update the display state
+    const modeMap = { 'PATTERN': 'segment', 'SONG': 'song', 'STEP': 'step', 'segment': 'segment', 'song': 'song', 'step-edit': 'step', 'step': 'step', 'pattern': 'segment' };
+    if (modeMap[mode]) {
+      this.mode = modeMap[mode];
+      this._refresh();
+    } else {
+      // Custom text → show on line 1, clear line 2
+      this.setLine1(mode);
+      this.setLine2(' ');
+    }
+  }
+
+  // ── Write directly to LCD lines ────────────────────────────────────────
+  setLine1(text) { this.line1El.textContent = this._pad(text); }
+  setLine2(text) { this.line2El.textContent = this._pad(text); }
+
+  // ── Context-dependent refresh ──────────────────────────────────────────
+  _refresh() {
+    const seg = String(this.pattern + 1).padStart(2, '0');
+    const bpm = this.bpm.toFixed ? this.bpm.toFixed(1) : this.bpm + '.0';
+
+    if (this.mode === 'segment' || this.mode === 'pattern') {
+      this.setLine1('Seg:' + seg + ' J=' + bpm);
+      this.setLine2(' ');
+    } else if (this.mode === 'song') {
+      this.setLine1('Song    J=' + bpm);
+      this.setLine2(' ');
+    } else if (this.mode === 'step') {
+      this.setLine1('StepPgm J=' + bpm);
+      this.setLine2(' ');
+    } else {
+      // Custom mode text (from module activation etc.)
+      this.setLine1(this.mode);
+    }
+  }
+
+  // ── Flash a message temporarily ────────────────────────────────────────
+  flash(line1, line2, duration = 1200) {
+    clearTimeout(this._flashTimer);
+    this.setLine1(line1);
+    if (line2 !== undefined) this.setLine2(line2);
+    this._flashTimer = setTimeout(() => this._refresh(), duration);
+  }
+
+  // ── Module function display ────────────────────────────────────────────
+  showModuleFunc(moduleName, funcName, detail) {
+    this.setLine1(moduleName + ': ' + funcName);
+    this.setLine2(detail || 'Use + and -');
+  }
+
+  // ── Mix bar graph (8 channels) ─────────────────────────────────────────
+  showMixLevels(values) {
+    const bars = [' ', '\u2581', '\u2582', '\u2583', '\u2584', '\u2585', '\u2586', '\u2587', '\u2588'];
+    const top = values.map(v => bars[Math.round(v * 8)]).join(' ');
+    this.setLine1(top);
+    this.setLine2('1 2 3 4 5 6 7 8');
+  }
+
+  // ── Tune display ───────────────────────────────────────────────────────
+  showTuneLevels(values) {
+    const vals = values.map(v => {
+      const st = Math.round((v - 0.5) * 15) - 8;
+      return (st >= 0 ? '+' : '') + st;
+    });
+    this.setLine1(vals.join(' '));
+    this.setLine2('1  2  3  4  5  6  7  8');
+  }
+
+  // ── VU meter for sampling ──────────────────────────────────────────────
+  showVU(level) {
+    const n = Math.round(level * 16);
+    this.setLine2('\u2588'.repeat(n) + '\u2591'.repeat(16 - n));
+  }
+
+  // ── Knob value (temporary) ─────────────────────────────────────────────
+  showKnobValue(name, value) {
+    clearTimeout(this._knobTimer);
+    this.setLine2(name + ': ' + Math.round(value * 100) + '%');
+    this._knobTimer = setTimeout(() => this._refresh(), 1500);
+  }
+
+  // ── Pad 16 chars ───────────────────────────────────────────────────────
+  _pad(str) {
+    return String(str).substring(0, 16).padEnd(16, ' ');
+  }
 }

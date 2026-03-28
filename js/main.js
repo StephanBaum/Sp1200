@@ -4,15 +4,15 @@ import { FadersUI } from './ui/faders.js';
 import { DisplayUI } from './ui/display.js';
 import { TransportUI } from './ui/transport.js';
 import { KeyboardUI } from './ui/keyboard.js';
-import { SampleEditUI } from './ui/sample-edit.js';
 import { StepEditUI } from './ui/step-edit.js';
 import { loadSampleFromFile, SampleMemory } from './audio/sample-loader.js';
 import { BANK_SAMPLE_TIME } from './constants.js';
 
 const engine = new SP1200Engine();
 const sampleMemory = new SampleMemory();
-let display, pads, faders, transport, keyboard, sampleEdit, stepEdit;
+let display, pads, faders, transport, keyboard, stepEdit;
 let currentBank = 0;
+let selectedPad = 0;
 let initialized = false;
 
 async function init() {
@@ -24,15 +24,14 @@ async function init() {
   pads = new PadsUI(engine);
   faders = new FadersUI(engine);
   transport = new TransportUI(engine, display);
-  keyboard = new KeyboardUI(engine);
-  sampleEdit = new SampleEditUI(engine, display);
+  keyboard = new KeyboardUI(engine, display);
   stepEdit = new StepEditUI(engine, display);
 
   engine.onMessage((msg) => {
     switch (msg.type) {
       case 'tick': display.setBar(msg.bar); break;
       case 'trigger-visual': pads.flashPad(msg.pad); break;
-      case 'song-end': document.getElementById('btn-stop').click(); break;
+      case 'song-end': document.getElementById('btn-run-stop').click(); break;
     }
   });
 
@@ -44,8 +43,49 @@ async function init() {
 
   document.addEventListener('pad-trigger', (e) => pads.flashPad(e.detail.pad));
 
-  // File upload
-  document.getElementById('btn-load-sample').addEventListener('click', () => {
+  document.addEventListener('fader-mode-change', (e) => {
+    faders.mode = e.detail.mode;
+  });
+
+  // Track selected pad
+  document.querySelectorAll('.pad').forEach(el => {
+    el.addEventListener('mousedown', () => {
+      selectedPad = parseInt(el.dataset.pad, 10);
+    });
+  });
+
+  // Fader value → display bar graph or tune values
+  document.addEventListener('fader-update', (e) => {
+    if (e.detail.mode === 'pitch') {
+      display.showTuneLevels(e.detail.values);
+    } else {
+      display.showMixLevels(e.detail.values);
+    }
+  });
+
+  // Knobs — drag to rotate, show value on LCD
+  document.querySelectorAll('.knob').forEach(knob => {
+    let dragging = false, startY = 0, startAngle = -120;
+    let angle = -120;
+    const pointer = knob.querySelector('.knob-indicator');
+    const names = { 'knob-gain': 'GAIN', 'knob-mix-vol': 'MIX VOL', 'knob-metro-vol': 'METRO' };
+    knob.addEventListener('mousedown', (e) => { dragging = true; startY = e.clientY; startAngle = angle; e.preventDefault(); });
+    document.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const delta = (startY - e.clientY) * 1.5;
+      angle = Math.max(-120, Math.min(120, startAngle + delta));
+      pointer.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+      const normalized = (angle + 120) / 240;
+      if (knob.id === 'knob-gain') engine.setParam('gain', 0, normalized);
+      if (knob.id === 'knob-mix-vol') engine.setParam('mix-volume', 0, normalized);
+      if (knob.id === 'knob-metro-vol') engine.send({ type: 'set-metronome-vol', vol: normalized });
+      display.showKnobValue(names[knob.id] || '', normalized);
+    });
+    document.addEventListener('mouseup', () => { dragging = false; });
+  });
+
+  // Disk → file upload
+  document.getElementById('btn-disk').addEventListener('click', () => {
     document.getElementById('file-input').click();
   });
   document.getElementById('file-input').addEventListener('change', async (e) => {
@@ -53,6 +93,14 @@ async function init() {
     if (!file) return;
     await loadFileToSelectedPad(file);
     e.target.value = '';
+  });
+
+  // Setup → sample edit mode
+  let setupMode = false;
+  document.getElementById('btn-setup').addEventListener('click', () => {
+    setupMode = !setupMode;
+    document.getElementById('btn-setup').classList.toggle('active', setupMode);
+    display.setMode(setupMode ? 'SET UP' : 'PATTERN');
   });
 
   // Drag and drop
@@ -66,12 +114,9 @@ async function init() {
     if (file) await loadFileToSelectedPad(file);
   });
 
-  // Mic recording
-  let micStream = null;
-  let micRecorder = null;
-  let micChunks = [];
-
-  document.getElementById('btn-mic-record').addEventListener('click', async () => {
+  // Sample → mic recording
+  let micStream = null, micRecorder = null, micChunks = [];
+  document.getElementById('btn-sample').addEventListener('click', async () => {
     if (micRecorder && micRecorder.state === 'recording') {
       micRecorder.stop();
       return;
@@ -83,26 +128,25 @@ async function init() {
       micRecorder.ondataavailable = (e) => { if (e.data.size > 0) micChunks.push(e.data); };
       micRecorder.onstop = async () => {
         const blob = new Blob(micChunks, { type: 'audio/webm' });
-        const arrayBuffer = await blob.arrayBuffer();
-        const processed = await loadSampleFromFile(engine.context, arrayBuffer);
-        engine.loadSample(0, processed);
-        const bank = sampleMemory.getBank(0);
-        sampleMemory.allocate(bank, processed.length);
-        display.setMemory(sampleMemory.getRemainingSeconds(bank));
+        const processed = await loadSampleFromFile(engine.context, await blob.arrayBuffer());
+        engine.loadSample(selectedPad, processed);
+        sampleMemory.allocate(sampleMemory.getBank(selectedPad), processed.length);
+        display.setMemory(sampleMemory.getRemainingSeconds(sampleMemory.getBank(selectedPad)));
         micStream.getTracks().forEach(t => t.stop());
         micStream = null;
-        document.getElementById('btn-mic-record').classList.remove('active');
+        document.getElementById('btn-sample').classList.remove('active');
+        display.setMode('SAMPLED');
+        setTimeout(() => display.setMode('PATTERN'), 800);
       };
       micRecorder.start();
-      document.getElementById('btn-mic-record').classList.add('active');
+      document.getElementById('btn-sample').classList.add('active');
+      display.setMode('REC...');
     } catch (err) {
       console.error('Mic access denied:', err);
     }
   });
 
   display.setMemory(BANK_SAMPLE_TIME);
-
-  // Load default kit
   await loadDefaultKit();
   console.log('SP-1200 ready');
 }
@@ -110,23 +154,21 @@ async function init() {
 async function loadFileToSelectedPad(file) {
   const arrayBuffer = await file.arrayBuffer();
   const processed = await loadSampleFromFile(engine.context, arrayBuffer);
-  engine.loadSample(0, processed);
-  const bank = sampleMemory.getBank(0);
-  sampleMemory.allocate(bank, processed.length);
-  display.setMemory(sampleMemory.getRemainingSeconds(bank));
+  engine.loadSample(selectedPad, processed);
+  sampleMemory.allocate(sampleMemory.getBank(selectedPad), processed.length);
+  display.setMemory(sampleMemory.getRemainingSeconds(sampleMemory.getBank(selectedPad)));
+  display.setMode('PAD ' + (selectedPad + 1));
+  setTimeout(() => display.setMode('PATTERN'), 800);
 }
 
 async function loadDefaultKit() {
   try {
     const resp = await fetch('/samples/manifest.json');
     const manifest = await resp.json();
-    const allSamples = manifest.categories.flatMap(c => c.samples);
-    const toLoad = allSamples.slice(0, 8);
+    const toLoad = manifest.categories.flatMap(c => c.samples).slice(0, 8);
     for (let i = 0; i < toLoad.length; i++) {
-      const sampleResp = await fetch('/samples/' + toLoad[i].file);
-      const arrayBuffer = await sampleResp.arrayBuffer();
-      const processed = await loadSampleFromFile(engine.context, arrayBuffer);
-      engine.loadSample(i, processed);
+      const buf = await (await fetch('/samples/' + toLoad[i].file)).arrayBuffer();
+      engine.loadSample(i, await loadSampleFromFile(engine.context, buf));
     }
     console.log('Default kit loaded');
   } catch (err) {

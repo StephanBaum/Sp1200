@@ -15,20 +15,17 @@ body {
   overflow: hidden;
 }
 
-/* ── Main container — holds the photo and all overlays ─────────────────── */
+/* ── Main container — FIT TO SCREEN HEIGHT ─────────────────────────────── */
 .sp1200 {
   position: relative;
-  width: min(95vw, 95vh); /* square image, fit to viewport */
-  max-width: 1000px;
-  aspect-ratio: 1;
+  width: min(98vw, 99vh);
+  max-width: 1800px;
   user-select: none;
 }
 
 .panel-img {
   width: 100%;
-  height: 100%;
   display: block;
-  object-fit: contain;
   pointer-events: none;
 }
 
@@ -76,33 +73,40 @@ body {
   box-shadow: 0 0 12px rgba(255, 50, 50, 0.4);
 }
 
-/* ── LCD overlay — positioned over the photo's LCD display area ────────── */
+/* ── LCD overlay — SOLID background, covers the photo LCD completely ───── */
 .lcd-overlay {
   position: absolute;
-  left: 68.5%;
-  top: 17.5%;
-  width: 19%;
-  height: 7%;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 0 8px;
+  left: 72.8%;
+  top: 22.8%;
+  width: 16.2%;
+  height: 5.8%;
   z-index: 15;
   pointer-events: none;
-  padding: 2px 6px;
-  /* MAGENTA DEBUG */
-  border: 1px solid magenta;
-  background: rgba(255, 0, 255, 0.15);
+  /* Authentic LCD — green backlit with dark pixel characters */
+  background: #4a6a28;
+  border: 2px solid #5a5a30;
+  border-radius: 5px;
+  box-shadow:
+    inset 0 0 12px rgba(0, 0, 0, 0.3),
+    inset 0 0 30px rgba(80, 140, 40, 0.15);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1% 2%;
+  gap: 0;
+  overflow: hidden;
 }
 
-.lcd-text {
+.lcd-line {
   font-family: 'Courier New', monospace;
-  font-size: clamp(8px, 1.2vw, 14px);
+  font-size: clamp(6px, 0.78vw, 13px);
   font-weight: bold;
-  color: #ff9922;
-  text-shadow: 0 0 6px rgba(255, 153, 34, 0.6);
-  letter-spacing: 0.05em;
+  color: #1a2a08;
+  text-shadow: 0 0 1px rgba(26, 42, 8, 0.5);
+  letter-spacing: 0;
+  white-space: pre;
+  line-height: 1.5;
+  overflow: hidden;
 }
 
 /* ── Fader overlays — transparent drag zones over photo faders ─────────── */
@@ -126,14 +130,14 @@ body {
   position: absolute;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 70%;
-  height: 6%;
+  width: 90%;
+  height: 12%;
   background: rgba(0, 255, 255, 0.4);
   border: 1px solid cyan;
   cursor: ns-resize;
   top: 25%;
   z-index: 12;
-  border-radius: 2px;
+  border-radius: 3px;
 }
 .fader-thumb:hover {
   background: rgba(0, 255, 255, 0.6);
@@ -172,10 +176,10 @@ body {
   background: rgba(255, 200, 50, 0.12);
 }
 
-/* ── Play active (green tint) ──────────────────────────────────────────── */
-#btn-play.active {
-  background: rgba(50, 255, 50, 0.12);
-  box-shadow: 0 0 10px rgba(50, 255, 50, 0.3);
+/* ── Run/Stop active (green glow) ──────────────────────────────────────── */
+#btn-run-stop.active {
+  background: rgba(50, 255, 50, 0.15);
+  box-shadow: 0 0 12px rgba(50, 255, 50, 0.4);
 }
 
 /* ── Record active (red pulse) ─────────────────────────────────────────── */
@@ -186,6 +190,107 @@ body {
 @keyframes rec-glow {
   0%, 100% { box-shadow: 0 0 8px rgba(255, 50, 50, 0.3); }
   50%      { box-shadow: 0 0 20px rgba(255, 50, 50, 0.6); }
+}
+
+/* ── Key buttons (numeric keypad) — show text content ─────────────────── */
+.hit.key {
+  font-size: clamp(8px, 1.1vh, 14px);
+  color: #fff;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Prog button active state ─────────────────────────────────────────── */
+.hit.prog.active {
+  background: rgba(255, 200, 50, 0.25);
+  box-shadow: 0 0 10px rgba(255, 200, 50, 0.4);
+}
+
+/* ── Knobs — realistic SP-1200 style: flange base, domed cap, glossy ─── */
+.knob-wrap {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.knob {
+  width: 90%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  /* Flange base — wider dark rim */
+  background: radial-gradient(circle at 50% 55%, #2a2a2a 55%, #1a1a1a 70%, #111 85%, #0a0a0a);
+  border: 1px solid #333;
+  box-shadow:
+    0 3px 6px rgba(0,0,0,0.8),
+    0 1px 2px rgba(0,0,0,0.5),
+    inset 0 -2px 4px rgba(0,0,0,0.6),
+    0 0 0 2px rgba(30,30,30,0.8);
+  cursor: pointer;
+  pointer-events: auto;
+  position: relative;
+  overflow: hidden;
+}
+.knob:hover {
+  box-shadow:
+    0 3px 6px rgba(0,0,0,0.8),
+    0 1px 2px rgba(0,0,0,0.5),
+    inset 0 -2px 4px rgba(0,0,0,0.6),
+    0 0 0 2px rgba(50,50,50,0.8);
+}
+/* Raised dome cap with glossy highlight */
+.knob-cap {
+  position: absolute;
+  top: 12%;
+  left: 12%;
+  width: 76%;
+  height: 76%;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 38% 32%, rgba(140,155,175,0.35) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 50%, #2c2c30 0%, #1a1a1e 50%, #101014 100%);
+  box-shadow:
+    inset 0 1px 3px rgba(255,255,255,0.06),
+    inset 0 -1px 2px rgba(0,0,0,0.4);
+}
+/* White matte indicator line */
+.knob-indicator {
+  position: absolute;
+  width: 2px;
+  height: 38%;
+  background: #d0d0d0;
+  top: 8%;
+  left: 50%;
+  transform-origin: bottom center;
+  transform: translateX(-50%) rotate(-120deg);
+  border-radius: 1px;
+  opacity: 0.85;
+}
+
+/* ── LED indicators — brownish-red off, bright fire red on ──────────────── */
+.led {
+  position: absolute;
+  width: 0.9%;
+  height: 0.9%;
+  border-radius: 50%;
+  background: #5a2010;
+  border: 1px solid rgba(90,40,20,0.5);
+  z-index: 12;
+  pointer-events: none;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+/* All color variants same brownish-red when off */
+.led-yellow, .led-orange, .led-red { background: #5a2010; }
+
+/* Active state — bright fire red with glow */
+.led.on, .led-yellow.on, .led-orange.on, .led-red.on {
+  background: #ff2800;
+  border-color: #ff4400;
+  box-shadow: 0 0 5px 2px rgba(255,40,0,0.7), 0 0 12px rgba(255,40,0,0.35);
 }
 
 /* ── Scrollbar ──────────────────────────────────────────────────────────── */

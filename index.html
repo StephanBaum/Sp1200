@@ -8,111 +8,114 @@
 </head>
 <body>
   <div id="sp1200" class="sp1200">
-    <!-- Real SP-1200 photo as background -->
     <img src="/assets/sp1200-panel.png" class="panel-img" alt="SP-1200" draggable="false">
 
-    <!-- LCD overlay — dynamic text rendered on top of the photo LCD area -->
+    <!-- LCD — authentic 2-line 16-char display -->
     <div class="lcd-overlay" id="lcd-overlay">
-      <span class="lcd-text" id="display-mode">Song</span>
-      <span class="lcd-text" id="display-bpm">01</span>
-      <span class="lcd-text" id="display-pattern">&#9833;120.0</span>
-      <br>
-      <span class="lcd-text" id="display-bar">&nbsp;</span>
-      <span class="lcd-text" id="display-bank">&nbsp;</span>
-      <span class="lcd-text" id="display-memory">&nbsp;</span>
+      <div class="lcd-line" id="lcd-line1">Seg:01  J=090.0</div>
+      <div class="lcd-line" id="lcd-line2">&nbsp;</div>
     </div>
 
-    <!-- ZONE 1: Module SELECT buttons -->
-    <button class="hit" id="btn-sample-edit" style="left:15.5%;top:14.8%;width:3.2%;height:2.8%" title="Set-up"></button>
-    <button class="hit" id="btn-load-sample" style="left:27.2%;top:14.8%;width:3.2%;height:2.8%" title="Disk"></button>
-    <button class="hit" id="btn-auto-repeat" style="left:35.8%;top:14.8%;width:3.2%;height:2.8%" title="Sync"></button>
-    <button class="hit" id="btn-mic-record" style="left:43.5%;top:16.2%;width:3.2%;height:2.8%" title="Sample"></button>
+    <!-- ═══ LED INDICATORS ═══ -->
+    <!-- Module select LEDs (positions are centers, offset by -0.3%) -->
+    <div class="led" id="led-setup" style="left:12.7%;top:23.6%"></div>
+    <div class="led" id="led-disk" style="left:29.4%;top:23.6%"></div>
+    <div class="led led-yellow" id="led-sync" style="left:47.1%;top:23.6%"></div>
+    <div class="led led-yellow" id="led-sample" style="left:55.6%;top:23.6%"></div>
+    <!-- Programming mode LEDs -->
+    <div class="led led-orange" id="led-song" style="left:15.0%;top:39.5%"></div>
+    <div class="led led-yellow" id="led-segment" style="left:15.0%;top:43.9%"></div>
+    <!-- Performance mode LEDs -->
+    <div class="led led-yellow" id="led-tune" style="left:15.0%;top:54.6%"></div>
+    <div class="led led-orange" id="led-mix" style="left:15.0%;top:56.8%"></div>
+    <div class="led led-red" id="led-multi" style="left:15.0%;top:59.0%"></div>
+    <!-- Bank LEDs -->
+    <div class="led led-yellow" id="led-bank-a" style="left:15.0%;top:67.4%"></div>
+    <div class="led led-yellow" id="led-bank-b" style="left:15.0%;top:69.1%"></div>
+    <div class="led led-yellow" id="led-bank-c" style="left:15.0%;top:72.1%"></div>
+    <div class="led led-yellow" id="led-bank-d" style="left:15.0%;top:73.9%"></div>
+    <!-- Transport LEDs -->
+    <div class="led led-yellow" id="led-run" style="left:81.2%;top:67.3%"></div>
+    <div class="led led-yellow" id="led-record" style="left:87.1%;top:67.4%"></div>
 
-    <!-- Master Control: Tempo/nav/Enter row -->
-    <button class="hit" style="left:72.5%;top:28.5%;width:4%;height:2.2%"></button>
-    <button class="hit" style="left:77%;top:28.5%;width:2.5%;height:2.2%"></button>
-    <button class="hit" style="left:80%;top:28.5%;width:2.5%;height:2.2%"></button>
-    <button class="hit" style="left:83%;top:28.5%;width:3.5%;height:2.2%"></button>
+    <!-- ═══ MODULE SELECT ═══ -->
+    <button class="hit" id="btn-setup" style="left:11.5%;top:25.2%;width:2.6%;height:2.6%" title="Set up"></button>
+    <button class="hit" id="btn-disk" style="left:28.3%;top:25.2%;width:2.6%;height:2.6%" title="Disk"></button>
+    <button class="hit" id="btn-sync" style="left:45.9%;top:25.2%;width:2.6%;height:2.6%" title="Sync"></button>
+    <button class="hit" id="btn-sample" style="left:54.6%;top:25.2%;width:2.6%;height:2.6%" title="Sample"></button>
 
-    <!-- Master Control: Numeric keypad 4x3 -->
-    <button class="hit key" style="left:75.2%;top:34%;width:3.2%;height:2.8%"></button>
-    <button class="hit key" style="left:79%;top:34%;width:3.2%;height:2.8%"></button>
-    <button class="hit key" style="left:82.8%;top:34%;width:3.2%;height:2.8%"></button>
-    <button class="hit key" style="left:75.2%;top:37.5%;width:3.2%;height:2.8%"></button>
-    <button class="hit key" style="left:79%;top:37.5%;width:3.2%;height:2.8%"></button>
-    <button class="hit key" style="left:82.8%;top:37.5%;width:3.2%;height:2.8%"></button>
-    <button class="hit key" style="left:75.2%;top:41%;width:3.2%;height:2.8%"></button>
-    <button class="hit key" style="left:79%;top:41%;width:3.2%;height:2.8%"></button>
-    <button class="hit key" style="left:82.8%;top:41%;width:3.2%;height:2.8%"></button>
-    <button class="hit key" style="left:75.2%;top:44.5%;width:3.2%;height:2.8%"></button>
-    <button class="hit key" style="left:79%;top:44.5%;width:3.2%;height:2.8%"></button>
-    <button class="hit key" style="left:82.8%;top:44.5%;width:3.2%;height:2.8%"></button>
+    <!-- ═══ MASTER CONTROL ═══ -->
+    <button class="hit" id="btn-tempo" style="left:72.8%;top:34%;width:2.6%;height:2.6%" title="Tempo"></button>
+    <button class="hit" id="btn-nav-left" style="left:77.3%;top:34%;width:2.6%;height:2.6%" title="◄"></button>
+    <button class="hit" id="btn-nav-right" style="left:81.8%;top:34%;width:2.6%;height:2.6%" title="►"></button>
+    <button class="hit" id="btn-enter" style="left:86.3%;top:34%;width:2.6%;height:2.6%" title="Enter"></button>
 
-    <!-- ZONE 2: Programming row 1 (10 buttons) -->
-    <button class="hit prog" id="btn-pattern" style="left:17%;top:50.2%;width:3%;height:2.5%"></button>
-    <button class="hit prog" id="btn-tap-tempo" style="left:23.5%;top:50.2%;width:3%;height:2.5%"></button>
-    <button class="hit prog" id="btn-truncate" style="left:30%;top:50.2%;width:3%;height:2.5%"></button>
-    <button class="hit prog rec" id="btn-record" style="left:36.5%;top:50.2%;width:3%;height:2.5%"></button>
-    <button class="hit prog" id="btn-song" style="left:43%;top:50.2%;width:3%;height:2.5%"></button>
-    <button class="hit prog" id="btn-loop" style="left:49.5%;top:50.2%;width:3%;height:2.5%"></button>
-    <button class="hit prog" id="btn-reverse" style="left:56%;top:50.2%;width:3%;height:2.5%"></button>
-    <button class="hit prog" style="left:62.5%;top:50.2%;width:3%;height:2.5%"></button>
-    <button class="hit prog" style="left:69%;top:50.2%;width:3%;height:2.5%"></button>
-    <button class="hit prog" style="left:75.5%;top:50.2%;width:3%;height:2.5%"></button>
+    <!-- ═══ NUMERIC KEYPAD (0-9 only, Enter confirms) ═══ -->
+    <button class="hit key" data-key="1" style="left:75.6%;top:48%;width:2.6%;height:2.6%">1</button>
+    <button class="hit key" data-key="2" style="left:79.5%;top:48%;width:2.6%;height:2.6%">2</button>
+    <button class="hit key" data-key="3" style="left:83.5%;top:48%;width:2.6%;height:2.6%">3</button>
+    <button class="hit key" data-key="4" style="left:75.6%;top:51.9%;width:2.6%;height:2.6%">4</button>
+    <button class="hit key" data-key="5" style="left:79.5%;top:51.9%;width:2.6%;height:2.6%">5</button>
+    <button class="hit key" data-key="6" style="left:83.5%;top:51.9%;width:2.6%;height:2.6%">6</button>
+    <button class="hit key" data-key="7" style="left:75.6%;top:55.9%;width:2.6%;height:2.6%">7</button>
+    <button class="hit key" data-key="8" style="left:79.5%;top:55.9%;width:2.6%;height:2.6%">8</button>
+    <button class="hit key" data-key="9" style="left:83.5%;top:55.9%;width:2.6%;height:2.6%">9</button>
+    <button class="hit key" data-key="0" style="left:79.5%;top:59.8%;width:2.6%;height:2.6%">0</button>
 
-    <!-- Programming row 2 -->
-    <button class="hit prog" style="left:17%;top:54.5%;width:3%;height:2.5%"></button>
-    <button class="hit prog" style="left:23.5%;top:54.5%;width:3%;height:2.5%"></button>
-    <button class="hit prog" style="left:30%;top:54.5%;width:3%;height:2.5%"></button>
-    <button class="hit prog" style="left:36.5%;top:54.5%;width:3%;height:2.5%"></button>
-    <button class="hit prog" style="left:43%;top:54.5%;width:3%;height:2.5%"></button>
-    <button class="hit prog" style="left:49.5%;top:54.5%;width:3%;height:2.5%"></button>
-    <button class="hit prog" style="left:56%;top:54.5%;width:3%;height:2.5%"></button>
-    <button class="hit prog" style="left:62.5%;top:54.5%;width:3%;height:2.5%"></button>
-    <button class="hit prog" id="btn-step-edit" style="left:69%;top:54.5%;width:3%;height:2.5%"></button>
-    <button class="hit prog" style="left:75.5%;top:54.5%;width:3%;height:2.5%"></button>
+    <!-- ═══ PROGRAMMING (9 dual-function toggles) ═══ -->
+    <button class="hit prog" id="prog-1" data-upper="song" data-lower="segment" style="left:11.5%;top:40.6%;width:2.6%;height:2.6%" title="Song / Segment"></button>
+    <button class="hit prog" id="prog-2" data-upper="trigger" data-lower="metronome" style="left:21.4%;top:40.6%;width:2.6%;height:2.6%" title="Trigger / Metronome"></button>
+    <button class="hit prog" id="prog-3" data-upper="repeat" data-lower="swing" style="left:27.3%;top:40.6%;width:2.6%;height:2.6%" title="Repeat / Swing"></button>
+    <button class="hit prog" id="prog-4" data-upper="tabsong" data-lower="copy" style="left:33.2%;top:40.6%;width:2.6%;height:2.6%" title="Tabsong / Copy"></button>
+    <button class="hit prog" id="prog-5" data-upper="end" data-lower="time-sig" style="left:39.3%;top:40.6%;width:2.6%;height:2.6%" title="End / Time Signature"></button>
+    <button class="hit prog" id="prog-6" data-upper="insert" data-lower="seg-length" style="left:45.2%;top:40.6%;width:2.6%;height:2.6%" title="Insert / Segment Length"></button>
+    <button class="hit prog" id="prog-7" data-upper="delete" data-lower="erase" style="left:51.1%;top:40.6%;width:2.6%;height:2.6%" title="Delete / Erase"></button>
+    <button class="hit prog" id="prog-8" data-upper="tempo-change" data-lower="auto-correct" style="left:57.1%;top:40.6%;width:2.6%;height:2.6%" title="Tempo Change / Auto Correct"></button>
+    <button class="hit prog" id="prog-9" data-upper="mix-change" data-lower="step-program" style="left:63.0%;top:40.6%;width:2.6%;height:2.6%" title="Mix Change / Step Program"></button>
 
-    <!-- ZONE 3 Performance: Mode buttons (left) -->
-    <button class="hit mode-btn active" data-mode="volume" style="left:13.5%;top:62.5%;width:4.2%;height:3%"></button>
-    <button class="hit mode-btn" data-mode="pitch" style="left:13.5%;top:66%;width:4.2%;height:2.5%"></button>
-    <button class="hit" style="left:13.5%;top:69%;width:4.2%;height:3%"></button>
-    <div class="fader-mode-switch" style="display:none">
-      <button class="mode-btn active" data-mode="volume"></button>
-      <button class="mode-btn" data-mode="pitch"></button>
+    <!-- ═══ PERFORMANCE: Mode button (cycles) ═══ -->
+    <button class="hit mode-btn" id="btn-mode" style="left:11.5%;top:55.9%;width:2.6%;height:2.6%" title="Tune/Decay → Mix → Multi Mode"></button>
+
+    <!-- ═══ KNOBS: Gain, Mix Volume, Metronome Volume ═══ -->
+    <div class="knob-wrap" style="left:62%;top:24.1%;width:5%;height:5%">
+      <div class="knob" id="knob-gain" title="Gain"><div class="knob-cap"><div class="knob-indicator"></div></div></div>
+    </div>
+    <div class="knob-wrap" style="left:74.5%;top:39.3%;width:5.5%;height:5.5%">
+      <div class="knob" id="knob-mix-vol" title="Mix Volume"><div class="knob-cap"><div class="knob-indicator"></div></div></div>
+    </div>
+    <div class="knob-wrap" style="left:82.4%;top:39.4%;width:5.5%;height:5.5%">
+      <div class="knob" id="knob-metro-vol" title="Metronome Volume"><div class="knob-cap"><div class="knob-indicator"></div></div></div>
     </div>
 
-    <!-- Select + Bank buttons -->
-    <button class="hit" style="left:13.5%;top:73%;width:4.2%;height:2.5%"></button>
-    <button class="hit bank-btn active" data-bank="0" style="left:13.5%;top:77%;width:4.2%;height:2.5%"></button>
-    <button class="hit bank-btn" data-bank="1" style="left:13.5%;top:80%;width:4.2%;height:2.5%"></button>
-    <button class="hit bank-btn" data-bank="2" style="left:13.5%;top:83%;width:4.2%;height:2.5%"></button>
-    <button class="hit bank-btn" data-bank="3" style="left:13.5%;top:86%;width:4.2%;height:2.5%"></button>
+    <!-- ═══ BANK: ONE cycling button ═══ -->
+    <button class="hit bank-btn" id="btn-bank" style="left:11.5%;top:69.6%;width:2.6%;height:2.4%" title="Bank (cycles A→B→C→D)"></button>
 
-    <!-- 8 Faders (transparent overlay on photo faders) -->
-    <div class="fader-hit" style="left:21.5%;top:60%;width:4%;height:24%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
-    <div class="fader-hit" style="left:28.5%;top:60%;width:4%;height:24%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
-    <div class="fader-hit" style="left:35.5%;top:60%;width:4%;height:24%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
-    <div class="fader-hit" style="left:42.5%;top:60%;width:4%;height:24%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
-    <div class="fader-hit" style="left:49.5%;top:60%;width:4%;height:24%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
-    <div class="fader-hit" style="left:56.5%;top:60%;width:4%;height:24%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
-    <div class="fader-hit" style="left:63.5%;top:60%;width:4%;height:24%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
-    <div class="fader-hit" style="left:70.5%;top:60%;width:4%;height:24%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
+    <!-- ═══ 8 FADERS — exact from mapper: tracks at x centers 22.75/28.71/34.55/40.54/46.38/52.38/58.21/64.25, y=50.7-63.7% ═══ -->
+    <div class="fader-hit" style="left:20.2%;top:50%;width:5%;height:14.5%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
+    <div class="fader-hit" style="left:26.2%;top:50%;width:5%;height:14.5%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
+    <div class="fader-hit" style="left:32.0%;top:50%;width:5%;height:14.5%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
+    <div class="fader-hit" style="left:38.0%;top:50%;width:5%;height:14.5%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
+    <div class="fader-hit" style="left:43.9%;top:50%;width:5%;height:14.5%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
+    <div class="fader-hit" style="left:49.9%;top:50%;width:5%;height:14.5%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
+    <div class="fader-hit" style="left:55.7%;top:50%;width:5%;height:14.5%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
+    <div class="fader-hit" style="left:61.7%;top:50%;width:5%;height:14.5%"><div class="fader-track"><div class="fader-thumb"></div></div></div>
 
-    <!-- 8 Pads -->
-    <button class="pad" data-pad="0" style="left:20%;top:86.5%;width:5%;height:3.5%"></button>
-    <button class="pad" data-pad="1" style="left:27%;top:86.5%;width:5%;height:3.5%"></button>
-    <button class="pad" data-pad="2" style="left:34%;top:86.5%;width:5%;height:3.5%"></button>
-    <button class="pad" data-pad="3" style="left:41%;top:86.5%;width:5%;height:3.5%"></button>
-    <button class="pad" data-pad="4" style="left:48%;top:86.5%;width:5%;height:3.5%"></button>
-    <button class="pad" data-pad="5" style="left:55%;top:86.5%;width:5%;height:3.5%"></button>
-    <button class="pad" data-pad="6" style="left:62%;top:86.5%;width:5%;height:3.5%"></button>
-    <button class="pad" data-pad="7" style="left:69%;top:86.5%;width:5%;height:3.5%"></button>
+    <!-- ═══ 8 PADS — exact from mapper clicks ═══ -->
+    <button class="pad" data-pad="0" style="left:20.5%;top:68.6%;width:4.2%;height:4.2%"></button>
+    <button class="pad" data-pad="1" style="left:26.2%;top:68.6%;width:4.2%;height:4.2%"></button>
+    <button class="pad" data-pad="2" style="left:32.3%;top:68.6%;width:4.2%;height:4.2%"></button>
+    <button class="pad" data-pad="3" style="left:38.1%;top:68.6%;width:4.2%;height:4.2%"></button>
+    <button class="pad" data-pad="4" style="left:44.2%;top:68.6%;width:4.2%;height:4.2%"></button>
+    <button class="pad" data-pad="5" style="left:50.1%;top:68.6%;width:4.2%;height:4.2%"></button>
+    <button class="pad" data-pad="6" style="left:56.1%;top:68.6%;width:4.2%;height:4.2%"></button>
+    <button class="pad" data-pad="7" style="left:61.9%;top:68.6%;width:4.2%;height:4.2%"></button>
 
-    <!-- Transport (bottom right) -->
-    <button class="hit" id="btn-play" style="left:81%;top:79%;width:5.5%;height:3%"></button>
-    <button class="hit" id="btn-stop" style="left:81%;top:82.5%;width:5.5%;height:3%"></button>
+    <!-- ═══ TRANSPORT — exact from mapper clicks ═══ -->
+    <button class="hit" id="btn-tap-tempo" style="left:73.96%;top:69.25%;width:3.4%;height:3.4%" title="Tap/Repeat"></button>
+    <button class="hit" id="btn-run-stop" style="left:79.79%;top:69.25%;width:3.5%;height:3.3%" title="Run/Stop"></button>
+    <button class="hit rec" id="btn-record" style="left:86.46%;top:69.83%;width:2.1%;height:2.0%" title="Record/Edit"></button>
 
-    <!-- Hidden JS-required elements -->
+    <!-- Hidden functional elements -->
     <div style="position:absolute;left:-9999px;opacity:0;pointer-events:none">
       <select id="quantize-select">
         <option value="96">1/4</option><option value="48">1/8</option>

@@ -5,25 +5,23 @@ export class FadersUI {
     this.values = new Float32Array(8).fill(0.75);
     this.thumbs = document.querySelectorAll('.fader-thumb');
     this.tracks = document.querySelectorAll('.fader-track');
-    this._bindModeSwitcher();
     this._bindDrag();
     this._updateAllPositions();
-  }
-  _bindModeSwitcher() {
-    const buttons = document.querySelectorAll('.fader-mode-switch .mode-btn');
-    buttons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        buttons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.mode = btn.dataset.mode;
-      });
-    });
   }
   _bindDrag() {
     this.thumbs.forEach((thumb, index) => {
       let dragging = false;
       const track = this.tracks[index];
       thumb.addEventListener('mousedown', (e) => { dragging = true; e.preventDefault(); });
+      track.addEventListener('mousedown', (e) => {
+        dragging = true;
+        const rect = track.getBoundingClientRect();
+        const y = 1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+        this.values[index] = y;
+        this._updatePosition(index);
+        this._sendValue(index);
+        this._notifyDisplay();
+      });
       document.addEventListener('mousemove', (e) => {
         if (!dragging) return;
         const rect = track.getBoundingClientRect();
@@ -31,6 +29,7 @@ export class FadersUI {
         this.values[index] = y;
         this._updatePosition(index);
         this._sendValue(index);
+        this._notifyDisplay();
       });
       document.addEventListener('mouseup', () => { dragging = false; });
     });
@@ -44,8 +43,20 @@ export class FadersUI {
   _sendValue(index) {
     if (this.mode === 'volume') {
       this.engine.setParam('volume', index, this.values[index]);
-    } else {
+    } else if (this.mode === 'pitch') {
       this.engine.setParam('pitch', index, 0.5 + this.values[index] * 1.5);
+    } else {
+      this.engine.setParam('decay', index, this.values[index]);
     }
+  }
+  _notifyDisplay() {
+    document.dispatchEvent(new CustomEvent('fader-update', { detail: { values: Array.from(this.values), mode: this.mode } }));
+  }
+  // Called by keyboard UI when faders change via keys
+  setValueFromKeyboard(index, value) {
+    this.values[index] = value;
+    this._updatePosition(index);
+    this._sendValue(index);
+    this._notifyDisplay();
   }
 }

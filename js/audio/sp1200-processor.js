@@ -23,6 +23,38 @@ const FILTER_FIXED = [2, 3, 4, 5];
 // FILTER_NONE = [6, 7]
 
 // ---------------------------------------------------------------------------
+// Metronome Click Generator
+// ---------------------------------------------------------------------------
+class MetronomeClick {
+  constructor() {
+    this.counter = 0;
+    this.length = 200; // ~5ms at 44100Hz
+    this.frequency = 1000;
+    this.active = false;
+    this.phase = 0;
+  }
+  trigger(isDownbeat) {
+    this.frequency = isDownbeat ? 1000 : 800;
+    this.counter = 0;
+    this.active = true;
+    this.phase = 0;
+  }
+  process() {
+    if (!this.active) return 0;
+    if (this.counter >= this.length) {
+      this.active = false;
+      return 0;
+    }
+    const sample = Math.sin(this.phase * 2 * Math.PI);
+    this.phase += this.frequency / 44100;
+    // Apply a quick fade-out envelope to avoid clicks at the end
+    const envelope = 1 - (this.counter / this.length);
+    this.counter++;
+    return sample * envelope;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Voice (from js/dsp/voice.js)
 // ---------------------------------------------------------------------------
 class Voice {
@@ -155,6 +187,7 @@ class FixedFilter {
 // ---------------------------------------------------------------------------
 class Mixer {
   constructor() {
+    this.masterVolume = 0.8;
     this.channels = Array.from({ length: NUM_PADS }, () => ({
       volume: 1.0,
       pan: 0,
@@ -345,8 +378,9 @@ class SP1200Processor extends AudioWorkletProcessor {
     this.dynamicFilters = [new SSM2044Filter(), new SSM2044Filter()];
     this.fixedFilters = [new FixedFilter(), new FixedFilter(), new FixedFilter(), new FixedFilter()];
 
-    // Mixer
+    // Mixer + input gain
     this.mixer = new Mixer();
+    this.inputGain = 1.0;
 
     // Clock (AudioWorklet global sampleRate)
     this.clock = new Clock(sampleRate);
@@ -369,6 +403,11 @@ class SP1200Processor extends AudioWorkletProcessor {
 
     // Auto-repeat: when pattern ends, loop back
     this.autoRepeat = true;
+
+    // Metronome
+    this.metronomeEnabled = false;
+    this.metronomeVolume = 0.7;
+    this.metronomeClick = new MetronomeClick();
 
     // Pending events scheduled (tick → [{pad, velocity}])
     this._pendingEvents = new Map();
@@ -455,6 +494,14 @@ class SP1200Processor extends AudioWorkletProcessor {
         this.autoRepeat = !!msg.enabled;
         break;
 
+      case 'set-metronome':
+        this.metronomeEnabled = !!msg.enabled;
+        break;
+
+      case 'set-metronome-vol':
+        this.metronomeVolume = Math.max(0, Math.min(1, msg.vol));
+        break;
+
       default:
         break;
     }
@@ -534,6 +581,13 @@ class SP1200Processor extends AudioWorkletProcessor {
           this.dynamicFilters[FILTER_DYNAMIC.indexOf(pad)].setResonance(value);
         }
         break;
+      case 'gain':
+        // Input gain 0-1 maps to 0-2x amplification
+        this.inputGain = value * 2;
+        break;
+      case 'mix-volume':
+        this.mixer.masterVolume = Math.max(0, Math.min(1, value));
+        break;
     }
   }
 
@@ -573,6 +627,12 @@ class SP1200Processor extends AudioWorkletProcessor {
     const events = pattern.getEventsAtTick(swungTick);
     for (const ev of events) {
       this._triggerVoice(ev.track, ev.velocity);
+    }
+
+    // Metronome click on quarter-note boundaries
+    if (this.metronomeEnabled && this.patternTick % PPQN === 0) {
+      const beatInBar = (this.patternTick / PPQN) % 4;
+      this.metronomeClick.trigger(beatInBar === 0);
     }
 
     // Post tick position
@@ -643,8 +703,9 @@ class SP1200Processor extends AudioWorkletProcessor {
 
       // Mix to stereo
       const [left, right] = this.mixer.process(voiceOutputs);
-      leftOut[i] = left;
-      rightOut[i] = right;
+      const metroSample = this.metronomeClick.process() * this.metronomeVolume;
+      leftOut[i] = left * this.mixer.masterVolume + metroSample;
+      rightOut[i] = right * this.mixer.masterVolume + metroSample;
     }
 
     return true; // keep processor alive

@@ -10,10 +10,7 @@ export class StepEditUI {
     this._bind();
   }
   _bind() {
-    document.getElementById('btn-step-edit').addEventListener('click', () => {
-      this.active = !this.active;
-      if (this.active) { this.currentStep = 0; this._updateDisplay(); }
-    });
+    // Listen for step-edit mode activation from transport
     document.addEventListener('step-navigate', (e) => {
       if (!this.active) return;
       this.currentStep = e.detail.step;
@@ -31,6 +28,7 @@ export class StepEditUI {
       this.quantizeGrid = parseInt(e.target.value, 10);
     });
   }
+  setActive(active) { this.active = active; if (active) { this.currentStep = 0; this._updateDisplay(); } }
   _updateDisplay() {
     const beat = Math.floor(this.currentStep / 4) + 1;
     const sub = (this.currentStep % 4) + 1;
