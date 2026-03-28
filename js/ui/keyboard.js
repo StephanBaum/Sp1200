@@ -47,18 +47,30 @@ export class KeyboardUI {
         return;
       }
 
-      // ── Shift+Up → Performance mode cycling ────────────────────
-      if ((e.key === 'ArrowUp' || code === 'ArrowUp') && e.shiftKey) {
+      // ── [ → Performance mode cycling (Tune/Mix/Multi) ─────────
+      if (key === '[' || code === 'BracketLeft') {
         e.preventDefault();
-        e.stopPropagation();
         document.getElementById('btn-mode')?.click();
         return;
       }
 
-      // ── Shift+Down → Bank cycling ──────────────────────────────
-      if ((e.key === 'ArrowDown' || code === 'ArrowDown') && e.shiftKey) {
+      // ── ] → Bank cycling (A/B/C/D) ────────────────────────────
+      if (key === ']' || code === 'BracketRight') {
         e.preventDefault();
-        e.stopPropagation();
+        document.getElementById('btn-bank')?.click();
+        return;
+      }
+
+      // ── ArrowUp → Shift+Up also works for mode cycling ────────
+      if (e.key === 'ArrowUp' && e.shiftKey) {
+        e.preventDefault();
+        document.getElementById('btn-mode')?.click();
+        return;
+      }
+
+      // ── ArrowDown → Shift+Down also works for bank cycling ────
+      if (e.key === 'ArrowDown' && e.shiftKey) {
+        e.preventDefault();
         document.getElementById('btn-bank')?.click();
         return;
       }
@@ -135,8 +147,8 @@ export class KeyboardUI {
         return;
       }
 
-      // ── Alt → Tap/Repeat ───────────────────────────────────────
-      if (code === 'AltLeft' || code === 'AltRight') {
+      // ── Alt or \ (backslash) → Tap/Repeat ──────────────────────
+      if (code === 'Backslash' || (code === 'AltLeft' && e.preventDefault())) {
         e.preventDefault();
         document.getElementById('btn-tap-tempo')?.click();
         return;
