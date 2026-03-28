@@ -20,6 +20,8 @@ export class SetupHandler {
       case 'reverse-sound': return this._reverseSound(msg);
       case 'erase-segment': return this._eraseSegment(msg);
       case 'copy-segment': return this._copySegment(msg);
+      case 'truncate': return this._truncate(msg);
+      case 'erase-track': return this._eraseTrack(msg);
       default: return false;
     }
   }
@@ -162,6 +164,36 @@ export class SetupHandler {
     if (seg >= 0 && seg < MAX_PATTERNS) {
       p.patterns[seg].clear();
       p.port.postMessage({ type: 'segment-erased', segment: seg });
+    }
+    return true;
+  }
+
+  _truncate(msg) {
+    const p = this.processor;
+    const pad = msg.pad;
+    if (pad >= 0 && pad < NUM_PADS) {
+      const voice = p.voices[pad];
+      if (voice.buffer) {
+        const start = msg.start ?? 0;
+        const end = msg.end ?? voice.buffer.length;
+        const newBuf = voice.buffer.slice(start, end);
+        voice.buffer = newBuf;
+        voice.length = newBuf.length;
+        p.port.postMessage({ type: 'truncated', pad });
+      }
+    }
+    return true;
+  }
+
+  _eraseTrack(msg) {
+    const p = this.processor;
+    const pat = p.patterns[p.currentPatternIndex];
+    if (msg.pad >= 0 && msg.pad < pat.tracks.length) {
+      const tick = p.patternTick;
+      const window = p.quantizeGrid;
+      pat.tracks[msg.pad].events = pat.tracks[msg.pad].events.filter(
+        e => Math.abs(e.tick - tick) > window
+      );
     }
     return true;
   }

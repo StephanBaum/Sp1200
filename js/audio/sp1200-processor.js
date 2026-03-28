@@ -67,6 +67,13 @@ class SP1200Processor extends AudioWorkletProcessor {
     this.channelAssign = new Uint8Array(8);
     for (let i = 0; i < 8; i++) this.channelAssign[i] = i;
 
+    // Sync / MIDI / time-sig state
+    this.syncMode = 1; // 1=internal, 2=midi
+    this.midiChannel = 1;
+    this.midiMode = 'omni';
+    this.timeSig = '4/4';
+    this.clickDivisor = 1;
+
     // Setup handler for setup-module messages
     this.setup = new SetupHandler(this);
 
@@ -185,6 +192,47 @@ class SP1200Processor extends AudioWorkletProcessor {
           this.clock.stop();
           this.port.postMessage({ type: 'song-end' });
         }
+        break;
+      }
+
+      case 'set-sync':
+        this.syncMode = msg.mode; // 1=internal, 2=midi
+        break;
+
+      case 'set-midi-channel':
+        this.midiChannel = Math.max(1, Math.min(16, msg.channel));
+        break;
+
+      case 'set-midi-mode':
+        this.midiMode = msg.mode; // 'omni' | 'poly'
+        break;
+
+      case 'set-time-sig':
+        this.timeSig = msg.timeSig;
+        break;
+
+      case 'set-click-divisor':
+        this.clickDivisor = Math.max(1, msg.divisor || 1);
+        break;
+
+      case 'song-end-mark':
+        this.song.addStep(this.song.currentSong, 999, { type: 'end' });
+        this.port.postMessage({ type: 'song-end-mark-set' });
+        break;
+
+      case 'song-insert': {
+        const songNum = msg.song ?? this.song.currentSong;
+        const step = msg.step ?? msg.segment ?? 0;
+        this.song.addStep(songNum, step, { type: 'segment', value: step });
+        this.port.postMessage({ type: 'song-step-inserted' });
+        break;
+      }
+
+      case 'song-delete': {
+        const songNum = msg.song ?? this.song.currentSong;
+        const step = msg.step ?? 0;
+        this.song.deleteStep(songNum, step);
+        this.port.postMessage({ type: 'song-step-deleted' });
         break;
       }
 
