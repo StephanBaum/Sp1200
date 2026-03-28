@@ -142,10 +142,23 @@ export function confirmEntry(s) {
     // No numeric buffer — handle confirm for non-numeric editParam states
     switch (s.editParam) {
       case 'sample-level':
-        s.editParam = 'module-func';
+        // Enter confirms gain, returns to VU mode
+        s.editParam = 'vu-mode';
         s.display.setLine1(s.vuPadLabel());
         document.dispatchEvent(new Event('sample-start-vu'));
-        break;
+        return; // skip editParam clearing below
+      case 'sample-length':
+        // Enter locks sample length, returns to VU mode
+        s.editParam = 'vu-mode';
+        s.display.setLine1(s.vuPadLabel());
+        document.dispatchEvent(new Event('sample-start-vu'));
+        return;
+      case 'threshold':
+        // Enter confirms threshold, returns to VU mode
+        s.editParam = 'vu-mode';
+        s.display.setLine1(s.vuPadLabel());
+        document.dispatchEvent(new Event('sample-start-vu'));
+        return;
       case 'smpte-rate':
         s.editParam = 'module-func';
         s.display.flash('SMPTE Set', s.smpteLabel());

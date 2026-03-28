@@ -119,15 +119,45 @@ export function bindKeypad(s) {
       if (s.editParam === 'assign-voice-channel') {
         s.numericBuffer += key;
         s.moduleDisplay('Sampling ' + _padLabel(s, s._pendingPad), 'Output Channel ' + s.numericBuffer);
-        if (s.numericBuffer.length >= 2) {
-          const ch = parseInt(s.numericBuffer, 10);
-          if (ch >= 1 && ch <= 16) {
-            s.engine.send({ type: 'channel-assign', pad: s._pendingPad, channel: ch });
-          }
+        // Single digit for channel 1-8, auto-confirm
+        const ch = parseInt(s.numericBuffer, 10);
+        if (ch >= 1 && ch <= 8) {
+          s.engine.send({ type: 'channel-assign', pad: s._pendingPad, channel: ch });
+          if (!s.channelAssign) s.channelAssign = new Uint8Array(8);
+          s.channelAssign[s._pendingPad] = ch - 1;
           s._pendingPad = null;
-          s.editParam = 'module-func';
+          // Return to VU mode (per manual: "You are then returned to Option 1")
+          s.editParam = 'vu-mode';
           s.numericBuffer = '';
+          s.display.setLine1(s.vuPadLabel());
+          document.dispatchEvent(new Event('sample-start-vu'));
         }
+        return;
+      }
+
+      // ── Resample confirm (Sample 6) ───────────────────────────────────
+      if (s.editParam === 'resample-confirm') {
+        if (key === '9') {
+          // Start recording with existing pad/settings
+          s.moduleDisplay('Sampling...', '');
+          s.listenSampleDone();
+          document.dispatchEvent(new Event('sample-force'));
+        } else if (key === '7') {
+          // Return to VU
+          s.editParam = 'vu-mode';
+          s.numericBuffer = '';
+          s.display.setLine1(s.vuPadLabel());
+          document.dispatchEvent(new Event('sample-start-vu'));
+        }
+        return;
+      }
+
+      // ── VU mode — keypad selects function number ──────────────────────
+      if (s.editParam === 'vu-mode') {
+        // In VU mode, pressing a number enters that sample function
+        s.editParam = 'module-func';
+        s.numericBuffer = key;
+        handleModuleFunction(s, parseInt(key, 10));
         return;
       }
 

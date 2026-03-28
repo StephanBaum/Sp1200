@@ -30,7 +30,6 @@ let micChunks = [];
 let micAnalyser = null;
 let micSource = null;
 let vuAnimFrame = null;
-let sampleMaxLength = 2.5; // seconds, adjustable via Sample opt 5
 let sampleArmed = false;
 
 async function init() {
@@ -132,8 +131,25 @@ async function init() {
     });
   });
 
-  // Fader value → display bar graph or tune values
+  // Fader value → display bar graph, tune values, or sample params
   document.addEventListener('fader-update', (e) => {
+    const slider1 = e.detail.values[0];
+
+    // Sample module: slider 1 controls threshold or sample length
+    if (state.editParam === 'threshold') {
+      state.sampleThreshold = slider1;
+      display.setLine1('Arm Slider #1');
+      display.showVU(slider1); // show threshold level as VU marker
+      return;
+    }
+    if (state.editParam === 'sample-length') {
+      // Map 0-1 to 0.1-2.5 seconds
+      state.sampleLength = Math.round((0.1 + slider1 * 2.4) * 10) / 10;
+      state.moduleDisplay('Length: ' + state.sampleLength.toFixed(1) + ' secs', 'Use Slider #1');
+      return;
+    }
+
+    // Normal display
     if (e.detail.mode === 'pitch') {
       display.showTuneLevels(e.detail.values);
     } else {
@@ -246,7 +262,7 @@ async function startVUMonitoring() {
       const level = Math.min(1, rms * 4);
       display.showVU(level);
 
-      if (sampleArmed && level > 0.05) {
+      if (sampleArmed && level > (state?.sampleThreshold || 0.05)) {
         sampleArmed = false;
         startForceRecording();
       }
@@ -320,7 +336,7 @@ async function startForceRecording() {
       if (micRecorder && micRecorder.state === 'recording') {
         micRecorder.stop();
       }
-    }, sampleMaxLength * 1000);
+    }, (state?.sampleLength || 2.5) * 1000);
   } catch (err) {
     console.error('Recording failed:', err);
     document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false } }));

@@ -27,6 +27,8 @@ export class SP1200State {
     this._pendingPad = null;
     this.sampleGainIndex = 0;
     this.selectedSamplePad = 0;
+    this.sampleLength = 2.5;     // seconds, adjustable via Sample opt 5
+    this.sampleThreshold = 0.05; // VU level 0-1, adjustable via Sample opt 4
     this.smpteIndex = 0;
     this.currentSong = 0;
     this.multiMode = null; // null | 'pitch' | 'level'
@@ -83,9 +85,11 @@ export class SP1200State {
   vuPadLabel() {
     const bank = ['A', 'B', 'C', 'D'][this.currentBank];
     const pad = (this.selectedSamplePad || 0) + 1;
-    const gains = ['0dB', '+20dB', '+40dB'];
+    const gains = ['+00dB', '+20dB', '+40dB'];
     const gain = gains[this.sampleGainIndex || 0];
-    return bank + pad + '     ' + gain;
+    // Pad label left, gain right, padded to 16 chars. TODO: asterisk if pad has sound
+    const left = bank + pad;
+    return (left + '              ' + gain).substring(0, 16);
   }
 
   gainLabel() {

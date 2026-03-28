@@ -160,53 +160,54 @@ export function handleModuleFunction(s, funcNum) {
   }
   else if (mod === 'sample') {
     switch (funcNum) {
-      case 1:
-        // Screenshot: "A1     +00dB" / VU meter
-        s.editParam = null;
+      case 1: // VU Mode — "A1      +00dB" / live VU meter on line 2
+        s.editParam = 'vu-mode';
         s.display.lock();
         s.display.setLine1(s.vuPadLabel());
         document.dispatchEvent(new Event('sample-start-vu'));
         break;
-      case 2:
-        // Screenshot: "Sampling A8" then "Output Channel 7"
+
+      case 2: // Assign Voice — "Sampling" / select pad → "Sampling A1" / "Output Channel 7"
         s.editParam = 'select-pad';
         s.pendingAction = 'assign-voice';
         s.moduleDisplay('Sampling', 'Select Sound');
         break;
-      case 3:
-        // Screenshot: "Input Gain +20dB" / "Use + and -"
+
+      case 3: // Input Gain — "Input Gain +20dB" / "Use + and -"
         s.editParam = 'sample-level';
         s.moduleDisplay('Input Gain ' + s.gainLabel(), 'Use + and -');
         break;
-      case 4:
-        // Screenshot: VU meter with threshold marker
+
+      case 4: // Threshold — full VU display, slider 1 sets threshold level
         s.editParam = 'threshold';
         s.display.lock();
-        s.display.setLine1('');
+        s.display.setLine1('Arm Slider #1');
         document.dispatchEvent(new Event('sample-start-vu'));
         break;
-      case 5:
-        // Screenshot: "Length: 2.5 secs" / "Use Slider #1"
+
+      case 5: // Sample Length — "Length: X.X secs" / "Use Slider #1"
         s.editParam = 'sample-length';
-        s.moduleDisplay('Length: 2.5 secs', 'Use Slider #1');
+        s.moduleDisplay('Length: ' + s.sampleLength.toFixed(1) + ' secs', 'Use Slider #1');
         break;
-      case 6:
-        // Screenshot: "A8  *  +20dB" — reuse last settings
-        s.moduleDisplay(s.vuPadLabel(), 'Resample');
+
+      case 6: // Resample — reuse last pad + settings, record immediately
+        s.moduleDisplay(s.vuPadLabel(), 'Resample? Y/N');
+        s.editParam = 'resample-confirm';
         break;
-      case 7:
-        // Arm — show VU, wait for threshold
+
+      case 7: // Arm Sampling — "Sample Armed" / VU, waits for threshold breach
         s.moduleDisplay('Sample Armed', 'Waiting...');
         s.listenSampleDone();
         document.dispatchEvent(new Event('sample-arm'));
         document.dispatchEvent(new Event('sample-start-vu'));
         break;
-      case 9:
-        // Force — record immediately
+
+      case 9: // Force Sample — record immediately
         s.moduleDisplay('Sampling...', '');
         s.listenSampleDone();
         document.dispatchEvent(new Event('sample-force'));
         break;
+
       default:
         s.moduleDisplay('Sample ' + funcNum, 'Not available');
     }
