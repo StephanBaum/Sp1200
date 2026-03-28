@@ -178,7 +178,7 @@ body {
 
 /* ── Prog button active state — uses filter glow from .hit.active ────── */
 
-/* ── Knobs — realistic SP-1200 style: flange base, domed cap, glossy ─── */
+/* ── Knobs — sprite rotates, light reflection stays static ────────────── */
 .knob-wrap {
   position: absolute;
   z-index: 10;
@@ -187,8 +187,18 @@ body {
   justify-content: center;
   pointer-events: none;
 }
+/* Static light reflection overlay — doesn't rotate */
+.knob-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 38% 30%, rgba(180, 195, 210, 0.25) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 2;
+}
 .knob {
-  width: 100%;
+  width: 75%;
   aspect-ratio: 1;
   border-radius: 50%;
   background: url('/assets/knob.png') center/contain no-repeat;
