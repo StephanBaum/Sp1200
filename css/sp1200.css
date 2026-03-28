@@ -120,20 +120,11 @@ body {
   overflow: hidden;
 }
 
-/* ── Fader overlays — img-based track + cap ───────────────────────────── */
+/* ── Fader overlays — track on faceplate, cap is fader.png rotated 90° ── */
 .fader-hit {
   position: absolute;
   z-index: 10;
   border: none;
-}
-
-.fader-img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: fill;
-  pointer-events: none;
 }
 
 .fader-track {
@@ -142,15 +133,14 @@ body {
   height: 100%;
   cursor: pointer;
   background: transparent;
-  z-index: 1;
 }
 
-/* Fader cap — real image, slides vertically */
+/* Fader cap — fader.png rotated 90° to become horizontal slider */
 .fader-thumb {
   position: absolute;
   left: 50%;
-  transform: translate(-50%, -50%);
-  width: 90%;
+  transform: translate(-50%, -50%) rotate(90deg);
+  width: 70%;
   height: auto;
   cursor: ns-resize;
   top: 25%;
