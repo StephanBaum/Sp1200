@@ -1,3 +1,7 @@
+function _padLabel(s, pad) {
+  return ['A', 'B', 'C', 'D'][s.currentBank] + ((pad ?? 0) + 1);
+}
+
 export function bindPadActions(s) {
   document.querySelectorAll('.pad').forEach(el => {
     el.addEventListener('mousedown', () => {
@@ -12,7 +16,7 @@ export function bindPadActions(s) {
             s.led('led-mix', false);
             s.faderMode = 'pitch';
             document.dispatchEvent(new CustomEvent('fader-mode-change', { detail: { mode: 'pitch' } }));
-            s.display.flash('Multi Pitch', 'Pad ' + (pad + 1));
+            s.display.flash('Multi Pitch', _padLabel(s, pad));
             break;
           case 'multi-level':
             s.engine.send({ type: 'multi-level', pad });
@@ -22,55 +26,69 @@ export function bindPadActions(s) {
             s.led('led-tune', false);
             s.faderMode = 'volume';
             document.dispatchEvent(new CustomEvent('fader-mode-change', { detail: { mode: 'volume' } }));
-            s.display.flash('Multi Level', 'Pad ' + (pad + 1));
+            s.display.flash('Multi Level', _padLabel(s, pad));
             break;
           case 'delete-sound':
-            s.engine.send({ type: 'delete-sound', pad });
-            s.display.flash('Deleted', 'Pad ' + (pad + 1));
+            // Screenshot: "Delete: A1" / "Confirm? Y/N"
+            s._pendingPad = pad;
+            s.editParam = 'delete-confirm';
+            s.pendingAction = null;
+            s.moduleDisplay('Delete: ' + _padLabel(s, pad), 'Confirm? Y/N');
             break;
           case 'decay-tune':
+            // Screenshot: "A7     TUNED" / "1=Tune  2=Decay"
             s._pendingPad = pad;
             s.editParam = 'decay-tune-select';
             s.pendingAction = null;
-            s.moduleDisplay('Pad ' + (pad + 1), '1=Tune 2=Decay');
+            const mode = s.padModes?.[pad] || 'tune';
+            s.moduleDisplay(
+              _padLabel(s, pad) + (mode === 'tune' ? '      TUNED' : '    DECAYED'),
+              '1=Tune  2=Decay'
+            );
             break;
           case 'truncate':
-            s.display.flash('Truncate', 'Pad ' + (pad + 1) + ' Use faders');
+            // Screenshot: "Truncate A1" then sample points
+            s._pendingPad = pad;
+            s.editParam = 'truncate-edit';
+            s.pendingAction = null;
+            s.moduleDisplay('Truncate ' + _padLabel(s, pad), 'Use faders 1-6');
             break;
           case 'channel-assign':
+            // Screenshot: "Assign A6" / "Output Channel 7"
             s._pendingPad = pad;
             s.editParam = 'channel-assign-num';
             s.pendingAction = null;
-            s.moduleDisplay('Pad ' + (pad + 1), 'Enter ch 1-6');
+            const ch = (s.channelAssign?.[pad] ?? pad) + 1;
+            s.moduleDisplay('Assign ' + _padLabel(s, pad), 'Output Channel ' + ch);
             break;
           case 'reverse-sound':
             s._pendingPad = pad;
             s.editParam = 'reverse-confirm';
             s.pendingAction = null;
-            s.moduleDisplay('Reverse ' + ['A','B','C','D'][s.currentBank] + (pad + 1), 'Yes=9 No=7');
+            s.moduleDisplay('Reverse ' + _padLabel(s, pad), 'YES/NO');
             break;
           case 'assign-voice':
+            // Screenshot: "Sampling A8" then "Output Channel 7"
             s.selectedSamplePad = pad;
-            s.display.flash('Sampling', ['A','B','C','D'][s.currentBank] + (pad + 1));
-            s.editParam = 'module-func';
+            s._pendingPad = pad;
+            s.editParam = 'assign-voice-channel';
             s.pendingAction = null;
+            s.moduleDisplay('Sampling ' + _padLabel(s, pad), 'Output Channel ' + ((s.channelAssign?.[pad] ?? pad) + 1));
             break;
           case 'load-sound-pad':
-            s.display.flash('Load Sound', 'Pad ' + (pad + 1));
+            s.display.flash('Load Sound', _padLabel(s, pad));
             s.editParam = 'module-func';
             s.pendingAction = null;
             break;
         }
-        // Return to module-func if still in a module, otherwise clear
+        // Return to module-func if still in select-pad
         if (s.editParam === 'select-pad') {
           s.editParam = s.activeModule ? 'module-func' : null;
         }
         if (s.pendingAction && s.editParam !== 'select-pad') s.pendingAction = null;
       } else if (s.eraseMode && s.playing) {
-        // Real-time erase: pad held while playing erases that pad's events
         s.engine.send({ type: 'erase-track', pad });
       } else if (s.tapRepeatHeld) {
-        // Tap/Repeat held + pad → retrigger at autocorrect rate
         const repeatPad = pad;
         const msPerQuarter = 60000 / s.bpm;
         const msPerStep = msPerQuarter * s.quantizeGrid / 96;
@@ -80,8 +98,8 @@ export function bindPadActions(s) {
           s.engine.trigger(repeatPad, 100);
         }, Math.max(30, msPerStep));
       } else if (s.activeModule && !s.pendingAction) {
-        // Pad clicked while module active but no pending action → exit module
-        s.exitModule();
+        // Pad clicked while module active but no pending action — stay in module, don't exit
+        // Only exit module by pressing the module button again
       }
     });
   });

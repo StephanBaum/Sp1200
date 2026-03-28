@@ -30,6 +30,9 @@ export class SP1200State {
     this.smpteIndex = 0;
     this.currentSong = 0;
     this.multiMode = null; // null | 'pitch' | 'level'
+    this.padModes = new Array(8).fill('tune'); // 'tune' | 'decay' per pad
+    this.channelAssign = new Uint8Array(8);
+    for (let i = 0; i < 8; i++) this.channelAssign[i] = i;
     this.tapRepeatHeld = false;
     this._repeatInterval = null;
   }
@@ -86,8 +89,8 @@ export class SP1200State {
   }
 
   gainLabel() {
-    const gains = ['0dB', '+20dB', '+40dB'];
-    return 'Gain: ' + gains[this.sampleGainIndex || 0];
+    const gains = ['+00dB', '+20dB', '+40dB'];
+    return gains[this.sampleGainIndex || 0];
   }
 
   smpteLabel() {

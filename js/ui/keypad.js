@@ -1,33 +1,30 @@
 import { handleModuleFunction } from './modules.js';
 import { confirmEntry } from './master-control.js';
 
+function _padLabel(s, pad) {
+  return ['A', 'B', 'C', 'D'][s.currentBank] + ((pad ?? 0) + 1);
+}
+
 export function bindKeypad(s) {
-  // Digits 0-9. Key 7 also = No, Key 9 also = Yes (dual function)
   document.querySelectorAll('.key').forEach(btn => {
     btn.addEventListener('click', () => {
       const key = btn.dataset.key;
 
       // If a module is active, route digits to module functions
-      // This takes priority over any other numeric entry
-      if (s.activeModule && (s.editParam === 'module-func' || !s.editParam || s.editParam === 'select-pad')) {
-        // If we're in a sub-flow (select-pad, confirmation, etc.),
-        // the sub-flow handlers below will catch it.
-        // Only route to module-func if editParam allows it.
-        if (s.editParam === 'module-func' || !s.editParam) {
-          s.editParam = 'module-func';
-          s.numericBuffer += key;
-          s.moduleDisplay(s.activeModule.toUpperCase() + ' ' + s.numericBuffer, 'Enter option #');
-          // Setup uses 2-digit numbers (11-23), others use 1 digit
-          if (s.activeModule === 'setup' && s.numericBuffer.length >= 2) {
-            handleModuleFunction(s, parseInt(s.numericBuffer, 10));
-          } else if (s.activeModule !== 'setup') {
-            handleModuleFunction(s, parseInt(s.numericBuffer, 10));
-          }
-          return;
+      if (s.activeModule && (s.editParam === 'module-func' || !s.editParam)) {
+        s.editParam = 'module-func';
+        s.numericBuffer += key;
+        s.moduleDisplay(s.activeModule.toUpperCase() + ' ' + s.numericBuffer, 'Enter option #');
+        if (s.activeModule === 'setup' && s.numericBuffer.length >= 2) {
+          handleModuleFunction(s, parseInt(s.numericBuffer, 10));
+        } else if (s.activeModule !== 'setup') {
+          handleModuleFunction(s, parseInt(s.numericBuffer, 10));
         }
+        return;
       }
 
-      // Yes/No confirmation flows (Key 9 = Yes, Key 7 = No)
+      // ── Yes/No confirmation flows (Key 9 = Yes, Key 7 = No) ──────────
+
       if (s.editParam === 'exit-multi-confirm') {
         if (key === '9') {
           s.engine.send({ type: 'exit-multi' });
@@ -46,25 +43,24 @@ export function bindKeypad(s) {
         if (key === '9') {
           s.dynamicButtons = true;
           s.engine.send({ type: 'dynamic-buttons', enabled: true });
-          s.display.flash('Dynamic Btns', 'On');
+          s.moduleDisplay('Dyn Buttons? YES', '(yes/no)');
         } else if (key === '7') {
           s.dynamicButtons = false;
           s.engine.send({ type: 'dynamic-buttons', enabled: false });
-          s.display.flash('Dynamic Btns', 'Off');
+          s.moduleDisplay('Dyn Buttons? NO', '(yes/no)');
         }
-        s.editParam = 'module-func';
-        s.numericBuffer = '';
+        // Stay on screen — pressing module button or another function exits
         return;
       }
 
-      if (s.editParam === 'dynamic-alloc-confirm') {
+      if (s.editParam === 'delete-confirm') {
         if (key === '9') {
-          s.engine.send({ type: 'dynamic-alloc', enabled: true });
-          s.display.flash('Dyn Alloc', 'On');
+          s.engine.send({ type: 'delete-sound', pad: s._pendingPad });
+          s.display.flash('Deleted', _padLabel(s, s._pendingPad));
         } else if (key === '7') {
-          s.engine.send({ type: 'dynamic-alloc', enabled: false });
-          s.display.flash('Dyn Alloc', 'Off');
+          s.display.flash('Cancelled', '');
         }
+        s._pendingPad = null;
         s.editParam = 'module-func';
         s.numericBuffer = '';
         return;
@@ -73,7 +69,7 @@ export function bindKeypad(s) {
       if (s.editParam === 'reverse-confirm') {
         if (key === '9') {
           s.engine.send({ type: 'reverse-sound', pad: s._pendingPad });
-          s.display.flash('Reversed', 'Pad ' + (s._pendingPad + 1));
+          s.display.flash('Reversed', _padLabel(s, s._pendingPad));
         } else if (key === '7') {
           s.display.flash('Cancelled', '');
         }
@@ -86,10 +82,117 @@ export function bindKeypad(s) {
       if (s.editParam === 'decay-tune-select') {
         if (key === '1') {
           s.engine.send({ type: 'set-pad-mode', pad: s._pendingPad, mode: 'tune' });
-          s.display.flash('Pad ' + (s._pendingPad + 1), 'Tune');
+          if (!s.padModes) s.padModes = new Array(8).fill('tune');
+          s.padModes[s._pendingPad] = 'tune';
+          s.moduleDisplay(_padLabel(s, s._pendingPad) + '      TUNED', '1=Tune  2=Decay');
         } else if (key === '2') {
           s.engine.send({ type: 'set-pad-mode', pad: s._pendingPad, mode: 'decay' });
-          s.display.flash('Pad ' + (s._pendingPad + 1), 'Decay');
+          if (!s.padModes) s.padModes = new Array(8).fill('tune');
+          s.padModes[s._pendingPad] = 'decay';
+          s.moduleDisplay(_padLabel(s, s._pendingPad) + '    DECAYED', '1=Tune  2=Decay');
+        }
+        // Stay on screen so user can toggle again
+        return;
+      }
+
+      // ── Channel assign: type channel number 1-16, Enter confirms ──────
+
+      if (s.editParam === 'channel-assign-num') {
+        s.numericBuffer += key;
+        const ch = parseInt(s.numericBuffer, 10);
+        s.moduleDisplay('Assign ' + _padLabel(s, s._pendingPad), 'Output Channel ' + s.numericBuffer);
+        if (s.numericBuffer.length >= 2) {
+          if (ch >= 1 && ch <= 16) {
+            s.engine.send({ type: 'channel-assign', pad: s._pendingPad, channel: ch });
+            if (!s.channelAssign) s.channelAssign = new Uint8Array(8);
+            s.channelAssign[s._pendingPad] = ch - 1;
+          }
+          s._pendingPad = null;
+          s.editParam = 'module-func';
+          s.numericBuffer = '';
+        }
+        return;
+      }
+
+      // ── Assign voice: after pad, enter channel ────────────────────────
+
+      if (s.editParam === 'assign-voice-channel') {
+        s.numericBuffer += key;
+        s.moduleDisplay('Sampling ' + _padLabel(s, s._pendingPad), 'Output Channel ' + s.numericBuffer);
+        if (s.numericBuffer.length >= 2) {
+          const ch = parseInt(s.numericBuffer, 10);
+          if (ch >= 1 && ch <= 16) {
+            s.engine.send({ type: 'channel-assign', pad: s._pendingPad, channel: ch });
+          }
+          s._pendingPad = null;
+          s.editParam = 'module-func';
+          s.numericBuffer = '';
+        }
+        return;
+      }
+
+      // ── MIDI channel (Setup 22) ───────────────────────────────────────
+
+      if (s.editParam === 'midi-channel') {
+        s.numericBuffer += key;
+        s.moduleDisplay('Midi Parameters', 'Basic Channel ' + s.numericBuffer.padStart(2, '0'));
+        if (s.numericBuffer.length >= 2) {
+          const ch = parseInt(s.numericBuffer, 10);
+          if (ch >= 1 && ch <= 16) {
+            s.engine.send({ type: 'set-midi-channel', channel: ch });
+            // After channel, show MIDI mode selection
+            s.editParam = 'midi-mode';
+            s.numericBuffer = '';
+            s.moduleDisplay('MIDI Mode: omni', '1=omni  2=poly');
+          } else {
+            s.editParam = 'module-func';
+            s.numericBuffer = '';
+          }
+        }
+        return;
+      }
+
+      if (s.editParam === 'midi-mode') {
+        if (key === '1') {
+          s.engine.send({ type: 'set-midi-mode', mode: 'omni' });
+          s.moduleDisplay('MIDI Mode: omni', '1=omni  2=poly');
+        } else if (key === '2') {
+          s.engine.send({ type: 'set-midi-mode', mode: 'poly' });
+          s.moduleDisplay('MIDI Mode: poly', '1=omni  2=poly');
+        }
+        return;
+      }
+
+      // ── Define/Select mix slot ────────────────────────────────────────
+
+      if (s.editParam === 'define-mix') {
+        if (key >= '1' && key <= '8') {
+          s.engine.send({ type: 'define-mix', slot: parseInt(key, 10) - 1 });
+          s.display.flash('Mix ' + key, 'Saved');
+        }
+        s.editParam = 'module-func';
+        s.numericBuffer = '';
+        return;
+      }
+
+      if (s.editParam === 'select-mix') {
+        if (key >= '1' && key <= '8') {
+          s.engine.send({ type: 'select-mix', slot: parseInt(key, 10) - 1 });
+          s.moduleDisplay('Select Mix #' + key, '');
+        }
+        s.editParam = 'module-func';
+        s.numericBuffer = '';
+        return;
+      }
+
+      // ── Truncate confirm ──────────────────────────────────────────────
+
+      if (s.editParam === 'truncate-confirm') {
+        if (key === '9') {
+          s.engine.send({ type: 'truncate', pad: s._pendingPad });
+          s.display.flash('Truncated', _padLabel(s, s._pendingPad));
+        } else if (key === '7') {
+          s.display.flash('Cancelled', '');
         }
         s._pendingPad = null;
         s.editParam = 'module-func';
@@ -97,15 +200,11 @@ export function bindKeypad(s) {
         return;
       }
 
-      if (s.editParam === 'channel-assign-num') {
-        if (key >= '1' && key <= '6') {
-          s.numericBuffer = key;
-          s.moduleDisplay('Ch ' + key + ' assigned', 'Pad ' + (s._pendingPad + 1));
-        }
-        return;
-      }
+      // ── Passthrough: modes that use arrows only ───────────────────────
 
-      if (s.editParam === 'sample-level' || s.editParam === 'smpte-rate' || s.editParam === 'threshold' || s.editParam === 'sample-length') {
+      if (s.editParam === 'sample-level' || s.editParam === 'smpte-rate' ||
+          s.editParam === 'threshold' || s.editParam === 'sample-length' ||
+          s.editParam === 'truncate-edit') {
         return;
       }
 
@@ -126,7 +225,8 @@ export function bindKeypad(s) {
         return;
       }
 
-      // Normal numeric entry
+      // ── Normal numeric entry ──────────────────────────────────────────
+
       s.numericBuffer += key;
       if (s.editParam === 'bpm') {
         s.moduleDisplay('Tempo ' + s.numericBuffer, 'Enter to confirm');
@@ -141,7 +241,6 @@ export function bindKeypad(s) {
         s.moduleDisplay('Swing ' + s.numericBuffer + '%', 'Enter to confirm');
         if (s.numericBuffer.length >= 2) confirmEntry(s);
       } else {
-        // No active edit — treat as segment selection
         if (!s.editParam) s.editParam = 'segment';
         s.moduleDisplay('Seg ' + s.numericBuffer, '');
         if (s.numericBuffer.length >= 2) confirmEntry(s);

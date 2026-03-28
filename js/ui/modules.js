@@ -9,22 +9,14 @@ export function bindModules(s) {
   for (const [btnId, mod] of Object.entries(modules)) {
     s.bindBtn(btnId, () => {
       if (s.activeModule === mod.name) {
-        // Deactivate module
-        if (mod.name === 'sample') document.dispatchEvent(new Event('sample-stop-vu'));
-        s.activeModule = null;
-        s.led(mod.led, false);
-        document.getElementById(btnId).classList.remove('active');
-        s.editParam = null;
-        s.numericBuffer = '';
-        s.pendingAction = null;
-        s.display.unlock();
-        s.display.setMode('segment');
+        // Deactivate module — return to segment screen
+        _deactivateModule(s, modules);
       } else {
-        // Deactivate previous module
+        // Deactivate previous module if any
         if (s.activeModule) {
           if (s.activeModule === 'sample') document.dispatchEvent(new Event('sample-stop-vu'));
-          for (const [id, m] of Object.entries(modules)) {
-            s.led(m.led, false);
+          for (const [id] of Object.entries(modules)) {
+            s.led(modules[id]?.led || '', false);
             document.getElementById(id)?.classList.remove('active');
           }
         }
@@ -34,24 +26,60 @@ export function bindModules(s) {
         document.getElementById(btnId).classList.add('active');
         s.editParam = 'module-func';
         s.numericBuffer = '';
-        // Show module name persistently (lock display)
-        s.display.lock();
-        s.display.setLine1(mod.label);
-        s.display.setLine2('Enter option #');
+        s.pendingAction = null;
 
-        // Sample module auto-enters VU mode with live VU meter
-        if (mod.name === 'sample') {
+        // While playing, Setup is restricted to 11-13
+        if (mod.name === 'setup' && s.playing) {
+          s.moduleDisplay('Set-up Function?', '[11-13]');
+        } else if (mod.name === 'sample') {
+          // Sample auto-enters VU mode
+          s.display.lock();
           s.display.setLine1(s.vuPadLabel());
           document.dispatchEvent(new Event('sample-start-vu'));
+        } else {
+          s.display.lock();
+          s.display.setLine1(mod.label);
+          s.display.setLine2('Enter option #');
         }
       }
     });
   }
 }
 
+function _deactivateModule(s, modules) {
+  if (!s.activeModule) return;
+  if (s.activeModule === 'sample') document.dispatchEvent(new Event('sample-stop-vu'));
+  const moduleIds = { 'setup': 'btn-setup', 'disk': 'btn-disk', 'sync': 'btn-sync', 'sample': 'btn-sample' };
+  const ledIds = { 'setup': 'led-setup', 'disk': 'led-disk', 'sync': 'led-sync', 'sample': 'led-sample' };
+  s.led(ledIds[s.activeModule], false);
+  const btnId = moduleIds[s.activeModule];
+  if (btnId) document.getElementById(btnId)?.classList.remove('active');
+  s.activeModule = null;
+  s.editParam = null;
+  s.numericBuffer = '';
+  s.pendingAction = null;
+  s.display.unlock();
+  s.display.setMode('segment');
+}
+
+// ── Pad label helper: "A1" format ─────────────────────────────────────────
+function _padLabel(s, pad) {
+  const bank = ['A', 'B', 'C', 'D'][s.currentBank];
+  return bank + ((pad ?? 0) + 1);
+}
+
+// ── Module function dispatch ──────────────────────────────────────────────
 export function handleModuleFunction(s, funcNum) {
   const mod = s.activeModule;
   if (!mod) return;
+
+  // While playing, Setup restricted to 11-13
+  if (mod === 'setup' && s.playing && (funcNum < 11 || funcNum > 13)) {
+    s.moduleDisplay('Set-up Function?', '[11-13]');
+    s.editParam = 'module-func';
+    s.numericBuffer = '';
+    return;
+  }
 
   if (mod === 'setup') {
     switch (funcNum) {
@@ -66,51 +94,60 @@ export function handleModuleFunction(s, funcNum) {
         s.moduleDisplay('Multi Level', 'Select a pad');
         break;
       case 13:
+        // Screenshot: "Exit Multi Mode?" / "YES/NO"
         s.editParam = 'exit-multi-confirm';
-        s.moduleDisplay('Exit Multi?', 'Yes=9 No=7');
+        s.moduleDisplay('Exit Multi Mode?', 'YES/NO');
         break;
       case 14:
+        // Screenshot: "Dyn Buttons? YES" / "(yes/no)"
         s.editParam = 'dynamic-confirm';
-        s.moduleDisplay('Dynamic Btns', 'Yes=9 No=7');
+        s.moduleDisplay('Dyn Buttons? ' + (s.dynamicButtons ? 'YES' : 'NO'), '(yes/no)');
         break;
       case 15:
+        // Screenshot: "Save Current Mix" / "As Mix #"
         s.editParam = 'define-mix';
         s.numericBuffer = '';
-        s.moduleDisplay('Define Mix', 'Enter slot 1-8');
+        s.moduleDisplay('Save Current Mix', 'As Mix #');
         break;
       case 16:
+        // Screenshot: "Select Mix #1" / ""
         s.editParam = 'select-mix';
         s.numericBuffer = '';
-        s.moduleDisplay('Select Mix', 'Enter slot 1-8');
+        s.moduleDisplay('Select Mix #1', '');
         break;
       case 17:
+        // Screenshot: "Assign A6" / "Output Channel 7"
         s.editParam = 'select-pad';
         s.pendingAction = 'channel-assign';
-        s.moduleDisplay('Channel Assign', 'Select a pad');
+        s.moduleDisplay('Assign', 'Select Sound');
         break;
       case 18:
+        // Screenshot: "Decay/Tuning" / "Select Sound"
         s.editParam = 'select-pad';
         s.pendingAction = 'decay-tune';
-        s.moduleDisplay('Decay/Tune Sel', 'Select a pad');
+        s.moduleDisplay('Decay/Tuning', 'Select Sound');
         break;
       case 19:
+        // Screenshot: "Truncate A1" / pad info
         s.editParam = 'select-pad';
         s.pendingAction = 'truncate';
-        s.moduleDisplay('Loop/Truncate', 'Select a pad');
+        s.moduleDisplay('Truncate', 'Select Sound');
         break;
       case 20:
+        // Screenshot: "Delete:" / "Select Sound"
         s.editParam = 'select-pad';
         s.pendingAction = 'delete-sound';
-        s.moduleDisplay('Delete Sound', 'Select a pad');
+        s.moduleDisplay('Delete:', 'Select Sound');
+        break;
+      case 21:
+        // Screenshot: "Song 01" / "First Step: 01"
+        s.moduleDisplay('Song 01', 'First Step: 01');
         break;
       case 22:
-        s.editParam = 'dynamic-alloc-confirm';
-        s.moduleDisplay('Dyn Alloc', 'Yes=9 No=7');
-        break;
-      case 23:
-        s.editParam = 'special-menu';
+        // Screenshot: "Midi Parameters" / "Basic Channel 01"
+        s.editParam = 'midi-channel';
         s.numericBuffer = '';
-        s.moduleDisplay('Special Menu', 'Enter function #');
+        s.moduleDisplay('Midi Parameters', 'Basic Channel 01');
         break;
       case 25:
         s.editParam = 'select-pad';
@@ -118,50 +155,60 @@ export function handleModuleFunction(s, funcNum) {
         s.moduleDisplay('Reverse Sound', 'Select a pad');
         break;
       default:
-        s.display.flash('Setup ' + funcNum, 'Not available');
+        s.moduleDisplay('Setup ' + funcNum, 'Not available');
     }
   }
   else if (mod === 'sample') {
     switch (funcNum) {
-      case 1: // VU Mode — monitor input with live meter
+      case 1:
+        // Screenshot: "A1     +00dB" / VU meter
         s.editParam = null;
         s.display.lock();
         s.display.setLine1(s.vuPadLabel());
         document.dispatchEvent(new Event('sample-start-vu'));
         break;
-      case 2: // Assign Voice — select pad for sampling
+      case 2:
+        // Screenshot: "Sampling A8" then "Output Channel 7"
         s.editParam = 'select-pad';
         s.pendingAction = 'assign-voice';
-        s.moduleDisplay('Assign Voice', 'Select a pad');
+        s.moduleDisplay('Sampling', 'Select Sound');
         break;
-      case 3: // Input Level — cycle 0/+20/+40 dB with arrows
+      case 3:
+        // Screenshot: "Input Gain +20dB" / "Use + and -"
         s.editParam = 'sample-level';
-        s.moduleDisplay('Input Level', s.gainLabel());
+        s.moduleDisplay('Input Gain ' + s.gainLabel(), 'Use + and -');
         break;
-      case 4: // Threshold — arm with slider
+      case 4:
+        // Screenshot: VU meter with threshold marker
         s.editParam = 'threshold';
-        s.moduleDisplay('Arm Threshold', 'Use Slider #1');
+        s.display.lock();
+        s.display.setLine1('');
+        document.dispatchEvent(new Event('sample-start-vu'));
         break;
-      case 5: // Sample Length
+      case 5:
+        // Screenshot: "Length: 2.5 secs" / "Use Slider #1"
         s.editParam = 'sample-length';
-        s.moduleDisplay('Sample Length', '2.5s Slider #1');
+        s.moduleDisplay('Length: 2.5 secs', 'Use Slider #1');
         break;
-      case 6: // Resample
-        s.display.flash('Resample', 'Last pad');
+      case 6:
+        // Screenshot: "A8  *  +20dB" — reuse last settings
+        s.moduleDisplay(s.vuPadLabel(), 'Resample');
         break;
-      case 7: // Arm Sampling — waits for threshold breach
+      case 7:
+        // Arm — show VU, wait for threshold
         s.moduleDisplay('Sample Armed', 'Waiting...');
         s.listenSampleDone();
         document.dispatchEvent(new Event('sample-arm'));
         document.dispatchEvent(new Event('sample-start-vu'));
         break;
-      case 9: // Force Sample — record immediately
+      case 9:
+        // Force — record immediately
         s.moduleDisplay('Sampling...', '');
         s.listenSampleDone();
         document.dispatchEvent(new Event('sample-force'));
         break;
       default:
-        s.display.flash('Sample ' + funcNum, 'Not available');
+        s.moduleDisplay('Sample ' + funcNum, 'Not available');
     }
   }
   else if (mod === 'sync') {
@@ -184,7 +231,7 @@ export function handleModuleFunction(s, funcNum) {
         s.moduleDisplay('Click Divisor', 'Enter value');
         break;
       default:
-        s.display.flash('Sync ' + funcNum, 'Not available');
+        s.moduleDisplay('Sync ' + funcNum, 'Not available');
     }
   }
   else if (mod === 'disk') {
@@ -230,10 +277,11 @@ export function handleModuleFunction(s, funcNum) {
         s.moduleDisplay('Save All As', 'Use slider name');
         break;
       default:
-        s.display.flash('Disk ' + funcNum, 'Not available');
+        s.moduleDisplay('Disk ' + funcNum, 'Not available');
     }
   }
 
-  s.editParam = s.editParam || null;
+  // Keep module-func if nothing else was set
+  if (!s.editParam) s.editParam = 'module-func';
   s.numericBuffer = '';
 }
