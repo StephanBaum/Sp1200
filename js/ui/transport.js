@@ -212,10 +212,8 @@ export class TransportUI {
           this._moduleDisplay('Multi Level', 'Select a pad');
           break;
         case 13:
-          this.engine.send({ type: 'exit-multi' });
-          this.multiMode = null;
-          this._led('led-multi', false);
-          this.display.flash('Exit Multi', 'Done');
+          this.editParam = 'exit-multi-confirm';
+          this._moduleDisplay('Exit Multi?', 'Yes=9 No=7');
           break;
         case 14:
           this.editParam = 'dynamic-confirm';
@@ -744,8 +742,10 @@ export class TransportUI {
       }
     }
 
-    // Only clear editParam if not reassigned inside the switch (e.g., back to 'module-func')
-    if (this.editParam !== 'module-func') this.editParam = null;
+    // Return to module-func if module is active, otherwise clear
+    if (this.editParam !== 'module-func') {
+      this.editParam = this.activeModule ? 'module-func' : null;
+    }
     const tempoBtn = document.getElementById('btn-tempo');
     if (tempoBtn) tempoBtn.classList.remove('active');
     this._flashDisplay();
@@ -829,20 +829,41 @@ export class TransportUI {
       btn.addEventListener('click', () => {
         const key = btn.dataset.key;
 
-        // If a module is active, route digit to module function
-        if (this.editParam === 'module-func') {
-          this.numericBuffer += key;
-          this.display.setMode(this.activeModule.toUpperCase() + ' ' + this.numericBuffer);
-          // Setup uses 2-digit numbers (11-23), others use 1 digit
-          if (this.activeModule === 'setup' && this.numericBuffer.length >= 2) {
-            this._handleModuleFunction(parseInt(this.numericBuffer, 10));
-          } else if (this.activeModule !== 'setup') {
-            this._handleModuleFunction(parseInt(this.numericBuffer, 10));
+        // If a module is active, route digits to module functions
+        // This takes priority over any other numeric entry
+        if (this.activeModule && (this.editParam === 'module-func' || !this.editParam || this.editParam === 'select-pad')) {
+          // If we're in a sub-flow (select-pad, confirmation, etc.),
+          // the sub-flow handlers below will catch it.
+          // Only route to module-func if editParam allows it.
+          if (this.editParam === 'module-func' || !this.editParam) {
+            this.editParam = 'module-func';
+            this.numericBuffer += key;
+            this._moduleDisplay(this.activeModule.toUpperCase() + ' ' + this.numericBuffer, 'Enter option #');
+            // Setup uses 2-digit numbers (11-23), others use 1 digit
+            if (this.activeModule === 'setup' && this.numericBuffer.length >= 2) {
+              this._handleModuleFunction(parseInt(this.numericBuffer, 10));
+            } else if (this.activeModule !== 'setup') {
+              this._handleModuleFunction(parseInt(this.numericBuffer, 10));
+            }
+            return;
           }
-          return;
         }
 
         // Yes/No confirmation flows (Key 9 = Yes, Key 7 = No)
+        if (this.editParam === 'exit-multi-confirm') {
+          if (key === '9') {
+            this.engine.send({ type: 'exit-multi' });
+            this.multiMode = null;
+            this._led('led-multi', false);
+            this.display.flash('Exit Multi', 'Done');
+          } else if (key === '7') {
+            this.display.flash('Cancelled', '');
+          }
+          this.editParam = 'module-func';
+          this.numericBuffer = '';
+          return;
+        }
+
         if (this.editParam === 'dynamic-confirm') {
           if (key === '9') {
             this.dynamicButtons = true;
@@ -1049,9 +1070,11 @@ export class TransportUI {
               this.pendingAction = null;
               break;
           }
-          // Only clear if not reassigned inside the switch
-          if (this.editParam === 'select-pad') this.editParam = null;
-          if (this.pendingAction && !this.editParam) this.pendingAction = null;
+          // Return to module-func if still in a module, otherwise clear
+          if (this.editParam === 'select-pad') {
+            this.editParam = this.activeModule ? 'module-func' : null;
+          }
+          if (this.pendingAction && this.editParam !== 'select-pad') this.pendingAction = null;
         } else if (this.eraseMode && this.playing) {
           // Real-time erase: pad held while playing erases that pad's events
           this.engine.send({ type: 'erase-track', pad });
