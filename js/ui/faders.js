@@ -37,9 +37,9 @@ export class FadersUI {
   _updatePosition(index) {
     const thumb = this.thumbs[index];
     if (!thumb) return;
-    // Constrain to graduation lines: ~12% (top) to ~88% (bottom) of track
-    const minTop = 12;
-    const maxTop = 88;
+    // Constrain so cap center aligns with first/last graduation lines
+    const minTop = 5;
+    const maxTop = 95;
     const top = maxTop - this.values[index] * (maxTop - minTop);
     thumb.style.top = `${top}%`;
   }

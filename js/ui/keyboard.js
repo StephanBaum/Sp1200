@@ -245,7 +245,7 @@ export class KeyboardUI {
   _updateFaderThumb(index) {
     const thumbs = document.querySelectorAll('.fader-thumb');
     if (thumbs[index]) {
-      const minTop = 12, maxTop = 88;
+      const minTop = 5, maxTop = 95;
       thumbs[index].style.top = `${maxTop - this.faderValues[index] * (maxTop - minTop)}%`;
     }
   }
