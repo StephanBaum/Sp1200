@@ -29,6 +29,7 @@ export class TransportUI {
     this.selectedSamplePad = 0;
     this.smpteIndex = 0;
     this.currentSong = 0;
+    this.multiMode = null; // null | 'pitch' | 'level'
 
     this._bindTransport();
     this._bindModules();
@@ -207,6 +208,8 @@ export class TransportUI {
           break;
         case 13:
           this.engine.send({ type: 'exit-multi' });
+          this.multiMode = null;
+          this._led('led-multi', false);
           this.display.flash('Exit Multi', 'Done');
           break;
         case 14:
@@ -546,11 +549,12 @@ export class TransportUI {
     }, 800);
   }
 
-  // ── Mode button (cycles Tune/Decay → Mix/Volume → Multi Mode) ─────────
+  // ── Mode button (toggles Mix ↔ Tune) ───────────────────────────────────
+  // Multi LED is separate — controlled by Setup 11/12/13, not the mode button.
   _bindModeButton() {
-    const modes = ['volume', 'pitch', 'decay'];
-    const labels = ['MIX', 'TUNE', 'DECAY'];
-    const ledIds = ['led-mix', 'led-tune', 'led-multi'];
+    const modes = ['volume', 'pitch'];
+    const labels = ['MIX', 'TUNE'];
+    const ledIds = ['led-mix', 'led-tune'];
     let modeIndex = 0;
     this._led('led-mix', true); // MIX active by default
 
@@ -562,7 +566,6 @@ export class TransportUI {
       this.faderMode = modes[modeIndex];
       document.dispatchEvent(new CustomEvent('fader-mode-change', { detail: { mode: this.faderMode } }));
       this.display.flash(labels[modeIndex], 'Mode selected');
-      // Update LEDs
       ledIds.forEach(id => this._led(id, false));
       this._led(ledIds[modeIndex], true);
     });
@@ -953,10 +956,22 @@ export class TransportUI {
           switch (this.pendingAction) {
             case 'multi-pitch':
               this.engine.send({ type: 'multi-pitch', pad });
+              this.multiMode = 'pitch';
+              this._led('led-multi', true);
+              this._led('led-tune', true);
+              this._led('led-mix', false);
+              this.faderMode = 'pitch';
+              document.dispatchEvent(new CustomEvent('fader-mode-change', { detail: { mode: 'pitch' } }));
               this.display.flash('Multi Pitch', 'Pad ' + (pad + 1));
               break;
             case 'multi-level':
               this.engine.send({ type: 'multi-level', pad });
+              this.multiMode = 'level';
+              this._led('led-multi', true);
+              this._led('led-mix', true);
+              this._led('led-tune', false);
+              this.faderMode = 'volume';
+              document.dispatchEvent(new CustomEvent('fader-mode-change', { detail: { mode: 'volume' } }));
               this.display.flash('Multi Level', 'Pad ' + (pad + 1));
               break;
             case 'delete-sound':
