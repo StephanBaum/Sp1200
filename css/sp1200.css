@@ -156,12 +156,12 @@ body {
   z-index: 10;
   border: none;
   background: url('/assets/pad.png') center/100% 100% no-repeat;
-  transition: transform 50ms;
+  transition: transform 50ms, filter 50ms;
+  /* Offset up slightly so press-down doesn't reveal background */
+  margin-top: -1px;
 }
-.pad:active {
-  transform: translateY(1px) scale(0.97);
-}
-.pad.triggered {
+.pad:active, .pad.triggered {
+  transform: translateY(1px) scale(0.99);
   filter: brightness(1.3);
 }
 
