@@ -104,11 +104,17 @@ async function init() {
     }
   });
 
-  // Knobs — drag to rotate, show value on LCD
+  // Knobs — drag to rotate, show value on LCD. Default 75%
   document.querySelectorAll('.knob').forEach(knob => {
-    let dragging = false, startY = 0, startAngle = -120;
-    let angle = -120;
+    let dragging = false, startY = 0, startAngle = 60;
+    let angle = 60; // 75% = -120 + 240*0.75 = 60
     const pointer = knob.querySelector('.knob-indicator');
+    if (pointer) pointer.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+    // Set initial values
+    const initVal = 0.75;
+    if (knob.id === 'knob-gain') engine.setParam('gain', 0, initVal);
+    if (knob.id === 'knob-mix-vol') engine.setParam('mix-volume', 0, initVal);
+    if (knob.id === 'knob-metro-vol') engine.send({ type: 'set-metronome-vol', vol: initVal });
     const names = { 'knob-gain': 'GAIN', 'knob-mix-vol': 'MIX VOL', 'knob-metro-vol': 'METRO' };
     knob.addEventListener('mousedown', (e) => { dragging = true; startY = e.clientY; startAngle = angle; e.preventDefault(); });
     document.addEventListener('mousemove', (e) => {

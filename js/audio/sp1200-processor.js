@@ -187,7 +187,7 @@ class FixedFilter {
 // ---------------------------------------------------------------------------
 class Mixer {
   constructor() {
-    this.masterVolume = 0.8;
+    this.masterVolume = 0.75;
     this.channels = Array.from({ length: NUM_PADS }, () => ({
       volume: 1.0,
       pan: 0,
@@ -486,9 +486,9 @@ class SP1200Processor extends AudioWorkletProcessor {
     // Voices: 8 voices (one per pad)
     this.voices = Array.from({ length: NUM_PADS }, (_, i) => new Voice(i));
 
-    // Filters: ch 0–1 → SSM2044, ch 2–5 → FixedFilter, ch 6–7 → none
-    this.dynamicFilters = [new SSM2044Filter(), new SSM2044Filter()];
-    this.fixedFilters = [new FixedFilter(), new FixedFilter(), new FixedFilter(), new FixedFilter()];
+    // Filters: ch 0–1 → SSM2044 (wider cutoff for fuller bass), ch 2–5 → FixedFilter, ch 6–7 → none
+    this.dynamicFilters = [new SSM2044Filter(12000, 0.1), new SSM2044Filter(12000, 0.1)];
+    this.fixedFilters = [new FixedFilter(10000), new FixedFilter(10000), new FixedFilter(10000), new FixedFilter(10000)];
 
     // Mixer + input gain
     this.mixer = new Mixer();

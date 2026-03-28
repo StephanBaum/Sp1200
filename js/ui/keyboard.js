@@ -182,7 +182,8 @@ export class KeyboardUI {
     if (this.faderMode === 'volume') {
       this.engine.setParam('volume', index, val);
     } else if (this.faderMode === 'pitch') {
-      this.engine.setParam('pitch', index, 0.5 + val * 1.5);
+      const semitones = (val * 15) - 8; // -8 to +7
+      this.engine.setParam('pitch', index, semitones);
     } else {
       this.engine.setParam('decay', index, val);
     }

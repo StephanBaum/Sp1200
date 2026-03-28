@@ -44,7 +44,9 @@ export class FadersUI {
     if (this.mode === 'volume') {
       this.engine.setParam('volume', index, this.values[index]);
     } else if (this.mode === 'pitch') {
-      this.engine.setParam('pitch', index, 0.5 + this.values[index] * 1.5);
+      // SP-1200: 7 semitones up, 8 down. Fader center = original pitch.
+      const semitones = (this.values[index] * 15) - 8; // -8 to +7
+      this.engine.setParam('pitch', index, semitones);
     } else {
       this.engine.setParam('decay', index, this.values[index]);
     }

@@ -104,21 +104,47 @@ export class DisplayUI {
     this.line2El.style.display = '';
   }
 
-  // ── Tune display ───────────────────────────────────────────────────────
+  // ── Tune display — center-line bars: up=pitch up, down=pitch down ───────
   showTuneLevels(values) {
     if (this.locked) return;
-    // Show using bars overlay but in "tune" style
     const barsEl = document.getElementById('lcd-bars');
-    if (!barsEl) return;
+    const barsRow = barsEl?.querySelector('.lcd-bars-row');
+    if (!barsEl || !barsRow) return;
     barsEl.style.display = 'flex';
     this.line1El.style.display = 'none';
     this.line2El.style.display = 'none';
+    // Switch to center-aligned mode
+    barsRow.style.alignItems = 'center';
     for (let i = 0; i < 8; i++) {
       const bar = document.getElementById('bar-' + i);
-      if (bar) bar.style.height = Math.round(values[i] * 100) + '%';
+      if (bar) {
+        // value 0.533 = center (0 semitones)
+        const offset = values[i] - 0.533; // -0.53 to +0.47
+        const pct = Math.round(Math.abs(offset) * 2 * 100);
+        bar.style.height = Math.max(2, pct) + '%';
+        if (offset >= 0) {
+          // Pitch up — bar grows upward from center
+          bar.style.alignSelf = 'flex-end';
+          bar.style.marginBottom = '50%';
+          bar.style.marginTop = '0';
+        } else {
+          // Pitch down — bar grows downward from center
+          bar.style.alignSelf = 'flex-start';
+          bar.style.marginTop = '50%';
+          bar.style.marginBottom = '0';
+        }
+      }
     }
     clearTimeout(this._barTimer);
-    this._barTimer = setTimeout(() => this._hideBars(), 2000);
+    this._barTimer = setTimeout(() => {
+      this._hideBars();
+      // Reset bar alignment
+      if (barsRow) barsRow.style.alignItems = 'flex-end';
+      for (let i = 0; i < 8; i++) {
+        const bar = document.getElementById('bar-' + i);
+        if (bar) { bar.style.alignSelf = ''; bar.style.marginBottom = ''; bar.style.marginTop = ''; }
+      }
+    }, 2000);
   }
 
   // ── VU meter for sampling ──────────────────────────────────────────────
