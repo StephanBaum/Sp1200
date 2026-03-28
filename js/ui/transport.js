@@ -79,6 +79,7 @@ export class TransportUI {
   _play() {
     this.playing = true;
     this.engine.play();
+    this.display.setPlaying(true);
     document.getElementById('btn-run-stop').classList.add('active');
     this._led('led-run', true);
   }
@@ -87,6 +88,7 @@ export class TransportUI {
     this.playing = false;
     this.recording = false;
     this.engine.stop();
+    this.display.setPlaying(false);
     document.getElementById('btn-run-stop').classList.remove('active');
     document.getElementById('btn-record').classList.remove('active');
     this._led('led-run', false);
@@ -325,7 +327,7 @@ export class TransportUI {
         this.engine.setMode('segment');
         this.editParam = 'segment';
         this.numericBuffer = '';
-        this.display.flash('Segment Mode', 'Seg:' + String(this.currentSegment + 1).padStart(2, '0'));
+        this.display.flash('Segment Mode', 'Seg ' + String(this.currentSegment + 1).padStart(2, '0'));
         break;
 
       case 'trigger':
@@ -413,7 +415,7 @@ export class TransportUI {
       case 'tempo-change':
         this.editParam = 'bpm';
         this.numericBuffer = '';
-        this.display.flash('Tempo: ' + this.bpm, 'Use +/- or keys');
+        this.display.flash('Tempo ' + Math.round(this.bpm), 'Use +/- or keys');
         break;
 
       case 'auto-correct': {
@@ -501,7 +503,7 @@ export class TransportUI {
             this.bpm = val;
             this.engine.setBpm(this.bpm);
             this.display.setBpm(this.bpm);
-            this.display.flash('Tempo: ' + this.bpm, 'BPM set');
+            this.display.flash('Tempo ' + Math.round(this.bpm), 'BPM set');
           } else {
             this.display.flash('Invalid BPM', '30-250 only');
           }
@@ -513,7 +515,7 @@ export class TransportUI {
             this.currentSegment = val;
             this.engine.selectPattern(this.currentSegment);
             this.display.setPattern(this.currentSegment);
-            this.display.flash('Seg:' + String(val + 1).padStart(2, '0'), 'Selected');
+            this.display.flash('Seg ' + String(val + 1).padStart(2, '0'), 'Selected');
           } else {
             this.display.flash('Invalid Seg', '0-99 only');
           }
@@ -598,7 +600,7 @@ export class TransportUI {
       case 'bpm':
         this.bpm = Math.max(30, Math.min(250, this.bpm + dir));
         this.engine.setBpm(this.bpm);
-        this.display.flash('Tempo: ' + this.bpm, 'BPM');
+        this.display.flash('Tempo ' + Math.round(this.bpm), 'BPM');
         break;
       case 'swing': {
         const SW = [50, 54, 58, 63, 67, 71];
@@ -661,10 +663,10 @@ export class TransportUI {
         // Normal numeric entry
         this.numericBuffer += key;
         if (this.editParam === 'bpm') {
-          this.display.flash('Tempo: ' + this.numericBuffer, 'Enter to confirm');
+          this.display.flash('Tempo ' + this.numericBuffer, 'Enter to confirm');
           if (this.numericBuffer.length >= 3) this._confirmEntry();
         } else if (this.editParam === 'segment' || this.editParam === 'copy' || this.editParam === 'erase-seg') {
-          this.display.flash('Seg: ' + this.numericBuffer, 'Enter to confirm');
+          this.display.flash('Seg ' + this.numericBuffer, 'Enter to confirm');
           if (this.numericBuffer.length >= 2) this._confirmEntry();
         } else if (this.editParam === 'seg-length') {
           this.display.flash('Bars: ' + this.numericBuffer, 'Enter to confirm');
@@ -675,7 +677,7 @@ export class TransportUI {
         } else {
           // No active edit — treat as segment selection
           if (!this.editParam) this.editParam = 'segment';
-          this.display.flash('Seg: ' + this.numericBuffer, '');
+          this.display.flash('Seg ' + this.numericBuffer, '');
           if (this.numericBuffer.length >= 2) this._confirmEntry();
         }
       });

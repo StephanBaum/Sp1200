@@ -12,6 +12,9 @@ export class DisplayUI {
     this.pattern = 0;
     this.bank = 0;
     this.bar = 0;
+    this.song = 0;
+    this.beat = 0;
+    this.playing = false;
     this.mode = 'segment'; // segment | song | step
     this._flashTimer = null;
     this._knobTimer = null;
@@ -22,7 +25,10 @@ export class DisplayUI {
   // ── Primary setters ────────────────────────────────────────────────────
   setBpm(bpm) { this.bpm = bpm; this._refresh(); }
   setPattern(num) { this.pattern = num; this._refresh(); }
+  setSong(num) { this.song = num; this._refresh(); }
   setBar(bar) { this.bar = bar; }
+  setBeat(beat) { this.beat = beat; }
+  setPlaying(playing) { this.playing = playing; }
   setBank(bank) { this.bank = bank; this._refresh(); }
   setMemory(seconds) { this.memory = seconds; }
 
@@ -46,20 +52,23 @@ export class DisplayUI {
   // ── Context-dependent refresh ──────────────────────────────────────────
   _refresh() {
     const seg = String(this.pattern + 1).padStart(2, '0');
-    const bpm = this.bpm.toFixed ? this.bpm.toFixed(1) : this.bpm + '.0';
-    const bpmStr = String(bpm).padStart(5, ' ');
+    const bpm = String(Math.round(this.bpm)).padStart(3, ' ');
 
     if (this.mode === 'segment' || this.mode === 'pattern') {
-      this.setLine1('Seg:' + seg + '  ' + bpmStr);
-      this.setLine2(' ');
+      this.setLine1('Seg ' + seg + '    ' + bpm);
+      if (this.playing) {
+        this.setLine2('Bar:' + (this.bar + 1) + ' Beat:' + (this.beat + 1));
+      } else {
+        this.setLine2(' ');
+      }
     } else if (this.mode === 'song') {
-      this.setLine1('Song:01  ' + bpmStr);
+      const song = String(this.song + 1).padStart(2, '0');
+      this.setLine1('Song ' + song + '   ' + bpm);
       this.setLine2(' ');
     } else if (this.mode === 'step') {
-      this.setLine1('StepPgm  ' + bpmStr);
+      this.setLine1('StepPgm     ' + bpm);
       this.setLine2(' ');
     } else {
-      // Custom mode text (from module activation etc.)
       this.setLine1(this.mode);
     }
   }
