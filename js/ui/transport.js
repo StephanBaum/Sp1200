@@ -132,6 +132,7 @@ export class TransportUI {
       this._bindBtn(btnId, () => {
         if (this.activeModule === mod.name) {
           // Deactivate module
+          if (mod.name === 'sample') document.dispatchEvent(new Event('sample-stop-vu'));
           this.activeModule = null;
           this._led(mod.led, false);
           document.getElementById(btnId).classList.remove('active');
@@ -143,6 +144,7 @@ export class TransportUI {
         } else {
           // Deactivate previous module
           if (this.activeModule) {
+            if (this.activeModule === 'sample') document.dispatchEvent(new Event('sample-stop-vu'));
             for (const [id, m] of Object.entries(modules)) {
               this._led(m.led, false);
               document.getElementById(id)?.classList.remove('active');
@@ -159,10 +161,10 @@ export class TransportUI {
           this.display.setLine1(mod.label);
           this.display.setLine2('Enter option #');
 
-          // Sample module auto-enters VU mode (function 1)
+          // Sample module auto-enters VU mode with live VU meter
           if (mod.name === 'sample') {
-            this.display.setLine1('VU Mode');
-            this.display.setLine2('A1     0dB');
+            this.display.setLine1(this._vuPadLabel());
+            document.dispatchEvent(new Event('sample-start-vu'));
           }
         }
       });
@@ -171,6 +173,9 @@ export class TransportUI {
 
   _exitModule() {
     if (!this.activeModule) return;
+    if (this.activeModule === 'sample') {
+      document.dispatchEvent(new Event('sample-stop-vu'));
+    }
     const moduleIds = { 'setup': 'btn-setup', 'disk': 'btn-disk', 'sync': 'btn-sync', 'sample': 'btn-sample' };
     const ledIds = { 'setup': 'led-setup', 'disk': 'led-disk', 'sync': 'led-sync', 'sample': 'led-sample' };
     this._led(ledIds[this.activeModule], false);
@@ -266,35 +271,42 @@ export class TransportUI {
     }
     else if (mod === 'sample') {
       switch (funcNum) {
-        case 1:
+        case 1: // VU Mode — monitor input with live meter
           this.editParam = null;
-          this._moduleDisplay('VU Mode', this._vuPadLabel());
+          this.display.lock();
+          this.display.setLine1(this._vuPadLabel());
+          document.dispatchEvent(new Event('sample-start-vu'));
           break;
-        case 2:
+        case 2: // Assign Voice — select pad for sampling
           this.editParam = 'select-pad';
           this.pendingAction = 'assign-voice';
           this._moduleDisplay('Assign Voice', 'Select a pad');
           break;
-        case 3:
+        case 3: // Input Level — cycle 0/+20/+40 dB with arrows
           this.editParam = 'sample-level';
           this._moduleDisplay('Input Level', this._gainLabel());
           break;
-        case 4:
+        case 4: // Threshold — arm with slider
           this.editParam = 'threshold';
           this._moduleDisplay('Arm Threshold', 'Use Slider #1');
           break;
-        case 5:
+        case 5: // Sample Length
           this.editParam = 'sample-length';
           this._moduleDisplay('Sample Length', '2.5s Slider #1');
           break;
-        case 6:
+        case 6: // Resample
           this.display.flash('Resample', 'Last pad');
           break;
-        case 7:
+        case 7: // Arm Sampling — waits for threshold breach
           this._moduleDisplay('Sample Armed', 'Waiting...');
+          this._listenSampleDone();
+          document.dispatchEvent(new Event('sample-arm'));
+          document.dispatchEvent(new Event('sample-start-vu'));
           break;
-        case 9:
-          this.display.flash('Sampling...', 'Force start');
+        case 9: // Force Sample — record immediately
+          this._moduleDisplay('Sampling...', '');
+          this._listenSampleDone();
+          document.dispatchEvent(new Event('sample-force'));
           break;
         default:
           this.display.flash('Sample ' + funcNum, 'Not available');
@@ -529,10 +541,14 @@ export class TransportUI {
         if (this.stepProgramMode) {
           this.mode = 'step-edit';
           this.engine.setMode('step-edit');
+          // Per manual: Record LED on, Run LED stays off
+          this._led('led-record', true);
+          this._led('led-run', false);
           document.dispatchEvent(new CustomEvent('step-edit-toggle', { detail: { active: true, quantize: this.quantizeGrid, bars: this.segmentLength } }));
         } else {
           this.mode = 'segment';
           this.engine.setMode('segment');
+          this._led('led-record', false);
           document.dispatchEvent(new CustomEvent('step-edit-toggle', { detail: { active: false } }));
           this.display.setMode('segment');
         }
@@ -705,6 +721,19 @@ export class TransportUI {
       }
 
       this.numericBuffer = '';
+    } else {
+      // No numeric buffer — handle confirm for non-numeric editParam states
+      switch (this.editParam) {
+        case 'sample-level':
+          this.editParam = 'module-func';
+          this.display.setLine1(this._vuPadLabel());
+          document.dispatchEvent(new Event('sample-start-vu'));
+          break;
+        case 'smpte-rate':
+          this.editParam = 'module-func';
+          this.display.flash('SMPTE Set', this._smpteLabel());
+          break;
+      }
     }
 
     // Only clear editParam if not reassigned inside the switch (e.g., back to 'module-func')
@@ -723,6 +752,7 @@ export class TransportUI {
       case 'bpm':
         this.bpm = Math.max(30, Math.min(250, this.bpm + dir));
         this.engine.setBpm(this.bpm);
+        this.display.setBpm(this.bpm);
         this.display.flash('Tempo ' + Math.round(this.bpm), 'BPM');
         break;
       case 'swing': {
@@ -1014,6 +1044,9 @@ export class TransportUI {
           // Only clear if not reassigned inside the switch
           if (this.editParam === 'select-pad') this.editParam = null;
           if (this.pendingAction && !this.editParam) this.pendingAction = null;
+        } else if (this.eraseMode && this.playing) {
+          // Real-time erase: pad held while playing erases that pad's events
+          this.engine.send({ type: 'erase-track', pad });
         } else if (this.tapRepeatHeld) {
           // Tap/Repeat held + pad → retrigger at autocorrect rate
           const repeatPad = pad;
@@ -1051,6 +1084,31 @@ export class TransportUI {
   _smpteLabel() {
     const rates = ['24fps', '25fps', '30fps', '30-drop'];
     return rates[this.smpteIndex || 0];
+  }
+
+  _listenSampleDone() {
+    const onStart = () => {
+      this._moduleDisplay('Sampling...', '');
+    };
+    const onDone = (e) => {
+      document.removeEventListener('sample-done', onDone);
+      document.removeEventListener('sample-recording-started', onStart);
+      if (e.detail.success) {
+        this._moduleDisplay('Sample is Good', '');
+      } else {
+        this._moduleDisplay('Sample Overload', '');
+      }
+      setTimeout(() => {
+        // Return to VU mode
+        if (this.activeModule === 'sample') {
+          this.editParam = 'module-func';
+          this.display.setLine1(this._vuPadLabel());
+          document.dispatchEvent(new Event('sample-start-vu'));
+        }
+      }, 1500);
+    };
+    document.addEventListener('sample-recording-started', onStart);
+    document.addEventListener('sample-done', onDone);
   }
 
   _bindBtn(id, handler) {

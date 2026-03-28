@@ -15,6 +15,16 @@ let currentBank = 0;
 let selectedPad = 0;
 let initialized = false;
 
+// Sampling state
+let micStream = null;
+let micRecorder = null;
+let micChunks = [];
+let micAnalyser = null;
+let micSource = null;
+let vuAnimFrame = null;
+let sampleMaxLength = 2.5; // seconds, adjustable via Sample opt 5
+let sampleArmed = false;
+
 async function init() {
   if (initialized) return;
   await engine.init();
@@ -31,12 +41,9 @@ async function init() {
     switch (msg.type) {
       case 'tick':
         display.setBar(msg.bar);
-        // Show position on line 2 during playback
         if (msg.bar !== undefined && msg.beat !== undefined) {
-          const barNum = (msg.bar || 0) + 1;
-          const beatNum = (msg.beat || 0) + 1;
-          if (!display.locked) display.setLine2('Bar:' + barNum + ' Beat:' + beatNum);
-          // Flicker Run LED on segment loop (bar resets to 0)
+          display.setBeat(msg.beat);
+          // Flicker Run LED on segment loop
           if (msg.bar === 0 && msg.beat === 0) {
             const runLed = document.getElementById('led-run');
             if (runLed) {
@@ -121,10 +128,9 @@ async function init() {
   // Knobs — drag to rotate, show value on LCD. Default 75%
   document.querySelectorAll('.knob').forEach(knob => {
     let dragging = false, startY = 0, startAngle = 60;
-    let angle = 60; // 75% = -120 + 240*0.75 = 60
+    let angle = 60;
     const pointer = knob.querySelector('.knob-indicator');
     if (pointer) pointer.style.transform = `translateX(-50%) rotate(${angle}deg)`;
-    // Set initial values
     const initVal = 0.75;
     if (knob.id === 'knob-gain') engine.setParam('gain', 0, initVal);
     if (knob.id === 'knob-mix-vol') engine.setParam('mix-volume', 0, initVal);
@@ -145,10 +151,7 @@ async function init() {
     document.addEventListener('mouseup', () => { dragging = false; });
   });
 
-  // Disk → file upload
-  document.getElementById('btn-disk').addEventListener('click', () => {
-    document.getElementById('file-input').click();
-  });
+  // Disk file upload — triggered by transport via custom event
   document.getElementById('file-input').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -156,13 +159,12 @@ async function init() {
     e.target.value = '';
   });
 
-  // Setup → sample edit mode
-  let setupMode = false;
-  document.getElementById('btn-setup').addEventListener('click', () => {
-    setupMode = !setupMode;
-    document.getElementById('btn-setup').classList.toggle('active', setupMode);
-    display.setMode(setupMode ? 'SET UP' : 'PATTERN');
-  });
+  // ── Sampling events from transport.js ──────────────────────────────────
+  document.addEventListener('sample-start-vu', () => startVUMonitoring());
+  document.addEventListener('sample-stop-vu', () => stopVUMonitoring());
+  document.addEventListener('sample-force', () => startForceRecording());
+  document.addEventListener('sample-arm', () => { sampleArmed = true; });
+  document.addEventListener('sample-stop', () => stopRecording());
 
   // Drag and drop
   const sp = document.getElementById('sp1200');
@@ -175,41 +177,123 @@ async function init() {
     if (file) await loadFileToSelectedPad(file);
   });
 
-  // Sample → mic recording
-  let micStream = null, micRecorder = null, micChunks = [];
-  document.getElementById('btn-sample').addEventListener('click', async () => {
-    if (micRecorder && micRecorder.state === 'recording') {
-      micRecorder.stop();
-      return;
-    }
-    try {
+  display.setMemory(BANK_SAMPLE_TIME);
+  await loadDefaultKit();
+  console.log('SP-1200 ready');
+}
+
+// ── VU Monitoring (mic input level display) ──────────────────────────────
+async function startVUMonitoring() {
+  try {
+    if (!micStream) {
       micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      micRecorder = new MediaRecorder(micStream);
-      micChunks = [];
-      micRecorder.ondataavailable = (e) => { if (e.data.size > 0) micChunks.push(e.data); };
-      micRecorder.onstop = async () => {
-        const blob = new Blob(micChunks, { type: 'audio/webm' });
+    }
+    const ctx = engine.context;
+    micSource = ctx.createMediaStreamSource(micStream);
+    micAnalyser = ctx.createAnalyser();
+    micAnalyser.fftSize = 256;
+    micSource.connect(micAnalyser);
+
+    const dataArray = new Uint8Array(micAnalyser.frequencyBinCount);
+    function drawVU() {
+      vuAnimFrame = requestAnimationFrame(drawVU);
+      micAnalyser.getByteTimeDomainData(dataArray);
+      // Calculate RMS level
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        const v = (dataArray[i] - 128) / 128;
+        sum += v * v;
+      }
+      const rms = Math.sqrt(sum / dataArray.length);
+      const level = Math.min(1, rms * 4); // Scale for visibility
+      display.showVU(level);
+
+      // If armed, check threshold
+      if (sampleArmed && level > 0.05) {
+        sampleArmed = false;
+        startForceRecording();
+      }
+    }
+    drawVU();
+  } catch (err) {
+    console.error('Mic access denied:', err);
+  }
+}
+
+function stopVUMonitoring() {
+  if (vuAnimFrame) { cancelAnimationFrame(vuAnimFrame); vuAnimFrame = null; }
+  if (micSource) { micSource.disconnect(); micSource = null; }
+  if (micAnalyser) { micAnalyser = null; }
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  sampleArmed = false;
+}
+
+// ── Force Recording (Sample option 9) ────────────────────────────────────
+async function startForceRecording() {
+  try {
+    if (!micStream) {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
+    // Set up analyser for VU during recording
+    if (!micAnalyser) {
+      const ctx = engine.context;
+      micSource = ctx.createMediaStreamSource(micStream);
+      micAnalyser = ctx.createAnalyser();
+      micAnalyser.fftSize = 256;
+      micSource.connect(micAnalyser);
+    }
+
+    micRecorder = new MediaRecorder(micStream);
+    micChunks = [];
+    micRecorder.ondataavailable = (e) => { if (e.data.size > 0) micChunks.push(e.data); };
+    micRecorder.onstop = async () => {
+      const blob = new Blob(micChunks, { type: 'audio/webm' });
+      try {
         const processed = await loadSampleFromFile(engine.context, await blob.arrayBuffer());
         engine.loadSample(selectedPad, processed);
         sampleMemory.allocate(sampleMemory.getBank(selectedPad), processed.length);
         display.setMemory(sampleMemory.getRemainingSeconds(sampleMemory.getBank(selectedPad)));
-        micStream.getTracks().forEach(t => t.stop());
-        micStream = null;
-        document.getElementById('btn-sample').classList.remove('active');
-        display.setMode('SAMPLED');
-        setTimeout(() => display.setMode('PATTERN'), 800);
-      };
-      micRecorder.start();
-      document.getElementById('btn-sample').classList.add('active');
-      display.setMode('REC...');
-    } catch (err) {
-      console.error('Mic access denied:', err);
-    }
-  });
+        document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: true } }));
+      } catch (err) {
+        document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false } }));
+      }
+    };
+    micRecorder.start();
+    document.dispatchEvent(new CustomEvent('sample-recording-started'));
 
-  display.setMemory(BANK_SAMPLE_TIME);
-  await loadDefaultKit();
-  console.log('SP-1200 ready');
+    // Show VU during recording
+    const dataArray = new Uint8Array(micAnalyser.frequencyBinCount);
+    function drawRecVU() {
+      if (!micRecorder || micRecorder.state !== 'recording') return;
+      vuAnimFrame = requestAnimationFrame(drawRecVU);
+      micAnalyser.getByteTimeDomainData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        const v = (dataArray[i] - 128) / 128;
+        sum += v * v;
+      }
+      const rms = Math.sqrt(sum / dataArray.length);
+      display.showVU(Math.min(1, rms * 4));
+    }
+    drawRecVU();
+
+    // Auto-stop after sample length
+    setTimeout(() => {
+      if (micRecorder && micRecorder.state === 'recording') {
+        micRecorder.stop();
+      }
+    }, sampleMaxLength * 1000);
+  } catch (err) {
+    console.error('Recording failed:', err);
+    document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false } }));
+  }
+}
+
+function stopRecording() {
+  if (micRecorder && micRecorder.state === 'recording') {
+    micRecorder.stop();
+  }
+  stopVUMonitoring();
 }
 
 async function loadFileToSelectedPad(file) {
@@ -218,8 +302,7 @@ async function loadFileToSelectedPad(file) {
   engine.loadSample(selectedPad, processed);
   sampleMemory.allocate(sampleMemory.getBank(selectedPad), processed.length);
   display.setMemory(sampleMemory.getRemainingSeconds(sampleMemory.getBank(selectedPad)));
-  display.setMode('PAD ' + (selectedPad + 1));
-  setTimeout(() => display.setMode('PATTERN'), 800);
+  display.flash('Loaded', 'Pad ' + (selectedPad + 1));
 }
 
 async function loadDefaultKit() {
