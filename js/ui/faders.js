@@ -37,7 +37,11 @@ export class FadersUI {
   _updatePosition(index) {
     const thumb = this.thumbs[index];
     if (!thumb) return;
-    thumb.style.top = `${(1 - this.values[index]) * 100}%`;
+    // Constrain to graduation lines: ~12% (top) to ~88% (bottom) of track
+    const minTop = 12;
+    const maxTop = 88;
+    const top = maxTop - this.values[index] * (maxTop - minTop);
+    thumb.style.top = `${top}%`;
   }
   _updateAllPositions() { for (let i = 0; i < 8; i++) this._updatePosition(i); }
   _sendValue(index) {
