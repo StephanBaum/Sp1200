@@ -109,7 +109,7 @@ body {
 
 .lcd-line {
   font-family: 'Courier New', monospace;
-  font-size: clamp(6px, 0.65vw, 12px);
+  font-size: 11px;
   font-weight: bold;
   color: #1a2a08;
   text-shadow: 0 0 1px rgba(26, 42, 8, 0.5);
@@ -259,7 +259,7 @@ body {
 .lcd-bars-labels {
   text-align: center;
   margin-top: 2px;
-  font-size: clamp(6px, 0.7vw, 11px) !important;
+  font-size: 8px !important;
   letter-spacing: 0.35em !important;
   color: #1a2a08;
 }
