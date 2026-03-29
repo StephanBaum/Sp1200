@@ -99,6 +99,7 @@ async function init() {
       setTimeout(() => {
         if (state?.activeModule === 'sample') {
           state.editParam = 'vu-mode';
+          display.setLine1(state.vuPadLabel());
           document.dispatchEvent(new Event('sample-start-vu'));
         }
       }, 800);
@@ -109,6 +110,7 @@ async function init() {
       setTimeout(() => {
         if (state?.activeModule === 'sample') {
           state.editParam = 'vu-mode';
+          display.setLine1(state.vuPadLabel());
           document.dispatchEvent(new Event('sample-start-vu'));
         }
       }, 800);
