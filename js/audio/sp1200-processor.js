@@ -113,24 +113,25 @@ class SP1200Processor extends AudioWorkletProcessor {
 
     switch (msg.type) {
       case 'trigger': {
-        // Load the correct bank's sample into the voice before triggering
-        const bank = msg.bank ?? this.currentBank;
-        const slotIdx = bank * NUM_PADS + msg.pad;
-        const slot = this.sampleSlots[slotIdx];
-        const v = this.voices[msg.pad];
-        if (slot?.sample) {
-          v.sample = slot.sample;
-          v.startPoint = slot.startPoint;
-          v.endPoint = slot.endPoint;
-          v.loopEnabled = slot.loopEnabled;
-          v.loopStart = slot.loopStart;
-          v.loopEnd = slot.loopEnd;
-          v.reversed = slot.reversed;
-          v.pitch = slot.pitch;
-          v.decayRate = slot.decayRate;
-        } else {
-          // Empty slot — don't play a stale sample from another bank
-          v.sample = null;
+        // In multi mode, voices are already set up — don't override
+        if (!this._multiBackup) {
+          const bank = msg.bank ?? this.currentBank;
+          const slotIdx = bank * NUM_PADS + msg.pad;
+          const slot = this.sampleSlots[slotIdx];
+          const v = this.voices[msg.pad];
+          if (slot?.sample) {
+            v.sample = slot.sample;
+            v.startPoint = slot.startPoint;
+            v.endPoint = slot.endPoint;
+            v.loopEnabled = slot.loopEnabled;
+            v.loopStart = slot.loopStart;
+            v.loopEnd = slot.loopEnd;
+            v.reversed = slot.reversed;
+            v.pitch = slot.pitch;
+            v.decayRate = slot.decayRate;
+          } else {
+            v.sample = null;
+          }
         }
         this._triggerVoice(msg.pad, msg.velocity ?? 127);
         break;
