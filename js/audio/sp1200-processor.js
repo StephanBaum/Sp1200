@@ -393,6 +393,10 @@ class SP1200Processor extends AudioWorkletProcessor {
         break;
       }
 
+      case 'set-bars':
+        this.patterns[this.currentPatternIndex].setBars(msg.bars);
+        break;
+
       case 'set-default-decay':
         for (let i = 0; i < NUM_PADS; i++) {
           if (this.padModes[i] === 'tune') this.voices[i].setDecay(msg.value / 31);
