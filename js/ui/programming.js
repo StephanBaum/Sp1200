@@ -19,22 +19,24 @@ export function bindProgramming(s) {
       // Button 1 (Song/Segment) is the mode selector — it toggles mode
       if (btn.id === 'prog-1') {
         if (s.mode === 'song') {
-          // Switch to segment mode
           s.mode = 'segment';
           s.engine.setMode('segment');
           s.led('led-song', false);
           s.led('led-segment', true);
-          s.editParam = 'segment';
-          s.numericBuffer = '';
-          s.display.setMode('segment');
+          if (!s.activeModule) {
+            s.editParam = 'segment';
+            s.numericBuffer = '';
+            s.display.setMode('segment');
+          }
         } else {
-          // Switch to song mode
           s.mode = 'song';
           s.engine.setMode('song');
           s.led('led-song', true);
           s.led('led-segment', false);
-          s.display.setSong(s.currentSong);
-          s.display.setMode('song');
+          if (!s.activeModule) {
+            s.display.setSong(s.currentSong);
+            s.display.setMode('song');
+          }
         }
         return;
       }
