@@ -2,6 +2,7 @@ export class KeyboardUI {
   constructor(engine, display) {
     this.engine = engine;
     this.display = display;
+    this.state = null; // set after SP1200State is created
     this.faderMode = 'volume';
     this._backtickHeld = false;
     this._repeatInterval = null;
@@ -218,7 +219,8 @@ export class KeyboardUI {
   }
 
   _firePad(pad) {
-    this.engine.trigger(pad, 100);
+    const bank = this.state?.currentBank || 0;
+    this.engine.trigger(pad, 100, bank);
     document.dispatchEvent(new CustomEvent('pad-trigger', { detail: { pad } }));
   }
 

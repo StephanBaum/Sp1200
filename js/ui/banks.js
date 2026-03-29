@@ -16,17 +16,17 @@ export function bindBanks(s) {
   });
 
   // Single cycling bank button (A → B → C → D → A)
-  let currentBank = 0;
   const bankLeds = ['led-bank-a', 'led-bank-b', 'led-bank-c', 'led-bank-d'];
   s.led('led-bank-a', true); // Bank A active by default
   const bankBtn = document.getElementById('btn-bank');
   if (bankBtn) {
     bankBtn.addEventListener('click', () => {
-      currentBank = (currentBank + 1) % 4;
-      s.display.setBank(currentBank);
-      document.dispatchEvent(new CustomEvent('bank-change', { detail: { bank: currentBank } }));
+      s.currentBank = (s.currentBank + 1) % 4;
+      s.display.setBank(s.currentBank);
+      s.engine.send({ type: 'set-bank', bank: s.currentBank });
+      document.dispatchEvent(new CustomEvent('bank-change', { detail: { bank: s.currentBank } }));
       bankLeds.forEach(id => s.led(id, false));
-      s.led(bankLeds[currentBank], true);
+      s.led(bankLeds[s.currentBank], true);
     });
   }
 }

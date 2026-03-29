@@ -14,6 +14,9 @@ export class Voice {
     this.loopEnd = 0;
     this.startPoint = 0;
     this.endPoint = 0;
+    // Per-note override: when a sequencer event has stored params,
+    // lock pitch/decay so fader changes don't clobber playback
+    this.perNoteLock = false;
   }
   loadSample(buffer) {
     this.sample = buffer;

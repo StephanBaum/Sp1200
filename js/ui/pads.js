@@ -1,6 +1,7 @@
 export class PadsUI {
   constructor(engine) {
     this.engine = engine;
+    this.state = null; // set after SP1200State is created
     this.padElements = document.querySelectorAll('.pad');
     this.currentBank = 0;
     this._bindMouse();
@@ -8,9 +9,14 @@ export class PadsUI {
   _bindMouse() {
     this.padElements.forEach((el) => {
       el.addEventListener('mousedown', (e) => {
+        // In erase mode, don't trigger/record — pad-actions handles erase
+        if (this.state?.eraseMode && this.state?.playing) return;
+
         const pad = parseInt(el.dataset.pad, 10);
         const velocity = this._velocityFromClick(e, el);
-        this.engine.trigger(pad, velocity);
+        // Trigger with bank offset so correct sample plays
+        const bank = this.state?.currentBank || 0;
+        this.engine.trigger(pad, velocity, bank);
         this._flash(pad);
       });
     });
