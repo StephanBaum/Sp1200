@@ -577,6 +577,14 @@ class SP1200Processor extends AudioWorkletProcessor {
       voice.perNoteLock = false;
     }
 
+    // Mute groups: stop other voices on the same output channel
+    const myChannel = this.channelAssign[pad];
+    for (let i = 0; i < NUM_PADS; i++) {
+      if (i !== pad && this.voices[i].active && this.channelAssign[i] === myChannel) {
+        this.voices[i].stop();
+      }
+    }
+
     // Dynamic allocation: steal an inactive voice to continue the current sound
     if (this.dynamicAlloc && voice.active) {
       for (let i = 0; i < NUM_PADS; i++) {
