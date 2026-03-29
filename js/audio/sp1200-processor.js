@@ -113,12 +113,12 @@ class SP1200Processor extends AudioWorkletProcessor {
 
     switch (msg.type) {
       case 'trigger': {
-        // If bank specified, load that bank's sample into the voice before triggering
+        // Load the correct bank's sample into the voice before triggering
         const bank = msg.bank ?? this.currentBank;
         const slotIdx = bank * NUM_PADS + msg.pad;
         const slot = this.sampleSlots[slotIdx];
+        const v = this.voices[msg.pad];
         if (slot?.sample) {
-          const v = this.voices[msg.pad];
           v.sample = slot.sample;
           v.startPoint = slot.startPoint;
           v.endPoint = slot.endPoint;
@@ -128,6 +128,9 @@ class SP1200Processor extends AudioWorkletProcessor {
           v.reversed = slot.reversed;
           v.pitch = slot.pitch;
           v.decayRate = slot.decayRate;
+        } else {
+          // Empty slot — don't play a stale sample from another bank
+          v.sample = null;
         }
         this._triggerVoice(msg.pad, msg.velocity ?? 127);
         break;
