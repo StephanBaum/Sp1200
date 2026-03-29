@@ -26,6 +26,7 @@ function mockDisplay() {
     setLine2: vi.fn(),
     setMode: vi.fn(),
     flash: vi.fn(),
+    setModuleRestore: vi.fn(),
     setBpm: vi.fn(),
     setSong: vi.fn(),
     setPlaying: vi.fn(),

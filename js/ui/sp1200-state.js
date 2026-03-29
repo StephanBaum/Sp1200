@@ -61,6 +61,11 @@ export class SP1200State {
     this.display.lock();
     this.display.setLine1(line1);
     this.display.setLine2(line2 || '');
+    // Save as restore point for flash() to return to
+    this.display.setModuleRestore(() => {
+      this.display.setLine1(line1);
+      this.display.setLine2(line2 || '');
+    });
   }
 
   exitModule() {
@@ -77,6 +82,7 @@ export class SP1200State {
     this.editParam = null;
     this.numericBuffer = '';
     this.pendingAction = null;
+    this.display.setModuleRestore(null);
     this.display.unlock();
     this.display.setMode('segment');
   }

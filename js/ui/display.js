@@ -87,10 +87,17 @@ export class DisplayUI {
     this.setLine1(line1);
     if (line2 !== undefined) this.setLine2(line2);
     this._flashTimer = setTimeout(() => {
-      // Don't revert to default screen if display is locked (module active)
-      if (!this.locked) this._refresh();
+      if (this.locked && this._moduleRestore) {
+        // Revert to the module's current screen
+        this._moduleRestore();
+      } else if (!this.locked) {
+        this._refresh();
+      }
     }, duration);
   }
+
+  /** Set a restore callback for flash() to return to when in a module */
+  setModuleRestore(fn) { this._moduleRestore = fn || null; }
 
   // ── Module function display ────────────────────────────────────────────
   showModuleFunc(moduleName, funcName, detail) {
