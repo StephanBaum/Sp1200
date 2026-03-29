@@ -1,6 +1,23 @@
 import { handleModuleFunction, handleSpecialFunction, executeDiskOp } from './modules.js';
 import { confirmEntry } from './master-control.js';
 
+function _returnToModuleMenu(s) {
+  s.editParam = 'module-func';
+  s.numericBuffer = '';
+  const labels = { 'setup': 'SET UP', 'disk': 'DISK', 'sync': 'SYNC', 'sample': 'SAMPLE' };
+  setTimeout(() => {
+    if (s.activeModule) {
+      if (s.activeModule === 'sample') {
+        s.editParam = 'vu-mode';
+        s.display.setLine1(s.vuPadLabel());
+        document.dispatchEvent(new Event('sample-start-vu'));
+      } else {
+        s.moduleDisplay(labels[s.activeModule] || 'MODULE', 'Enter option #');
+      }
+    }
+  }, 800);
+}
+
 function _padLabel(s, pad) {
   return ['A', 'B', 'C', 'D'][s.currentBank] + ((pad ?? 0) + 1);
 }
@@ -57,12 +74,11 @@ export function bindKeypad(s) {
           s.engine.send({ type: 'exit-multi' });
           s.multiMode = null;
           s.led('led-multi', false);
-          s.display.flash('Exit Multi', 'Done');
+          s.moduleDisplay('Exit Multi', 'Done');
         } else if (key === '7') {
-          s.display.flash('Cancelled', '');
+          s.moduleDisplay('Cancelled', '');
         }
-        s.editParam = 'module-func';
-        s.numericBuffer = '';
+        _returnToModuleMenu(s);
         return;
       }
 
@@ -70,13 +86,13 @@ export function bindKeypad(s) {
         if (key === '9') {
           s.dynamicButtons = true;
           s.engine.send({ type: 'dynamic-buttons', enabled: true });
-          s.moduleDisplay('Dyn Buttons? YES', '(yes/no)');
+          s.moduleDisplay('Dyn Buttons', 'YES - On');
         } else if (key === '7') {
           s.dynamicButtons = false;
           s.engine.send({ type: 'dynamic-buttons', enabled: false });
-          s.moduleDisplay('Dyn Buttons? NO', '(yes/no)');
+          s.moduleDisplay('Dyn Buttons', 'NO - Off');
         }
-        // Stay on screen — pressing module button or another function exits
+        _returnToModuleMenu(s);
         return;
       }
 
@@ -271,8 +287,7 @@ export function bindKeypad(s) {
         s._truncEnd = null;
         s._truncLoop = null;
         s._truncSampleLen = null;
-        s.editParam = 'module-func';
-        s.numericBuffer = '';
+        _returnToModuleMenu(s);
         return;
       }
 
@@ -298,49 +313,45 @@ export function bindKeypad(s) {
       if (s.editParam === 'clear-all-confirm') {
         if (key === '9') {
           s.engine.send({ type: 'clear-all' });
-          s.display.flash('All Cleared', '');
+          s.moduleDisplay('All Cleared', '');
         } else if (key === '7') {
-          s.display.flash('Cancelled', '');
+          s.moduleDisplay('Cancelled', '');
         }
-        s.editParam = 'module-func';
-        s.numericBuffer = '';
+        _returnToModuleMenu(s);
         return;
       }
 
       if (s.editParam === 'clear-sounds-confirm') {
         if (key === '9') {
           s.engine.send({ type: 'clear-sounds' });
-          s.display.flash('Sounds Cleared', '');
+          s.moduleDisplay('Sounds Cleared', '');
         } else if (key === '7') {
-          s.display.flash('Cancelled', '');
+          s.moduleDisplay('Cancelled', '');
         }
-        s.editParam = 'module-func';
-        s.numericBuffer = '';
+        _returnToModuleMenu(s);
         return;
       }
 
       if (s.editParam === 'clear-seqs-confirm') {
         if (key === '9') {
           s.engine.send({ type: 'clear-sequences' });
-          s.display.flash('Seqs Cleared', '');
+          s.moduleDisplay('Seqs Cleared', '');
         } else if (key === '7') {
-          s.display.flash('Cancelled', '');
+          s.moduleDisplay('Cancelled', '');
         }
-        s.editParam = 'module-func';
-        s.numericBuffer = '';
+        _returnToModuleMenu(s);
         return;
       }
 
       if (s.editParam === 'dynamic-alloc-confirm') {
         if (key === '9') {
           s.engine.send({ type: 'dynamic-alloc', enabled: true });
-          s.display.flash('Dyn Alloc', 'Enabled');
+          s.moduleDisplay('Dyn Alloc', 'Enabled');
         } else if (key === '7') {
           s.engine.send({ type: 'dynamic-alloc', enabled: false });
-          s.display.flash('Dyn Alloc', 'Disabled');
+          s.moduleDisplay('Dyn Alloc', 'Disabled');
         }
-        s.editParam = 'module-func';
-        s.numericBuffer = '';
+        _returnToModuleMenu(s);
         return;
       }
 

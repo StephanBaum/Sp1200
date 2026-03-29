@@ -74,7 +74,7 @@ class SP1200Processor extends AudioWorkletProcessor {
 
     // Setup module state
     this.mixSnapshots = Array.from({ length: 8 }, () => new Float32Array(8).fill(0.75));
-    this.dynamicButtons = false;
+    this.dynamicButtons = true;
     this.dynamicAlloc = false;
     this.padModes = new Array(8).fill('tune');
     this._multiBackup = null;
