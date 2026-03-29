@@ -48,6 +48,7 @@ function mockState() {
     stepProgramMode: false,
     eraseMode: false,
     storage: { listDisks: async () => [] },
+    fsStorage: { hasFolder: true, _refreshFiles: async () => {}, getFileList: () => [], dirHandle: { name: 'test' } },
     engine: { send: vi.fn(), setMode: vi.fn() },
     display: {
       lock: vi.fn(),

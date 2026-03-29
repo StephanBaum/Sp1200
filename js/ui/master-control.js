@@ -202,8 +202,12 @@ export function confirmEntry(s) {
         s.editParam = 'module-func';
         break;
       case 'create-folder':
-        if (s.diskNameBuffer.trim()) {
-          s.display.flash('Folder Created', s.diskNameBuffer.trim() + '/');
+        if (s.diskNameBuffer.trim() && s.fsStorage?.hasFolder) {
+          s.fsStorage.createDirectory(s.diskNameBuffer.trim()).then(ok => {
+            s.display.flash(ok ? 'Folder Created' : 'Create Failed', s.diskNameBuffer.trim() + '/');
+          });
+        } else if (s.diskNameBuffer.trim()) {
+          s.display.flash('No Folder Set', '');
         } else {
           s.display.flash('Cancelled', '');
         }

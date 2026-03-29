@@ -17,9 +17,11 @@ import { StepEditUI } from './ui/step-edit.js';
 import { loadSampleFromFile, SampleMemory } from './audio/sample-loader.js';
 import { BANK_SAMPLE_TIME } from './constants.js';
 import { MIDIInput } from './midi/midi-input.js';
+import { FileSystemStorage } from './storage/filesystem.js';
 
 const engine = new SP1200Engine();
 const storage = new SP1200Storage();
+const fsStorage = new FileSystemStorage();
 const sampleMemory = new SampleMemory();
 let display, pads, faders, state, keyboard, stepEdit;
 let currentBank = 0;
@@ -55,6 +57,7 @@ async function init() {
   faders = new FadersUI(engine);
   state = new SP1200State(engine, display);
   state.storage = storage;
+  state.fsStorage = fsStorage;
   pads.state = state;
   bindTransport(state);
   bindModules(state);

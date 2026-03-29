@@ -341,6 +341,16 @@ class SP1200Processor extends AudioWorkletProcessor {
         }
         break;
 
+      case 'load-patterns': {
+        if (Array.isArray(msg.patterns)) {
+          for (let i = 0; i < msg.patterns.length && i < MAX_PATTERNS; i++) {
+            this.patterns[i] = Pattern.deserialize(msg.patterns[i]);
+          }
+        }
+        this.port.postMessage({ type: 'patterns-loaded' });
+        break;
+      }
+
       case 'clear-all':
         for (let i = 0; i < NUM_PADS; i++) { this.voices[i].sample = null; }
         for (let i = 0; i < TOTAL_PADS; i++) { this.sampleSlots[i].sample = null; }

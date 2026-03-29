@@ -265,23 +265,28 @@ export function handleModuleFunction(s, funcNum) {
     }
   }
   else if (mod === 'disk') {
+    // Ensure folder is selected first
+    if (!s.fsStorage?.hasFolder && funcNum !== undefined) {
+      _ensureFolderSelected(s, () => handleModuleFunction(s, funcNum, 'disk'));
+      return;
+    }
     switch (funcNum) {
-      case 0:
+      case 0: // Load All
         s.editParam = 'disk-browse';
         s._diskOperation = 'load-all';
         _loadDiskList(s);
         break;
-      case 1:
+      case 1: // Save Sequences
         s.editParam = 'disk-browse';
         s._diskOperation = 'save-sequences';
         _loadDiskList(s);
         break;
-      case 2:
+      case 2: // Save Sounds
         s.editParam = 'disk-browse';
         s._diskOperation = 'save-sounds';
         _loadDiskList(s);
         break;
-      case 3:
+      case 3: // Load Sequences
         s.editParam = 'disk-browse';
         s._diskOperation = 'load-sequences';
         _loadDiskList(s);
@@ -291,7 +296,7 @@ export function handleModuleFunction(s, funcNum) {
         s.numericBuffer = '';
         s.moduleDisplay('Load Segment #', 'Enter 2-digit #');
         break;
-      case 5:
+      case 5: // Load Sounds
         s.editParam = 'disk-browse';
         s._diskOperation = 'load-sounds';
         _loadDiskList(s);
@@ -301,23 +306,23 @@ export function handleModuleFunction(s, funcNum) {
         s.pendingAction = 'load-sound-pad';
         s.moduleDisplay('Load Sound #', 'Select a pad');
         break;
-      case 7:
+      case 7: // Catalog Sequences
         s.editParam = 'disk-browse';
         s._diskOperation = 'cat-sequences';
         _loadDiskList(s);
         break;
-      case 8:
+      case 8: // Catalog Sounds
         s.editParam = 'disk-browse';
         s._diskOperation = 'cat-sounds';
         _loadDiskList(s);
         break;
-      case 9:
+      case 9: // Save All As
         s.editParam = 'disk-name';
         s.diskNameBuffer = 'UNTITLED';
         s.diskNameCursor = 0;
         s.moduleDisplay('Save All As', s.diskNameBuffer);
         break;
-      case 27:
+      case 27: // Create Folder
         s.editParam = 'create-folder';
         s.diskNameBuffer = '';
         s.diskNameCursor = 0;
@@ -418,15 +423,33 @@ export function handleSpecialFunction(s, funcNum) {
 
 // ── Disk helpers ─────────────────────────────────────────────────────────
 
+async function _ensureFolderSelected(s, callback) {
+  if (s.fsStorage?.hasFolder) { callback(); return; }
+  s.moduleDisplay('Select Folder', 'Opening...');
+  const ok = await s.fsStorage.selectFolder();
+  if (ok) {
+    s.moduleDisplay('Folder Set', s.fsStorage.dirHandle.name);
+    setTimeout(() => callback(), 800);
+  } else {
+    s.moduleDisplay('No Folder', 'Cancelled');
+  }
+}
+
 async function _loadDiskList(s) {
   try {
-    s.diskFiles = await s.storage.listDisks();
+    if (!s.fsStorage?.hasFolder) {
+      s.moduleDisplay('No Folder', 'Select first');
+      return;
+    }
+    await s.fsStorage._refreshFiles();
+    const items = s.fsStorage.getFileList();
+    s.diskFiles = items.map(f => f.name);
     s.diskFileIndex = 0;
     if (s.diskFiles.length > 0) {
       s.diskCurrentFile = s.diskFiles[0];
-      s.moduleDisplay(s.diskCurrentFile, 'Use +/- Enter');
+      s.moduleDisplay(s.diskCurrentFile, 'Use < > Enter');
     } else {
-      s.moduleDisplay('No files', 'Save first (9)');
+      s.moduleDisplay('Empty Folder', 'Save first (9)');
     }
   } catch (e) {
     s.moduleDisplay('Disk Error', e.message?.substring(0, 16) || 'Unknown');
@@ -434,73 +457,155 @@ async function _loadDiskList(s) {
 }
 
 export async function executeDiskOp(s, op, filename) {
+  // Strip trailing / for directory names
+  const cleanName = filename.replace(/\/$/, '');
+
   try {
+    // If selected item is a directory, navigate into it
+    const items = s.fsStorage.getFileList();
+    const selected = items.find(f => f.name === filename);
+    if (selected?.kind === 'directory') {
+      if (filename === '../') {
+        await s.fsStorage.goUp();
+      } else {
+        await s.fsStorage.enterDirectory(cleanName);
+      }
+      // Refresh the file list
+      const newItems = s.fsStorage.getFileList();
+      s.diskFiles = newItems.map(f => f.name);
+      s.diskFileIndex = 0;
+      s.diskCurrentFile = s.diskFiles[0] || '';
+      const path = s.fsStorage.currentPath || s.fsStorage.dirHandle.name;
+      s.moduleDisplay(s.diskCurrentFile || 'Empty', path.substring(0, 16));
+      return;
+    }
+
     switch (op) {
       case 'load-all': {
-        const disk = await s.storage.loadAll(filename);
-        if (disk && disk.data) {
-          if (disk.data.sounds) {
-            for (const snd of disk.data.sounds) {
-              if (snd.buffer) {
-                s.engine.send({ type: 'load-sample', pad: snd.pad, buffer: snd.buffer });
-              }
-            }
+        s.moduleDisplay('Loading...', cleanName);
+        const project = await s.fsStorage.loadProject(cleanName);
+        // Load samples into engine
+        for (const slot of project.slots) {
+          if (slot.buffer) {
+            s.engine.send({ type: 'load-sample', pad: slot.slot, buffer: slot.buffer.buffer });
           }
-          s.moduleDisplay('Loaded', filename);
-        } else {
-          s.moduleDisplay('File Empty', filename);
         }
+        // Load patterns
+        if (project.patterns) {
+          s.engine.send({ type: 'load-patterns', patterns: project.patterns });
+        }
+        if (project.bpm) { s.engine.setBpm(project.bpm); s.bpm = project.bpm; }
+        s.display.flash('Loaded', cleanName);
         break;
       }
+
       case 'save-all': {
-        const data = { sounds: [], sequences: [], timestamp: Date.now() };
-        await s.storage.saveAll(filename, data);
-        s.moduleDisplay('Saved', filename);
+        s.moduleDisplay('Saving...', cleanName);
+        // Request full state from engine
+        await new Promise((resolve) => {
+          const handler = (msg) => {
+            if (msg.type === 'full-state') {
+              s.engine.node.port.onmessage = s._origOnMessage;
+              s.fsStorage.saveProject(cleanName, msg).then(() => {
+                s.display.flash('Saved', cleanName);
+                resolve();
+              }).catch(err => {
+                s.display.flash('Save Error', err.message?.substring(0, 14) || 'Failed');
+                resolve();
+              });
+            }
+          };
+          s._origOnMessage = s.engine.node.port.onmessage;
+          s.engine.node.port.onmessage = (e) => {
+            handler(e.data);
+            if (e.data.type !== 'full-state' && s._origOnMessage) s._origOnMessage(e);
+          };
+          s.engine.send({ type: 'query-full-state' });
+        });
         break;
       }
+
       case 'save-sequences': {
-        await s.storage.saveSequences(filename, []);
-        s.moduleDisplay('Seq Saved', filename);
+        s.moduleDisplay('Saving Seqs...', cleanName);
+        await new Promise((resolve) => {
+          const handler = (msg) => {
+            if (msg.type === 'full-state') {
+              s.engine.node.port.onmessage = s._origOnMessage;
+              s.fsStorage.saveSequences(cleanName, msg.patterns, msg.songs).then(() => {
+                s.display.flash('Seq Saved', cleanName);
+                resolve();
+              });
+            }
+          };
+          s._origOnMessage = s.engine.node.port.onmessage;
+          s.engine.node.port.onmessage = (e) => {
+            handler(e.data);
+            if (e.data.type !== 'full-state' && s._origOnMessage) s._origOnMessage(e);
+          };
+          s.engine.send({ type: 'query-full-state' });
+        });
         break;
       }
+
       case 'save-sounds': {
-        await s.storage.saveSounds(filename, []);
-        s.moduleDisplay('Snd Saved', filename);
+        s.moduleDisplay('Saving Snds...', cleanName);
+        await new Promise((resolve) => {
+          const handler = (msg) => {
+            if (msg.type === 'full-state') {
+              s.engine.node.port.onmessage = s._origOnMessage;
+              s.fsStorage.saveProject(cleanName, msg).then(() => {
+                s.display.flash('Snd Saved', cleanName);
+                resolve();
+              });
+            }
+          };
+          s._origOnMessage = s.engine.node.port.onmessage;
+          s.engine.node.port.onmessage = (e) => {
+            handler(e.data);
+            if (e.data.type !== 'full-state' && s._origOnMessage) s._origOnMessage(e);
+          };
+          s.engine.send({ type: 'query-full-state' });
+        });
         break;
       }
+
       case 'load-sequences': {
-        const disk = await s.storage.loadAll(filename);
-        if (disk?.data?.sequences) {
-          s.moduleDisplay('Seq Loaded', filename);
+        s.moduleDisplay('Loading Seqs...', cleanName);
+        const project = await s.fsStorage.loadProject(cleanName);
+        if (project?.patterns) {
+          s.engine.send({ type: 'load-patterns', patterns: project.patterns });
+          s.display.flash('Seq Loaded', cleanName);
         } else {
-          s.moduleDisplay('No Sequences', filename);
+          s.display.flash('No Sequences', cleanName);
         }
         break;
       }
+
       case 'load-sounds': {
-        const disk = await s.storage.loadAll(filename);
-        if (disk?.data?.sounds) {
-          for (const snd of disk.data.sounds) {
-            if (snd.buffer) {
-              s.engine.send({ type: 'load-sample', pad: snd.pad, buffer: snd.buffer });
+        s.moduleDisplay('Loading Snds...', cleanName);
+        const project = await s.fsStorage.loadProject(cleanName);
+        if (project?.slots) {
+          for (const slot of project.slots) {
+            if (slot.buffer) {
+              s.engine.send({ type: 'load-sample', pad: slot.slot, buffer: slot.buffer.buffer });
             }
           }
-          s.moduleDisplay('Snd Loaded', filename);
+          s.display.flash('Snd Loaded', cleanName);
         } else {
-          s.moduleDisplay('No Sounds', filename);
+          s.display.flash('No Sounds', cleanName);
         }
         break;
       }
+
       case 'cat-sequences':
       case 'cat-sounds': {
-        // Catalog just displays file info, no loading
-        const disk = await s.storage.loadAll(filename);
-        if (disk?.data) {
-          const sndCount = disk.data.sounds?.length || 0;
-          const seqCount = disk.data.sequences?.length || 0;
-          s.moduleDisplay(filename, sndCount + ' Snd ' + seqCount + ' Seq');
-        } else {
-          s.moduleDisplay(filename, 'Empty');
+        try {
+          const project = await s.fsStorage.loadProject(cleanName);
+          const sndCount = project?.slots?.filter(s => s.sampleFile)?.length || 0;
+          const seqCount = project?.patterns?.filter(p => p.tracks?.some(t => t.events?.length > 0))?.length || 0;
+          s.moduleDisplay(cleanName, sndCount + ' Snd ' + seqCount + ' Seq');
+        } catch {
+          s.moduleDisplay(cleanName, 'Not a project');
         }
         break;
       }
