@@ -6,8 +6,8 @@ export function bindProgramming(s) {
     const lower = btn.dataset.lower;
 
     btn.addEventListener('click', () => {
-      // Clear previous edit state
-      if (s.editParam && s.editParam !== 'module-func') {
+      // Clear previous edit state — but don't exit an active module
+      if (s.editParam && s.editParam !== 'module-func' && !s.activeModule) {
         s.editParam = null;
         s.display.unlock();
       }
