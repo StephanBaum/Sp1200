@@ -1,4 +1,4 @@
-import { executeDiskOp } from './modules.js';
+import { executeDiskOp, handleSpecialFunction } from './modules.js';
 
 export function bindMasterControl(s) {
   s.bindBtn('btn-tempo', () => {
@@ -143,6 +143,13 @@ export function confirmEntry(s) {
   } else {
     // No numeric buffer — handle confirm for non-numeric editParam states
     switch (s.editParam) {
+      case 'special-menu':
+        // Enter selects the currently browsed function
+        if (s._specialCatalog && s._specialIdx != null) {
+          const entry = s._specialCatalog[s._specialIdx];
+          handleSpecialFunction(s, entry.num);
+        }
+        return;
       case 'truncate-edit':
         // Enter → prompt for permanent truncation
         s.editParam = 'truncate-confirm';

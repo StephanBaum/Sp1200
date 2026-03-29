@@ -9,8 +9,9 @@ export class PadsUI {
   _bindMouse() {
     this.padElements.forEach((el) => {
       el.addEventListener('mousedown', (e) => {
-        // In erase mode, don't trigger/record — pad-actions handles erase
+        // Don't trigger sound when selecting a pad for a function or erasing
         if (this.state?.eraseMode && this.state?.playing) return;
+        if (this.state?.editParam === 'select-pad') return;
 
         const pad = parseInt(el.dataset.pad, 10);
         const velocity = this._velocityFromClick(e, el);
