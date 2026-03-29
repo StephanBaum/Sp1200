@@ -436,37 +436,33 @@ async function startVUMonitoring() {
     // Ensure AudioContext is running
     await engine.resume();
 
-    if (!micStream) {
-      // No stream yet — show hint, don't block
-      display.setLine2('Press 8: Sys Aud');
-      return;
-    }
     const ctx = engine.context;
     if (ctx.state === 'suspended') await ctx.resume();
 
-    micSource = ctx.createMediaStreamSource(micStream);
-    gainNode = ctx.createGain();
-    gainNode.gain.value = getSampleGain();
-    micAnalyser = ctx.createAnalyser();
-    micAnalyser.fftSize = 256;
-    micSource.connect(gainNode);
-    gainNode.connect(micAnalyser);
+    if (micStream) {
+      micSource = ctx.createMediaStreamSource(micStream);
+      gainNode = ctx.createGain();
+      gainNode.gain.value = getSampleGain();
+      micAnalyser = ctx.createAnalyser();
+      micAnalyser.fftSize = 256;
+      micSource.connect(gainNode);
+      gainNode.connect(micAnalyser);
+    }
 
-    const dataArray = new Uint8Array(micAnalyser.frequencyBinCount);
+    const dataArray = micAnalyser ? new Uint8Array(micAnalyser.frequencyBinCount) : null;
     function drawVU() {
-      if (!micAnalyser) return;
       vuAnimFrame = requestAnimationFrame(drawVU);
-      // Update gain in real-time as knob/level changes
-      if (gainNode) gainNode.gain.value = getSampleGain();
-      micAnalyser.getByteTimeDomainData(dataArray);
-      let sum = 0;
-      for (let i = 0; i < dataArray.length; i++) {
-        const v = (dataArray[i] - 128) / 128;
-        sum += v * v;
+      let level = 0;
+      if (micAnalyser && dataArray) {
+        if (gainNode) gainNode.gain.value = getSampleGain();
+        micAnalyser.getByteTimeDomainData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          const v = (dataArray[i] - 128) / 128;
+          sum += v * v;
+        }
+        level = Math.min(1, Math.sqrt(sum / dataArray.length) * 4);
       }
-      const rms = Math.sqrt(sum / dataArray.length);
-      const level = Math.min(1, rms * 4);
-      // Show threshold marker when in threshold mode or when armed
       const showThreshold = (state?.editParam === 'threshold' || sampleArmed)
         ? (state?.sampleThreshold || 0.05) : undefined;
       display.showVU(level, showThreshold);
