@@ -236,42 +236,17 @@ async function init() {
   console.log('SP-1200 ready');
 }
 
-// ── Audio Input ──────────────────────────────────────────────────────────
-// Captures system audio via getDisplayMedia (select a tab/screen to sample from).
-// The video track is kept alive (required by browser) but ignored.
-async function getAudioInput() {
-  if (micStream) return micStream;
-  try {
-    micStream = await navigator.mediaDevices.getDisplayMedia({
-      audio: true,
-      video: true, // required by spec, but we ignore the video
-    });
-    // Don't stop the video track — some browsers kill audio if video is stopped
-  } catch (err) {
-    console.error('Audio capture denied:', err);
-    return null;
-  }
-  return micStream;
-}
-
-// ── VU Monitoring (input level display) ──────────────────────────────────
+// ── VU Monitoring ────────────────────────────────────────────────────────
 async function startVUMonitoring() {
   try {
     if (!micStream) {
-      const stream = await getAudioInput();
-      if (!stream) {
-        display.showVU(0);
-        return;
-      }
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     }
-    // Reconnect analyser (may have been disconnected by stopVUMonitoring)
-    if (!micAnalyser) {
-      const ctx = engine.context;
-      micSource = ctx.createMediaStreamSource(micStream);
-      micAnalyser = ctx.createAnalyser();
-      micAnalyser.fftSize = 256;
-      micSource.connect(micAnalyser);
-    }
+    const ctx = engine.context;
+    micSource = ctx.createMediaStreamSource(micStream);
+    micAnalyser = ctx.createAnalyser();
+    micAnalyser.fftSize = 256;
+    micSource.connect(micAnalyser);
 
     const dataArray = new Uint8Array(micAnalyser.frequencyBinCount);
     function drawVU() {
@@ -295,6 +270,7 @@ async function startVUMonitoring() {
     drawVU();
   } catch (err) {
     console.error('Mic access denied:', err);
+    display.showVU(0);
   }
 }
 
@@ -302,7 +278,7 @@ function stopVUMonitoring() {
   if (vuAnimFrame) { cancelAnimationFrame(vuAnimFrame); vuAnimFrame = null; }
   if (micSource) { micSource.disconnect(); micSource = null; }
   if (micAnalyser) { micAnalyser = null; }
-  // Keep micStream alive so we don't need to re-prompt for permission
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
   sampleArmed = false;
 }
 
@@ -310,14 +286,8 @@ function stopVUMonitoring() {
 async function startForceRecording() {
   try {
     if (!micStream) {
-      const stream = await getAudioInput();
-      if (!stream) {
-        // No audio input — show error, don't dispatch sample-done failure
-        if (state) state.moduleDisplay('No Audio Input', 'Grant permission');
-        return;
-      }
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     }
-    // Set up analyser for VU during recording
     if (!micAnalyser) {
       const ctx = engine.context;
       micSource = ctx.createMediaStreamSource(micStream);
@@ -330,25 +300,13 @@ async function startForceRecording() {
     micChunks = [];
     micRecorder.ondataavailable = (e) => { if (e.data.size > 0) micChunks.push(e.data); };
     micRecorder.onstop = async () => {
-      if (micChunks.length === 0) {
-        document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false } }));
-        return;
-      }
       const blob = new Blob(micChunks, { type: 'audio/webm' });
-      if (blob.size < 100) {
-        document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false } }));
-        return;
-      }
       try {
-        const arrayBuf = await blob.arrayBuffer();
-        const processed = await loadSampleFromFile(engine.context, arrayBuf);
-        if (!processed || processed.length === 0) {
-          document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false } }));
-          return;
-        }
-        engine.loadSample(selectedPad, processed);
-        sampleMemory.allocate(sampleMemory.getBank(selectedPad), processed.length);
-        display.setMemory(sampleMemory.getRemainingSeconds(sampleMemory.getBank(selectedPad)));
+        const processed = await loadSampleFromFile(engine.context, await blob.arrayBuffer());
+        const targetPad = state?.selectedSamplePad ?? selectedPad;
+        engine.loadSample(targetPad, processed);
+        sampleMemory.allocate(sampleMemory.getBank(targetPad), processed.length);
+        display.setMemory(sampleMemory.getRemainingSeconds(sampleMemory.getBank(targetPad)));
         document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: true } }));
       } catch (err) {
         console.error('Sample processing failed:', err);
@@ -358,7 +316,7 @@ async function startForceRecording() {
     micRecorder.start();
     document.dispatchEvent(new CustomEvent('sample-recording-started'));
 
-    // Show VU during recording
+    // VU during recording
     const dataArray = new Uint8Array(micAnalyser.frequencyBinCount);
     function drawRecVU() {
       if (!micRecorder || micRecorder.state !== 'recording') return;
@@ -369,8 +327,7 @@ async function startForceRecording() {
         const v = (dataArray[i] - 128) / 128;
         sum += v * v;
       }
-      const rms = Math.sqrt(sum / dataArray.length);
-      display.showVU(Math.min(1, rms * 4));
+      display.showVU(Math.min(1, Math.sqrt(sum / dataArray.length) * 4));
     }
     drawRecVU();
 
