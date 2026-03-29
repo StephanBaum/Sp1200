@@ -451,14 +451,16 @@ export function bindKeypad(s) {
       // ── Tab Song step entry (song mode) ───────────────────────────────
       if (s.editParam === 'tabsong-entry') {
         s.numericBuffer += key;
-        s.moduleDisplay('Add Step:', 'Seg ' + s.numericBuffer.padStart(2, '0'));
+        s.moduleDisplay('Song Edit', 'Seg ' + s.numericBuffer.padStart(2, '0'));
         if (s.numericBuffer.length >= 2) {
-          const seg = parseInt(s.numericBuffer, 10);
-          if (seg >= 0 && seg <= 99) {
-            s.engine.send({ type: 'song-add-step', song: s.currentSong, step: 999, stepType: 'segment', value: seg });
-            s.display.flash('Added', 'Seg ' + String(seg + 1).padStart(2, '0'));
+          const segNum = parseInt(s.numericBuffer, 10);
+          if (segNum >= 1 && segNum <= 99) {
+            const segIdx = segNum - 1; // user types 1-indexed, internal 0-indexed
+            s.engine.send({ type: 'song-add-step', song: s.currentSong, step: 999, stepType: 'segment', value: segIdx });
+            s.moduleDisplay('Added Seg ' + String(segNum).padStart(2, '0'), 'Next seg #');
           }
-          s.editParam = 'tabsong';
+          // Stay in song edit mode for next entry
+          s.editParam = 'tabsong-entry';
           s.numericBuffer = '';
         }
         return;

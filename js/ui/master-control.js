@@ -65,21 +65,21 @@ export function confirmEntry(s) {
 
       case 'copy':
         s.display.unlock();
-        if (val >= 0 && val <= 99) {
-          s.engine.send({ type: 'copy-segment', from: s.currentSegment, to: val });
-          s.display.flash('Copied', 'Seg ' + (s.currentSegment + 1) + ' > ' + (val + 1));
+        if (val >= 1 && val <= 99) {
+          s.engine.send({ type: 'copy-segment', from: s.currentSegment, to: val - 1 });
+          s.display.flash('Copied', 'Seg ' + String(s.currentSegment + 1).padStart(2, '0') + '>' + String(val).padStart(2, '0'));
         } else {
-          s.display.flash('Invalid Seg', '0-99 only');
+          s.display.flash('Invalid Seg', '1-99 only');
         }
         break;
 
       case 'erase-seg':
         s.display.unlock();
-        if (val >= 0 && val <= 99) {
-          s.engine.send({ type: 'erase-segment', segment: val });
-          s.display.flash('Erased', 'Seg ' + (val + 1));
+        if (val >= 1 && val <= 99) {
+          s.engine.send({ type: 'erase-segment', segment: val - 1 });
+          s.display.flash('Erased', 'Seg ' + String(val).padStart(2, '0'));
         } else {
-          s.display.flash('Invalid Seg', '0-99 only');
+          s.display.flash('Invalid Seg', '1-99 only');
         }
         break;
 

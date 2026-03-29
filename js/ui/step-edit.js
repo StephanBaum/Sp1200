@@ -68,9 +68,10 @@ export class StepEditUI {
         } else {
           this.engine.send({
             type: 'step-edit',
-            step: tick,
+            tick: tick,
             track,
-            event: { velocity: 100, pitchOffset: 0 }
+            velocity: 100,
+            pitchOffset: 0,
           });
         }
         this._updateDisplay();

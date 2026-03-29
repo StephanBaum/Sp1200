@@ -4,14 +4,27 @@ export function bindTransport(s) {
   });
 
   document.getElementById('btn-record').addEventListener('click', () => {
-    if (s.playing) {
+    if (s.mode === 'song' && !s.playing) {
+      // Song mode: Record toggles song edit mode (type segment numbers)
+      s.recording = !s.recording;
+      document.getElementById('btn-record').classList.toggle('active', s.recording);
+      s.led('led-record', s.recording);
+      if (s.recording) {
+        s.editParam = 'tabsong-entry';
+        s.numericBuffer = '';
+        s.moduleDisplay('Song Edit', 'Enter seg #');
+      } else {
+        s.editParam = null;
+        s.display.flash('Song Edit', 'Done');
+      }
+    } else if (s.playing) {
       // Already playing — toggle recording on/off (overdub)
       s.recording = !s.recording;
       if (s.recording) s.engine.record();
       document.getElementById('btn-record').classList.toggle('active', s.recording);
       s.led('led-record', s.recording);
     } else {
-      // Not playing — arm recording, then start playback
+      // Segment mode, not playing — arm recording, then start playback
       s.recording = true;
       s.engine.record();
       document.getElementById('btn-record').classList.add('active');
