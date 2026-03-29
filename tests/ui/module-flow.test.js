@@ -271,7 +271,7 @@ describe('Module Flow: Sample', () => {
   });
 
   it('Invalid sample number shows Not available', () => {
-    handleModuleFunction(s, 8);
+    handleModuleFunction(s, 99);
     expect(s._lastDisplay[1]).toBe('Not available');
   });
 });

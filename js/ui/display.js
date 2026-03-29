@@ -92,7 +92,7 @@ export class DisplayUI {
   // ── Module function display ────────────────────────────────────────────
   showModuleFunc(moduleName, funcName, detail) {
     this.setLine1(moduleName + ': ' + funcName);
-    this.setLine2(detail || 'Use + and -');
+    this.setLine2(detail || 'Use < and >');
   }
 
   // ── Mix bar graph (8 channels) — CSS bars + numeric values ─────────────

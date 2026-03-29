@@ -73,21 +73,36 @@ async function init() {
   midi.state = state;
   midi.init();
 
-  // Acquire audio input stream once (system audio or mic) — kept alive for session
+  // Acquire mic stream at startup (permission persists across refreshes)
+  // System audio (getDisplayMedia) requires a prompt every time — user can
+  // switch to it via Sample module option 8 ("System Audio")
   if (!micStream) {
     try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('Mic stream acquired');
+    } catch (e) {
+      console.warn('No mic available:', e.message);
+    }
+  }
+
+  // Listen for system audio switch request
+  document.addEventListener('request-system-audio', async () => {
+    try {
+      if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+      if (micSource) { micSource.disconnect(); micSource = null; }
+      if (gainNode) { gainNode.disconnect(); gainNode = null; }
+      micAnalyser = null;
       micStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
       micStream.getVideoTracks().forEach(t => t.stop());
       console.log('System audio stream acquired');
-    } catch (_) {
-      try {
-        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        console.log('Mic stream acquired');
-      } catch (e) {
-        console.warn('No audio input available:', e.message);
-      }
+      display.flash('System Audio', 'Connected');
+    } catch (err) {
+      console.warn('System audio denied:', err.message);
+      display.flash('Denied', 'Using mic');
+      // Re-acquire mic
+      try { micStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (_) {}
     }
-  }
+  });
 
   engine.onMessage((msg) => {
     switch (msg.type) {
@@ -390,22 +405,11 @@ async function startVUMonitoring() {
 
     if (!micStream) {
       try {
-        // Try system audio capture first (captures other tabs, apps)
-        micStream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,  // required by API but we only use audio
-          audio: true,
-        });
-        // Stop the video track — we only need audio
-        micStream.getVideoTracks().forEach(t => t.stop());
-      } catch (displayErr) {
-        // Fallback to mic input
-        try {
-          micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch (micErr) {
-          console.warn('No audio source:', micErr.message);
-          display.setLine2('No audio src');
-          return;
-        }
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (micErr) {
+        console.warn('No audio source:', micErr.message);
+        display.setLine2('No audio src');
+        return;
       }
     }
     const ctx = engine.context;
@@ -464,19 +468,11 @@ async function startForceRecording() {
 
     if (!micStream) {
       try {
-        micStream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-          audio: true,
-        });
-        micStream.getVideoTracks().forEach(t => t.stop());
-      } catch (displayErr) {
-        try {
-          micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch (micErr) {
-          console.error('No audio source for recording:', micErr.message);
-          document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false, error: 'No audio' } }));
-          return;
-        }
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (micErr) {
+        console.error('No audio source for recording:', micErr.message);
+        document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false, error: 'No audio' } }));
+        return;
       }
     }
     const ctx = engine.context;

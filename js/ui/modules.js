@@ -183,9 +183,9 @@ export function handleModuleFunction(s, funcNum) {
         s.moduleDisplay('Sampling', 'Select Sound');
         break;
 
-      case 3: // Input Gain — "Input Gain +20dB" / "Use + and -"
+      case 3: // Input Gain — "Input Gain +20dB" / "Use < and >"
         s.editParam = 'sample-level';
-        s.moduleDisplay('Input Gain ' + s.gainLabel(), 'Use + and -');
+        s.moduleDisplay('Input Gain ' + s.gainLabel(), 'Use < and >');
         break;
 
       case 4: // Threshold — full VU display, slider 1 sets threshold level
@@ -210,6 +210,11 @@ export function handleModuleFunction(s, funcNum) {
         s.listenSampleDone();
         document.dispatchEvent(new Event('sample-arm'));
         document.dispatchEvent(new Event('sample-start-vu'));
+        break;
+
+      case 8: // System Audio — switch to capturing system audio
+        s.moduleDisplay('System Audio', 'Share screen...');
+        document.dispatchEvent(new Event('request-system-audio'));
         break;
 
       case 9: // Force Sample — record immediately

@@ -258,7 +258,7 @@ export function handleNav(s, dir) {
     case 'sample-level': {
       const gains = ['+00dB', '+20dB', '+40dB'];
       s.sampleGainIndex = Math.max(0, Math.min(gains.length - 1, s.sampleGainIndex + dir));
-      s.moduleDisplay('Input Gain ' + gains[s.sampleGainIndex], 'Use + and -');
+      s.moduleDisplay('Input Gain ' + gains[s.sampleGainIndex], 'Use < and >');
       break;
     }
     case 'smpte-rate': {

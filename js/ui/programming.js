@@ -121,7 +121,7 @@ export function execProgFunction(s, func, btn) {
 
     case 'swing':
       s.editParam = 'swing';
-      s.moduleDisplay('Swing ' + s.swingAmount + '%', 'Use +/- arrows');
+      s.moduleDisplay('Swing ' + s.swingAmount + '%', 'Use < and >');
       break;
 
     case 'copy':
