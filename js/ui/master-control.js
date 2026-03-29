@@ -101,15 +101,11 @@ export function confirmEntry(s) {
         break;
 
       case 'channel-assign-num':
-        if (s.numericBuffer.length > 0) {
-          const ch = parseInt(s.numericBuffer, 10);
-          if (ch >= 1 && ch <= 6) {
-            s.engine.send({ type: 'channel-assign', pad: s._pendingPad, channel: ch });
-            s.display.flash('Ch ' + ch, 'Pad ' + (s._pendingPad + 1));
-          }
-        }
+        // Enter exits channel-assign back to module menu
         s._pendingPad = null;
+        s.pendingAction = null;
         s.editParam = 'module-func';
+        s.moduleDisplay('SET UP', 'Enter option #');
         break;
 
       case 'click-divisor':
@@ -143,6 +139,27 @@ export function confirmEntry(s) {
   } else {
     // No numeric buffer — handle confirm for non-numeric editParam states
     switch (s.editParam) {
+      case 'select-pad':
+        // Enter exits pad-selection mode back to module menu
+        s.pendingAction = null;
+        s._pendingPad = null;
+        s.editParam = 'module-func';
+        s.moduleDisplay('SET UP', 'Enter option #');
+        return;
+      case 'channel-assign-num':
+        // Enter exits channel-assign back to module menu
+        s._pendingPad = null;
+        s.pendingAction = null;
+        s.editParam = 'module-func';
+        s.moduleDisplay('SET UP', 'Enter option #');
+        return;
+      case 'decay-tune-select':
+        // Enter exits decay/tune back to module menu
+        s._pendingPad = null;
+        s.pendingAction = null;
+        s.editParam = 'module-func';
+        s.moduleDisplay('SET UP', 'Enter option #');
+        return;
       case 'special-menu':
         // Enter selects the currently browsed function
         if (s._specialCatalog && s._specialIdx != null) {
@@ -290,6 +307,17 @@ export function handleNav(s, dir) {
     case 'sample-length':
     case 'default-decay':
       break;
+    case 'channel-assign-num': {
+      if (!s.channelAssign) s.channelAssign = new Uint8Array(8);
+      const curCh = s.channelAssign[s._pendingPad] + 1; // 1-based
+      const newCh = Math.max(1, Math.min(8, curCh + dir));
+      s.channelAssign[s._pendingPad] = newCh - 1;
+      s.engine.send({ type: 'channel-assign', pad: s._pendingPad, channel: newCh });
+      const banks = ['A','B','C','D'];
+      const label = banks[s.currentBank] + (s._pendingPad + 1);
+      s.moduleDisplay('Assign ' + label, 'Output Channel ' + newCh);
+      break;
+    }
     case 'tabsong':
       s._tabSongStep = Math.max(0, (s._tabSongStep || 0) + dir);
       s.moduleDisplay('Song ' + String(s.currentSong + 1).padStart(2, '0'),

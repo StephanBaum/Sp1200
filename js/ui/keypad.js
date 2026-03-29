@@ -83,12 +83,13 @@ export function bindKeypad(s) {
       if (s.editParam === 'delete-confirm') {
         if (key === '9') {
           s.engine.send({ type: 'delete-sound', pad: s._pendingPad, bank: s.currentBank });
-          s.display.flash('Deleted', _padLabel(s, s._pendingPad));
+          s.moduleDisplay('Deleted', _padLabel(s, s._pendingPad) + '  Next pad?');
         } else if (key === '7') {
-          s.display.flash('Cancelled', '');
+          s.moduleDisplay('Cancelled', 'Select next pad');
         }
-        s._pendingPad = null;
-        s.editParam = 'module-func';
+        // Stay in delete mode for next pad
+        s.editParam = 'select-pad';
+        s.pendingAction = 'delete-sound';
         s.numericBuffer = '';
         return;
       }
@@ -96,12 +97,13 @@ export function bindKeypad(s) {
       if (s.editParam === 'reverse-confirm') {
         if (key === '9') {
           s.engine.send({ type: 'reverse-sound', pad: s._pendingPad, bank: s.currentBank });
-          s.display.flash('Reversed', _padLabel(s, s._pendingPad));
+          s.moduleDisplay('Reversed', _padLabel(s, s._pendingPad) + '  Next pad?');
         } else if (key === '7') {
-          s.display.flash('Cancelled', '');
+          s.moduleDisplay('Cancelled', 'Select next pad');
         }
-        s._pendingPad = null;
-        s.editParam = 'module-func';
+        // Stay in reverse mode for next pad
+        s.editParam = 'select-pad';
+        s.pendingAction = 'reverse-sound';
         s.numericBuffer = '';
         return;
       }
@@ -111,14 +113,16 @@ export function bindKeypad(s) {
           s.engine.send({ type: 'set-pad-mode', pad: s._pendingPad, mode: 'tune' });
           if (!s.padModes) s.padModes = new Array(8).fill('tune');
           s.padModes[s._pendingPad] = 'tune';
-          s.moduleDisplay(_padLabel(s, s._pendingPad) + '      TUNED', '1=Tune  2=Decay');
+          s.moduleDisplay(_padLabel(s, s._pendingPad) + '      TUNED', 'Select next pad');
         } else if (key === '2') {
           s.engine.send({ type: 'set-pad-mode', pad: s._pendingPad, mode: 'decay' });
           if (!s.padModes) s.padModes = new Array(8).fill('tune');
           s.padModes[s._pendingPad] = 'decay';
-          s.moduleDisplay(_padLabel(s, s._pendingPad) + '    DECAYED', '1=Tune  2=Decay');
+          s.moduleDisplay(_padLabel(s, s._pendingPad) + '    DECAYED', 'Select next pad');
         }
-        // Stay on screen so user can toggle again
+        // Return to select-pad so user can pick another pad
+        s.editParam = 'select-pad';
+        s.pendingAction = 'decay-tune';
         return;
       }
 
@@ -128,14 +132,16 @@ export function bindKeypad(s) {
         s.numericBuffer += key;
         const ch = parseInt(s.numericBuffer, 10);
         s.moduleDisplay('Assign ' + _padLabel(s, s._pendingPad), 'Output Channel ' + s.numericBuffer);
-        if (s.numericBuffer.length >= 2) {
-          if (ch >= 1 && ch <= 16) {
-            s.engine.send({ type: 'channel-assign', pad: s._pendingPad, channel: ch });
-            if (!s.channelAssign) s.channelAssign = new Uint8Array(8);
-            s.channelAssign[s._pendingPad] = ch - 1;
-          }
-          s._pendingPad = null;
-          s.editParam = 'module-func';
+        if (s.numericBuffer.length >= 1 && ch >= 1 && ch <= 8) {
+          s.engine.send({ type: 'channel-assign', pad: s._pendingPad, channel: ch });
+          if (!s.channelAssign) s.channelAssign = new Uint8Array(8);
+          s.channelAssign[s._pendingPad] = ch - 1;
+          s.moduleDisplay('Assign ' + _padLabel(s, s._pendingPad), 'Channel ' + ch + ' Set');
+          // Stay in channel-assign mode — ready for next pad
+          s.editParam = 'select-pad';
+          s.pendingAction = 'channel-assign';
+          s.numericBuffer = '';
+        } else if (s.numericBuffer.length >= 2) {
           s.numericBuffer = '';
         }
         return;
