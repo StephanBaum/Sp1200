@@ -237,22 +237,13 @@ async function init() {
 }
 
 // ── Audio Input ──────────────────────────────────────────────────────────
-// Try system audio first (getDisplayMedia), fall back to mic (getUserMedia)
 async function getAudioInput() {
   if (micStream) return micStream;
   try {
-    // System audio capture — allows sampling audio playing on the computer
-    micStream = await navigator.mediaDevices.getDisplayMedia({ audio: true, video: true });
-    // Stop the video track — we only want audio
-    micStream.getVideoTracks().forEach(t => t.stop());
-  } catch (e) {
-    // Fall back to microphone
-    try {
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch (err) {
-      console.error('No audio input available:', err);
-      return null;
-    }
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    console.error('No audio input available:', err);
+    return null;
   }
   return micStream;
 }
@@ -262,7 +253,11 @@ async function startVUMonitoring() {
   try {
     if (!micStream) {
       const stream = await getAudioInput();
-      if (!stream) return;
+      if (!stream) {
+        // No mic access — show flat VU bar, don't fail
+        display.showVU(0);
+        return;
+      }
     }
     const ctx = engine.context;
     micSource = ctx.createMediaStreamSource(micStream);
@@ -308,7 +303,11 @@ async function startForceRecording() {
   try {
     if (!micStream) {
       const stream = await getAudioInput();
-      if (!stream) return;
+      if (!stream) {
+        // No audio input — show error, don't dispatch sample-done failure
+        if (state) state.moduleDisplay('No Audio Input', 'Grant permission');
+        return;
+      }
     }
     // Set up analyser for VU during recording
     if (!micAnalyser) {
@@ -323,14 +322,28 @@ async function startForceRecording() {
     micChunks = [];
     micRecorder.ondataavailable = (e) => { if (e.data.size > 0) micChunks.push(e.data); };
     micRecorder.onstop = async () => {
+      if (micChunks.length === 0) {
+        document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false } }));
+        return;
+      }
       const blob = new Blob(micChunks, { type: 'audio/webm' });
+      if (blob.size < 100) {
+        document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false } }));
+        return;
+      }
       try {
-        const processed = await loadSampleFromFile(engine.context, await blob.arrayBuffer());
+        const arrayBuf = await blob.arrayBuffer();
+        const processed = await loadSampleFromFile(engine.context, arrayBuf);
+        if (!processed || processed.length === 0) {
+          document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false } }));
+          return;
+        }
         engine.loadSample(selectedPad, processed);
         sampleMemory.allocate(sampleMemory.getBank(selectedPad), processed.length);
         display.setMemory(sampleMemory.getRemainingSeconds(sampleMemory.getBank(selectedPad)));
         document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: true } }));
       } catch (err) {
+        console.error('Sample processing failed:', err);
         document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false } }));
       }
     };

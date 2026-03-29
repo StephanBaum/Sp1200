@@ -55,6 +55,7 @@ function mockState() {
       setLine1: vi.fn(),
       setLine2: vi.fn(),
       flash: vi.fn(),
+      showVU: vi.fn(),
       setMode: vi.fn(),
       setBpm: vi.fn(),
       setSong: vi.fn(),
@@ -74,7 +75,8 @@ function mockState() {
       const gains = ['+00dB', '+20dB', '+40dB'];
       const gain = gains[this.sampleGainIndex || 0];
       const left = bank + pad;
-      return (left + '              ' + gain).substring(0, 16);
+      const spaces = 16 - left.length - gain.length;
+      return left + ' '.repeat(Math.max(1, spaces)) + gain;
     },
     gainLabel: function () {
       return ['+00dB', '+20dB', '+40dB'][this.sampleGainIndex || 0];

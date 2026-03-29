@@ -32,9 +32,11 @@ export function bindModules(s) {
         if (mod.name === 'setup' && s.playing) {
           s.moduleDisplay('Set-up Function?', '[11-13]');
         } else if (mod.name === 'sample') {
-          // Sample auto-enters VU mode
+          // Sample auto-enters VU mode (option 1)
+          s.editParam = 'vu-mode';
           s.display.lock();
           s.display.setLine1(s.vuPadLabel());
+          s.display.showVU(0); // show empty VU bar immediately
           document.dispatchEvent(new Event('sample-start-vu'));
         } else {
           s.display.lock();
@@ -171,6 +173,7 @@ export function handleModuleFunction(s, funcNum) {
         s.editParam = 'vu-mode';
         s.display.lock();
         s.display.setLine1(s.vuPadLabel());
+        s.display.showVU(0);
         document.dispatchEvent(new Event('sample-start-vu'));
         break;
 

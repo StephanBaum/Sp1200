@@ -95,9 +95,10 @@ export class SP1200State {
     const pad = (this.selectedSamplePad || 0) + 1;
     const gains = ['+00dB', '+20dB', '+40dB'];
     const gain = gains[this.sampleGainIndex || 0];
-    // Pad label left, gain right, padded to 16 chars. TODO: asterisk if pad has sound
     const left = bank + pad;
-    return (left + '              ' + gain).substring(0, 16);
+    // Right-align gain in 16-char field: "A1         +00dB"
+    const spaces = 16 - left.length - gain.length;
+    return left + ' '.repeat(Math.max(1, spaces)) + gain;
   }
 
   gainLabel() {
