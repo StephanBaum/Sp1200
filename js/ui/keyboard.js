@@ -93,6 +93,30 @@ export class KeyboardUI {
         return;
       }
 
+      // ── Programming buttons: X C V B N M , . / → prog 1-9 ────
+      const progKeys = ['x', 'c', 'v', 'b', 'n', 'm'];
+      const progIdx = progKeys.indexOf(key);
+      if (progIdx !== -1 && !e.ctrlKey && !e.altKey && !e.shiftKey && !e.repeat) {
+        e.preventDefault();
+        document.getElementById('prog-' + (progIdx + 1))?.click();
+        return;
+      }
+      if (key === ',' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.repeat) {
+        e.preventDefault();
+        document.getElementById('prog-7')?.click();
+        return;
+      }
+      if (key === '.' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.repeat) {
+        e.preventDefault();
+        document.getElementById('prog-8')?.click();
+        return;
+      }
+      if (key === '/' && !e.ctrlKey && !e.altKey && !e.repeat) {
+        e.preventDefault();
+        document.getElementById('prog-9')?.click();
+        return;
+      }
+
       // ── Space → Run/Stop ───────────────────────────────────────
       if (code === 'Space' && !e.ctrlKey && !e.repeat) {
         e.preventDefault();

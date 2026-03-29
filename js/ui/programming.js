@@ -4,7 +4,6 @@ export function bindProgramming(s) {
   document.querySelectorAll('.prog').forEach(btn => {
     const upper = btn.dataset.upper;
     const lower = btn.dataset.lower;
-    s.progStates[btn.id] = 'lower';
 
     btn.addEventListener('click', () => {
       // Clear previous edit state
@@ -13,19 +12,36 @@ export function bindProgramming(s) {
         s.display.unlock();
       }
 
-      const state = s.progStates[btn.id];
-      const newState = state === 'upper' ? 'lower' : 'upper';
-      s.progStates[btn.id] = newState;
-      const func = newState === 'upper' ? upper : lower;
-
+      // Clear all prog active states, set this one
       document.querySelectorAll('.prog').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
+      // Button 1 (Song/Segment) is the mode selector — it toggles mode
       if (btn.id === 'prog-1') {
-        s.led('led-song', newState === 'upper');
-        s.led('led-segment', newState === 'lower');
+        if (s.mode === 'song') {
+          // Switch to segment mode
+          s.mode = 'segment';
+          s.engine.setMode('segment');
+          s.led('led-song', false);
+          s.led('led-segment', true);
+          s.editParam = 'segment';
+          s.numericBuffer = '';
+          s.display.setMode('segment');
+        } else {
+          // Switch to song mode
+          s.mode = 'song';
+          s.engine.setMode('song');
+          s.led('led-song', true);
+          s.led('led-segment', false);
+          s.display.setSong(s.currentSong);
+          s.display.setMode('song');
+        }
+        return;
       }
 
+      // All other buttons: upper function = song mode, lower = segment mode
+      // Some functions work in both modes (tempo-change, auto-correct)
+      const func = s.mode === 'song' ? upper : lower;
       execProgFunction(s, func, btn);
     });
   });
@@ -36,24 +52,55 @@ export function execProgFunction(s, func, btn) {
   const QUANT_LABELS = ['1/4', '1/8', '1/8T', '1/16', '1/16T', '1/32', 'HiRes'];
 
   switch (func) {
-    case 'song':
-      s.mode = 'song';
-      s.engine.setMode('song');
-      s.display.setSong(s.currentSong);
-      s.display.setMode('song');
-      break;
-
-    case 'segment':
-      s.mode = 'segment';
-      s.engine.setMode('segment');
-      s.editParam = 'segment';
-      s.numericBuffer = '';
-      s.display.setMode('segment');
-      break;
+    // ── Song mode functions (upper labels) ────────────────────────────
 
     case 'trigger':
-      btn.classList.toggle('active');
+      // Song mode: insert trigger step (click type for external sync)
+      s.editParam = 'trigger-type';
+      s.moduleDisplay('Trigger Step', '1=1/4 2=1/8 3=16');
       break;
+
+    case 'repeat':
+      // Song mode: insert repeat start/end brackets
+      s.editParam = 'repeat-count';
+      s.numericBuffer = '';
+      s.moduleDisplay('Repeat', 'Enter count 01-99');
+      break;
+
+    case 'tabsong':
+      // Song mode: view/scroll song arrangement
+      s.editParam = 'tabsong';
+      s._tabSongStep = 0;
+      s.moduleDisplay('Song ' + String(s.currentSong + 1).padStart(2, '0'),
+        'Step 01: ---');
+      break;
+
+    case 'end':
+      // Song mode: insert end marker
+      s.engine.send({ type: 'song-end-mark', song: s.currentSong });
+      s.display.flash('End Mark', 'Song end set');
+      break;
+
+    case 'insert':
+      // Song mode: insert empty step
+      s.engine.send({ type: 'song-insert', song: s.currentSong });
+      s.display.flash('Insert', 'Step inserted');
+      break;
+
+    case 'delete':
+      // Song mode: delete current step
+      s.engine.send({ type: 'song-delete', song: s.currentSong });
+      s.display.flash('Delete', 'Step removed');
+      break;
+
+    case 'mix-change':
+      // Song mode: insert mix-change step
+      s.editParam = 'mix-change';
+      s.numericBuffer = '';
+      s.moduleDisplay('Mix Change', 'Enter mix # 1-8');
+      break;
+
+    // ── Segment mode functions (lower labels) ─────────────────────────
 
     case 'metronome':
       s.metronomeOn = !s.metronomeOn;
@@ -64,25 +111,9 @@ export function execProgFunction(s, func, btn) {
       );
       break;
 
-    case 'repeat':
-      btn.classList.toggle('active');
-      break;
-
     case 'swing':
       s.editParam = 'swing';
       s.moduleDisplay('Swing ' + s.swingAmount + '%', 'Use +/- arrows');
-      break;
-
-    case 'tabsong':
-      // Tab Song — view/edit song arrangement (list of segments)
-      if (s.mode === 'song') {
-        s.editParam = 'tabsong';
-        s._tabSongStep = 0;
-        s.moduleDisplay('Song ' + String(s.currentSong + 1).padStart(2, '0'),
-          'Step 01: Seg ' + String(s.currentSegment + 1).padStart(2, '0'));
-      } else {
-        s.display.flash('Song Mode', 'Required');
-      }
       break;
 
     case 'copy':
@@ -91,30 +122,10 @@ export function execProgFunction(s, func, btn) {
       s.moduleDisplay('Copy Seg ' + String(s.currentSegment + 1).padStart(2, '0'), 'To seg #?');
       break;
 
-    case 'end':
-      // End mark — only in song mode
-      if (s.mode === 'song') {
-        s.engine.send({ type: 'song-end-mark', song: s.currentSong });
-        s.display.flash('End Mark', 'Song end set');
-      } else {
-        s.display.flash('Song Mode', 'Required');
-      }
-      break;
-
     case 'time-sig':
       s.editParam = 'time-sig';
       s.numericBuffer = '';
       s.moduleDisplay('Time Sig', s.timeSig);
-      break;
-
-    case 'insert':
-      // Insert — only in song mode
-      if (s.mode === 'song') {
-        s.engine.send({ type: 'song-insert', song: s.currentSong, segment: s.currentSegment });
-        s.display.flash('Insert', 'Seg inserted');
-      } else {
-        s.display.flash('Song Mode', 'Required');
-      }
       break;
 
     case 'seg-length':
@@ -123,51 +134,19 @@ export function execProgFunction(s, func, btn) {
       s.moduleDisplay('Seg Length', s.segmentLength + ' Bars');
       break;
 
-    case 'delete':
-      // Delete — only in song mode
-      if (s.mode === 'song') {
-        s.engine.send({ type: 'song-delete', song: s.currentSong });
-        s.display.flash('Delete', 'Step removed');
-      } else {
-        s.display.flash('Song Mode', 'Required');
-      }
-      break;
-
     case 'erase':
       if (s.playing) {
-        // Real-time erase: hold erase + hold pad to delete hits as playhead passes
+        // Real-time erase: hold pad while playing to delete hits
         s.eraseMode = !s.eraseMode;
         s.moduleDisplay(
           s.eraseMode ? 'Erase On' : 'Erase Off',
           s.eraseMode ? 'Hold pad' : ''
         );
       } else {
-        // Stopped: prompt for segment number to erase
+        // Stopped: erase segment by number
         s.editParam = 'erase-seg';
         s.numericBuffer = '';
         s.moduleDisplay('Erase Seg?', 'Enter seg number');
-      }
-      break;
-
-    case 'tempo-change':
-      s.editParam = 'bpm';
-      s.numericBuffer = '';
-      s.moduleDisplay('Tempo ' + Math.round(s.bpm), 'Use +/- or keys');
-      break;
-
-    case 'auto-correct':
-      s.editParam = 'quantize';
-      s.moduleDisplay('Auto-Correct', QUANT_LABELS[s.quantizeIndex]);
-      break;
-
-    case 'mix-change':
-      // Mix Change — in song mode, insert a mix-change step
-      if (s.mode === 'song') {
-        s.editParam = 'mix-change';
-        s.numericBuffer = '';
-        s.moduleDisplay('Mix Change', 'Enter mix # 1-8');
-      } else {
-        s.display.flash('Song Mode', 'Required');
       }
       break;
 
@@ -186,6 +165,19 @@ export function execProgFunction(s, func, btn) {
         document.dispatchEvent(new CustomEvent('step-edit-toggle', { detail: { active: false } }));
         s.display.setMode('segment');
       }
+      break;
+
+    // ── Both modes ────────────────────────────────────────────────────
+
+    case 'tempo-change':
+      s.editParam = 'bpm';
+      s.numericBuffer = '';
+      s.moduleDisplay('Tempo ' + Math.round(s.bpm), 'Use +/- or keys');
+      break;
+
+    case 'auto-correct':
+      s.editParam = 'quantize';
+      s.moduleDisplay('Auto-Correct', QUANT_LABELS[s.quantizeIndex]);
       break;
   }
 }

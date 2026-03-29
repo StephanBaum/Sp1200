@@ -308,6 +308,34 @@ export function bindKeypad(s) {
         return;
       }
 
+      // ── Trigger type (song mode) ──────────────────────────────────────
+      if (s.editParam === 'trigger-type') {
+        const types = { '1': '1/4', '2': '1/8', '3': '1/16', '4': '1/32', '5': '1/32T', '6': 'Click' };
+        if (types[key]) {
+          s.engine.send({ type: 'song-add-step', song: s.currentSong, step: 999, stepType: 'trigger', value: key });
+          s.display.flash('Trigger', types[key]);
+        }
+        s.editParam = null;
+        s.numericBuffer = '';
+        return;
+      }
+
+      // ── Repeat count (song mode) ──────────────────────────────────────
+      if (s.editParam === 'repeat-count') {
+        s.numericBuffer += key;
+        s.moduleDisplay('Repeat', 'Count: ' + s.numericBuffer.padStart(2, '0'));
+        if (s.numericBuffer.length >= 2) {
+          const count = parseInt(s.numericBuffer, 10);
+          if (count >= 1 && count <= 99) {
+            s.engine.send({ type: 'song-add-step', song: s.currentSong, step: 999, stepType: 'repeat-start', value: count });
+            s.display.flash('Repeat', count + 'x');
+          }
+          s.editParam = null;
+          s.numericBuffer = '';
+        }
+        return;
+      }
+
       // ── Mix Change (song mode) ────────────────────────────────────────
       if (s.editParam === 'mix-change') {
         if (key >= '1' && key <= '8') {
