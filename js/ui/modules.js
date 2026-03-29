@@ -150,7 +150,21 @@ export function handleModuleFunction(s, funcNum) {
       case 23:
         s.editParam = 'special-menu';
         s.numericBuffer = '';
-        s.moduleDisplay('Special Menu', 'Enter function #');
+        s._specialCatalog = [
+          { num: 11, name: 'Catalog Funcs' },
+          { num: 12, name: 'Clear All Mem' },
+          { num: 13, name: 'Memory Remain' },
+          { num: 15, name: 'Clear Sounds' },
+          { num: 16, name: 'Clear Seqs' },
+          { num: 17, name: 'Copy Sound' },
+          { num: 18, name: 'Swap Sounds' },
+          { num: 19, name: 'Default Decay' },
+          { num: 21, name: 'Name Sound' },
+          { num: 22, name: 'Dynamic Alloc' },
+          { num: 25, name: 'Reverse Sound' },
+        ];
+        s._specialIdx = 0;
+        s.moduleDisplay('11 Catalog Funcs', 'Use Slider or #');
         break;
       case 22:
         // Screenshot: "Midi Parameters" / "Basic Channel 01"
@@ -322,8 +336,11 @@ export function handleModuleFunction(s, funcNum) {
 // ── Special Menu dispatch (Setup 23 sub-functions) ───────────────────────
 export function handleSpecialFunction(s, funcNum) {
   switch (funcNum) {
-    case 11: // Catalog — show menu list
-      s.moduleDisplay('Special Funcs:', '11-22, 25');
+    case 11: // Catalog — return to browsable list
+      s.editParam = 'special-menu';
+      s.numericBuffer = '';
+      s._specialIdx = 0;
+      s.moduleDisplay('11 Catalog Funcs', 'Use Slider or #');
       break;
     case 12: // Clear All Memory
       s.editParam = 'clear-all-confirm';

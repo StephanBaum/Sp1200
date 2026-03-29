@@ -244,6 +244,14 @@ async function init() {
       state.engine.send({ type: 'set-default-decay', value: decayVal });
       return;
     }
+    if (state.editParam === 'special-menu' && state._specialCatalog) {
+      const cat = state._specialCatalog;
+      const idx = Math.min(cat.length - 1, Math.floor(slider1 * cat.length));
+      state._specialIdx = idx;
+      const entry = cat[idx];
+      state.moduleDisplay(entry.num + ' ' + entry.name, 'Use Slider or #');
+      return;
+    }
     if (state.editParam === 'disk-name' || state.editParam === 'name-sound-edit' || state.editParam === 'create-folder') {
       // Slider 1 cycles through characters at cursor position
       const chars = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.';
