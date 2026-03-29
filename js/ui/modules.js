@@ -609,29 +609,78 @@ export async function executeDiskOp(s, op, filename) {
         break;
       }
 
-      case 'cat-sequences':
-      case 'cat-sounds': {
+      case 'cat-sequences': {
         try {
           const project = await s.fsStorage.loadProject(filename);
-          const sndCount = project?.slots?.filter(s => s.sampleFile)?.length || 0;
-          const seqCount = project?.patterns?.filter(p => p.tracks?.some(t => t.events?.length > 0))?.length || 0;
-          s.moduleDisplay(cleanName, sndCount + ' Snd ' + seqCount + ' Seq');
+          const entries = [];
+          if (project?.patterns) {
+            project.patterns.forEach((p, i) => {
+              const eventCount = p.tracks?.reduce((sum, t) => sum + (t.events?.length || 0), 0) || 0;
+              if (eventCount > 0) {
+                entries.push({ num: i, bars: p.bars || 2, events: eventCount });
+              }
+            });
+          }
+          if (entries.length === 0) {
+            s.moduleDisplay(cleanName, 'No Sequences');
+          } else {
+            s._catalogEntries = entries;
+            s._catalogIdx = 0;
+            s.editParam = 'catalog-browse';
+            const e = entries[0];
+            s.moduleDisplay('Seg ' + String(e.num).padStart(2, '0') + ' ' + e.bars + 'bar', entries.length + ' segs  Use ^v');
+          }
         } catch {
           s.moduleDisplay(cleanName, 'Not a project');
         }
-        break;
+        return; // Don't auto-exit
+      }
+
+      case 'cat-sounds': {
+        try {
+          const project = await s.fsStorage.loadProject(filename);
+          const entries = [];
+          const banks = ['A','B','C','D'];
+          if (project?.slots) {
+            project.slots.forEach(sl => {
+              if (sl.sampleFile || sl.hasSample) {
+                const bank = banks[Math.floor(sl.slot / 8)] || '?';
+                const pad = (sl.slot % 8) + 1;
+                entries.push({ label: bank + pad, name: sl.name || '(unnamed)', slot: sl.slot });
+              }
+            });
+          }
+          if (entries.length === 0) {
+            s.moduleDisplay(cleanName, 'No Sounds');
+          } else {
+            s._catalogEntries = entries;
+            s._catalogIdx = 0;
+            s.editParam = 'catalog-browse';
+            const e = entries[0];
+            s.moduleDisplay(e.label + ' ' + e.name, entries.length + ' snds  Use ^v');
+          }
+        } catch {
+          s.moduleDisplay(cleanName, 'Not a project');
+        }
+        return; // Don't auto-exit
       }
     }
   } catch (e) {
     s.moduleDisplay('Disk Error', e.message?.substring(0, 16) || 'Failed');
   }
 
-  // Return to module-func after 1.5s
+  // Return to disk menu after flash (save confirmations, errors)
+  // Load operations stay on screen until user presses a module button
+  if (op?.startsWith('save') || op?.startsWith('cat')) {
+    // save ops already flash and return via display.flash timeout
+  }
+  // Only auto-return for save-all entered via disk-name (option 9)
+  // All other operations return to disk menu for the next action
   setTimeout(() => {
-    if (s.activeModule === 'disk') {
+    if (s.activeModule === 'disk' && s.editParam !== 'catalog-browse' && s.editParam !== 'disk-browse') {
       s.editParam = 'module-func';
       s.numericBuffer = '';
       s.moduleDisplay('DISK', 'Enter option #');
     }
-  }, 1500);
+  }, 2000);
 }

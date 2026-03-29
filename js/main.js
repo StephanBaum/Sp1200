@@ -247,6 +247,20 @@ async function init() {
       state.engine.send({ type: 'set-default-decay', value: decayVal });
       return;
     }
+    if (state.editParam === 'catalog-browse' && state._catalogEntries?.length) {
+      const cat = state._catalogEntries;
+      const idx = Math.min(cat.length - 1, Math.floor(slider1 * cat.length));
+      state._catalogIdx = idx;
+      const e = cat[idx];
+      if (e.num !== undefined) {
+        // Sequence catalog
+        display.setLine1('Seg ' + String(e.num).padStart(2, '0') + ' ' + e.bars + 'bar');
+      } else {
+        // Sound catalog
+        display.setLine1(e.label + ' ' + e.name);
+      }
+      return;
+    }
     if (state.editParam === 'special-menu' && state._specialCatalog) {
       const cat = state._specialCatalog;
       const idx = Math.min(cat.length - 1, Math.floor(slider1 * cat.length));
