@@ -292,9 +292,11 @@ class SP1200Processor extends AudioWorkletProcessor {
     switch (action) {
       case 'play':
         this.isPlaying = true;
-        this.isRecording = false;
-        this.patternTick = 0;
-        this.clock.start();
+        // Don't clear isRecording — play can be called while record is armed
+        if (!this.clock.playing) {
+          this.patternTick = 0;
+          this.clock.start();
+        }
         if (this.mode === 'song') {
           this.songPlaying = true;
           this.song.start(this.song.currentSong);
@@ -318,10 +320,12 @@ class SP1200Processor extends AudioWorkletProcessor {
         break;
 
       case 'record':
-        this.isPlaying = true;
         this.isRecording = true;
-        this.patternTick = 0;
-        this.clock.start();
+        if (!this.isPlaying) {
+          this.isPlaying = true;
+          this.patternTick = 0;
+          this.clock.start();
+        }
         break;
     }
   }
@@ -423,14 +427,16 @@ class SP1200Processor extends AudioWorkletProcessor {
       this.metronomeClick.trigger(beatInBar === 0);
     }
 
-    // Post tick position
+    // Post tick position — only on beat boundaries to reduce message volume
     const pos = this.clock.getPosition(clockTick);
-    this.port.postMessage({
-      type: 'tick',
-      ...pos,
-      patternTick: this.patternTick,
-      patternIndex,
-    });
+    if (pos.sixteenth === 0 || this.patternTick === 0) {
+      this.port.postMessage({
+        type: 'tick',
+        ...pos,
+        patternTick: this.patternTick,
+        patternIndex,
+      });
+    }
 
     // Advance pattern tick
     this.patternTick++;

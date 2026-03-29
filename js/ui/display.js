@@ -27,8 +27,16 @@ export class DisplayUI {
   setPattern(num) { this.pattern = num; this._refresh(); }
   setSong(num) { this.song = num; this._refresh(); }
   setBar(bar) { this.bar = bar; }
-  setBeat(beat) { this.beat = beat; }
-  setPlaying(playing) { this.playing = playing; }
+  setBeat(beat) {
+    if (this.beat !== beat) {
+      this.beat = beat;
+      if (this.playing && !this.locked) this._refresh();
+    }
+  }
+  setPlaying(playing) {
+    this.playing = playing;
+    if (!this.locked) this._refresh();
+  }
   setBank(bank) { this.bank = bank; this._refresh(); }
   setMemory(seconds) { this.memory = seconds; }
 
