@@ -276,6 +276,23 @@ export function bindKeypad(s) {
         return;
       }
 
+      // ── Segment truncate confirm ──────────────────────────────────────
+
+      if (s.editParam === 'seg-truncate-confirm') {
+        if (key === '9') {
+          // Yes — permanently delete events beyond the new length
+          s.engine.send({ type: 'truncate-pattern', bars: s._segTruncBars });
+          s.display.flash('Truncated', s._segTruncBars + ' Bars');
+        } else if (key === '7') {
+          // No — keep hidden events (they won't play but remain stored)
+          s.display.flash('Kept Hidden', 'Events saved');
+        }
+        s._segTruncBars = null;
+        s.editParam = null;
+        s.numericBuffer = '';
+        return;
+      }
+
       // ── Clear All Memory (Special 12) ─────────────────────────────────
 
       if (s.editParam === 'clear-all-confirm') {

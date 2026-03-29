@@ -397,6 +397,16 @@ class SP1200Processor extends AudioWorkletProcessor {
         this.patterns[this.currentPatternIndex].setBars(msg.bars);
         break;
 
+      case 'truncate-pattern': {
+        const pat = this.patterns[this.currentPatternIndex];
+        const maxTick = msg.bars * PPQN * 4;
+        for (const track of pat.tracks) {
+          track.events = track.events.filter(e => e.tick < maxTick);
+        }
+        this.port.postMessage({ type: 'pattern-truncated', bars: msg.bars });
+        break;
+      }
+
       case 'set-default-decay':
         for (let i = 0; i < NUM_PADS; i++) {
           if (this.padModes[i] === 'tune') this.voices[i].setDecay(msg.value / 31);

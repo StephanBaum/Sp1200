@@ -47,9 +47,17 @@ export function confirmEntry(s) {
       case 'seg-length':
         s.display.unlock();
         if (val >= 1 && val <= 99) {
+          const oldLength = s.segmentLength;
           s.segmentLength = val;
           s.engine.send({ type: 'set-bars', bars: val });
-          s.display.flash('Seg Length', val + ' Bars');
+          if (val < oldLength) {
+            // Shortened — ask to truncate hidden events
+            s._segTruncBars = val;
+            s.editParam = 'seg-truncate-confirm';
+            s.moduleDisplay(val + ' Bars Set', 'Truncate? Y/N');
+          } else {
+            s.display.flash('Seg Length', val + ' Bars');
+          }
         } else {
           s.display.flash('Invalid', '1-99 bars');
         }
