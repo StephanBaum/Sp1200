@@ -225,7 +225,7 @@ export class DisplayUI {
     // Place peak hold marker if it's beyond the current level
     if ((this._vuPeak || 0) > 0 && peakPos >= n && peakPos < 16) {
       const chars = bar.split('');
-      chars[peakPos] = '\u2586'; // ▆ lower three quarters block as peak marker
+      chars[peakPos] = '\u2758'; // ❘ thin vertical bar as peak marker
       bar = chars.join('');
     }
     this.setLine2(bar);
