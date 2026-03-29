@@ -1,6 +1,27 @@
 # SP-1200 Emulator — UI Mechanics & Rules
 
-This document defines HOW the UI works. Follow these rules when modifying any UI code.
+This document defines HOW the emulator UI works. Follow these rules when modifying any UI code.
+
+**Goal:** Replicate the original E-MU / Rossum SP-1200 behavior as closely as possible. Digital shortcuts (file system, right-click pad loading, system audio capture) are acceptable where hardware is impractical in a browser, but all sequencer, sampling, editing, and module workflows must match the original.
+
+**Reference documents:**
+- `docs/sp1200-function-reference.md` — complete function list with LCD displays, derived from manual + tutorial
+- `docs/superpowers/refs/sp1200_functions.md` — raw notes from ToneLab tutorial video
+- `docs/superpowers/refs/sp1200_manual.pdf` — original Rossum SP-1200 manual
+- `docs/superpowers/refs/transcript` — full video tutorial transcript
+- `docs/superpowers/refs/screens/` — screenshots of real hardware LCD displays
+
+**When in doubt about behavior, consult the transcript and manual first.** The emulator should feel like using the real hardware.
+
+---
+
+## How the Real SP-1200 Works (Summary)
+
+The SP-1200 has 4 modules (Setup, Disk, Sync, Sample), each activated by its button. Once in a module, you type function numbers on the keypad. Each function shows a screen on the 2-line, 16-character LCD. You interact via pads (select sounds), sliders (adjust values), keypad (type numbers, Y/N), and arrows (step through options). Enter confirms. The module stays active until you press its button again.
+
+The sequencer has Segment mode (build individual patterns) and Song mode (chain patterns). You toggle with the Song/Segment button. Recording: hold Record, press Run. Erase: toggle Erase, hold a pad while playing.
+
+Sounds live in 4 banks (A-D) × 8 pads = 32 slots. Each pad has independent pitch, volume, decay, reverse, loop, and truncate settings. Channel assignment creates mute groups.
 
 ---
 

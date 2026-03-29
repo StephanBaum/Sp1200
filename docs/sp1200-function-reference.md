@@ -23,7 +23,7 @@ Press Sample button → LED illuminates → enters Option 1 (VU Mode) by default
 
 | Opt | Function | LCD Display | Behavior | Status |
 |-----|----------|-------------|----------|--------|
-| 1 | VU Mode (default) | `A1         +00dB` / `[VU meter bars]` | Monitors incoming audio level. Top line: Bank+Pad left, Gain right. Asterisk `*` if pad has sound. Bottom line: real-time moving-bar VU meter with **peak hold** indicator. Physical Gain knob adjusts input level. | OK (no peak hold) |
+| 1 | VU Mode (default) | `A1         +00dB` / `[VU meter bars]` | Monitors incoming audio level. Top line: Bank+Pad left, Gain right. Asterisk `*` if pad has sound. Bottom line: real-time CSS VU meter with **peak hold** indicator (thin line). Physical Gain knob adjusts input level. | OK |
 | 2 | Assign Voice | `Sampling A1` / _(blank)_ | Select pad to receive sample. Asterisk `*` warns if pad has sound — asks to confirm erase (Yes/No). Press Enter on vacant pad. | OK |
 | 2→ | Output Channel | `Sampling A1` / `Output Channel 7` | After confirming pad, enter output channel 1-8, press Enter. Returns to VU mode. | OK |
 | 3 | Input Gain (Level) | `Input Gain +20dB` / `Use ← and →` | Adjusts internal preamp to boost weak signals. Arrow keys cycle: +00dB, +20dB, +40dB. Press Enter to confirm, returns to VU. Recommended: return to +00dB after sampling to avoid loud playback. | OK |
@@ -31,7 +31,7 @@ Press Sample button → LED illuminates → enters Option 1 (VU Mode) by default
 | 5 | Sample Length | `Length: 2.5 secs` / `Use Slider #1` | Sets strict cutoff time for recording. Max 2.5 seconds per zone. Slider 1 adjusts in **100ms increments**. Press Enter to lock. | OK |
 | 6 | Resample | `A8    *    +20dB` / _(VU meter)_ | Shortcut: immediately overwrites last used pad using previously defined length and routing settings. Asterisk shows pad will be overwritten. Abort by pressing another module button or running Option 2. | OK |
 | 7 | Arm Sampling | `Sample Armed` → `Sampling...` → `Sample is Good` | Standby mode. Auto-starts when audio breaches threshold (Option 4). Shows `Sample Overload` if audio clipped. | OK |
-| 8 | _(unused)_ | — | — | — |
+| 8 | System Audio (emulator) | `System Audio` / `Share screen...` | **Emulator addition:** Switches audio input from mic to system audio (captures other browser tabs, apps). Uses getDisplayMedia. Returns to VU mode after selection. | OK |
 | 9 | Force Sample | `Sampling...` → `Sample is Good` | Manual trigger — recording begins immediately on keypress, bypasses threshold entirely. | OK |
 
 ---
