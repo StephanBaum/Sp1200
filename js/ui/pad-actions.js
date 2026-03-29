@@ -6,7 +6,7 @@ export function bindPadActions(s) {
   document.querySelectorAll('.pad').forEach(el => {
     el.addEventListener('mousedown', () => {
       const pad = parseInt(el.dataset.pad, 10);
-      if ((s.editParam === 'select-pad' || s.editParam === 'channel-assign-num' || s.editParam === 'decay-tune-select') && s.pendingAction) {
+      if ((s.editParam === 'select-pad' || s.editParam === 'channel-assign-num' || s.editParam === 'decay-tune-select' || s.editParam === 'truncate-edit') && s.pendingAction) {
         switch (s.pendingAction) {
           case 'multi-pitch':
             s.engine.send({ type: 'multi-pitch', pad });
@@ -56,7 +56,7 @@ export function bindPadActions(s) {
             s._pendingPad = pad;
             s._pendingBank = s.currentBank;
             s.editParam = 'truncate-edit';
-            s.pendingAction = null;
+            s.pendingAction = 'truncate';
             s._truncStart = 0;
             s._truncEnd = 65535;
             s._truncLoop = -1; // -1 = NONE
