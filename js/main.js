@@ -16,6 +16,7 @@ import { KeyboardUI } from './ui/keyboard.js';
 import { StepEditUI } from './ui/step-edit.js';
 import { loadSampleFromFile, SampleMemory } from './audio/sample-loader.js';
 import { BANK_SAMPLE_TIME } from './constants.js';
+import { MIDIInput } from './midi/midi-input.js';
 
 const engine = new SP1200Engine();
 const storage = new SP1200Storage();
@@ -58,6 +59,10 @@ async function init() {
   keyboard.state = state;
   stepEdit = new StepEditUI(engine, display);
   stepEdit.state = state;
+
+  const midi = new MIDIInput(engine);
+  midi.state = state;
+  midi.init();
 
   engine.onMessage((msg) => {
     switch (msg.type) {
@@ -354,11 +359,22 @@ async function startVUMonitoring() {
 
     if (!micStream) {
       try {
-        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      } catch (micErr) {
-        console.warn('getUserMedia failed:', micErr.message);
-        display.setLine2('No mic - use D&D');
-        return;
+        // Try system audio capture first (captures other tabs, apps)
+        micStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,  // required by API but we only use audio
+          audio: true,
+        });
+        // Stop the video track — we only need audio
+        micStream.getVideoTracks().forEach(t => t.stop());
+      } catch (displayErr) {
+        // Fallback to mic input
+        try {
+          micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (micErr) {
+          console.warn('No audio source:', micErr.message);
+          display.setLine2('No audio src');
+          return;
+        }
       }
     }
     const ctx = engine.context;
@@ -410,11 +426,19 @@ async function startForceRecording() {
 
     if (!micStream) {
       try {
-        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      } catch (micErr) {
-        console.error('No mic for recording:', micErr.message);
-        document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false, error: 'No mic' } }));
-        return;
+        micStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: true,
+        });
+        micStream.getVideoTracks().forEach(t => t.stop());
+      } catch (displayErr) {
+        try {
+          micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (micErr) {
+          console.error('No audio source for recording:', micErr.message);
+          document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false, error: 'No audio' } }));
+          return;
+        }
       }
     }
     if (!micAnalyser) {
