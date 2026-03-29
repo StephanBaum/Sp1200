@@ -229,11 +229,11 @@ export class DisplayUI {
       this.line2El.textContent = '';
       vu = document.createElement('div');
       vu.className = 'vu-meter';
-      vu.style.cssText = 'position:relative;width:100%;height:100%;background:#3a5a1a;border-radius:2px;overflow:hidden;';
+      vu.style.cssText = 'position:relative;width:100%;height:70%;background:#4a7a22;border-radius:2px;overflow:hidden;align-self:center;';
       vu.innerHTML =
         '<div class="vu-fill" style="position:absolute;left:0;top:0;bottom:0;background:#1a2a08;transition:width 0.06s;border-radius:2px;"></div>' +
-        '<div class="vu-peak" style="position:absolute;top:0;bottom:0;width:2px;background:#1a2a08;opacity:0.6;"></div>' +
-        '<div class="vu-thresh" style="position:absolute;top:0;bottom:0;width:2px;background:#0a1a04;display:none;"></div>';
+        '<div class="vu-peak" style="position:absolute;top:0;bottom:0;width:2px;background:#1a2a08;"></div>' +
+        '<div class="vu-thresh" style="position:absolute;top:0;bottom:0;width:2px;background:#0a1504;display:none;"></div>';
       this.line2El.appendChild(vu);
     }
 
