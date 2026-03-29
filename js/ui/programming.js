@@ -42,7 +42,8 @@ export function bindProgramming(s) {
       }
 
       // All other buttons: upper function = song mode, lower = segment mode
-      // Some functions work in both modes (tempo-change, auto-correct)
+      // Don't process prog functions when a module is active
+      if (s.activeModule) return;
       const func = s.mode === 'song' ? upper : lower;
       execProgFunction(s, func, btn);
     });

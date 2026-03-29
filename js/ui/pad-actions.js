@@ -137,11 +137,11 @@ export function bindPadActions(s) {
             s.moduleDisplay('Name ' + _padLabel(s, pad), '________________');
             break;
         }
-        // Return to module-func if still in select-pad
-        if (s.editParam === 'select-pad') {
+        // Return to module-func if select-pad wasn't re-set by the action
+        // (e.g., copy-sound-from sets select-pad + copy-sound-to for the next step)
+        if (s.editParam === 'select-pad' && !s.pendingAction) {
           s.editParam = s.activeModule ? 'module-func' : null;
         }
-        if (s.pendingAction && s.editParam !== 'select-pad') s.pendingAction = null;
       } else if (s.eraseMode && s.playing) {
         // Start continuous erase — events removed as playhead passes
         s.engine.send({ type: 'erase-track-start', pad });

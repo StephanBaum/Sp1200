@@ -209,6 +209,14 @@ export function confirmEntry(s) {
         }
         s.editParam = 'module-func';
         break;
+      default:
+        // Enter = Yes on any Y/N confirmation screen
+        if (s.editParam && s.editParam.endsWith('-confirm')) {
+          const yesBtn = document.querySelector('.key[data-key="9"]');
+          if (yesBtn) yesBtn.click();
+          return;
+        }
+        break;
     }
   }
 
