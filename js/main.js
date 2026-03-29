@@ -503,14 +503,21 @@ async function startForceRecording() {
   try {
     await engine.resume();
 
-    if (!micStream) {
-      display.flash('No Audio Src', 'Press 8: Sys Aud');
-      document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false, error: 'No audio source' } }));
-      return;
+    if (!micStream || !micStream.active) {
+      // Try mic as last resort
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (_) {
+        display.flash('No Audio Src', 'Press 8: Sys Aud');
+        document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false, error: 'No audio source' } }));
+        return;
+      }
     }
     const ctx = engine.context;
     if (ctx.state === 'suspended') await ctx.resume();
-    if (!micAnalyser) {
+    if (!micAnalyser || !micSource) {
+      if (micSource) { try { micSource.disconnect(); } catch (_) {} }
+      if (gainNode) { try { gainNode.disconnect(); } catch (_) {} }
       micSource = ctx.createMediaStreamSource(micStream);
       gainNode = ctx.createGain();
       gainNode.gain.value = getSampleGain();
