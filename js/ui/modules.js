@@ -423,6 +423,16 @@ export function handleSpecialFunction(s, funcNum) {
 
 // ── Disk helpers ─────────────────────────────────────────────────────────
 
+function _returnToDiskMenu(s) {
+  setTimeout(() => {
+    if (s.activeModule === 'disk') {
+      s.editParam = 'module-func';
+      s.numericBuffer = '';
+      s.moduleDisplay('DISK', 'Enter option #');
+    }
+  }, 1500);
+}
+
 async function _ensureFolderSelected(s, callback) {
   if (s.fsStorage?.hasFolder) { callback(); return; }
   s.moduleDisplay('Select Folder', 'Opening...');
@@ -507,22 +517,24 @@ export async function executeDiskOp(s, op, filename) {
           s.engine.send({ type: 'load-patterns', patterns: project.patterns });
         }
         if (project.bpm) { s.engine.setBpm(project.bpm); s.bpm = project.bpm; }
-        s.display.flash('Loaded', cleanName);
-        break;
+        s.moduleDisplay('Loaded', cleanName);
+        _returnToDiskMenu(s);
+        return;
       }
 
       case 'save-all': {
         s.moduleDisplay('Saving...', cleanName);
-        // Request full state from engine
         await new Promise((resolve) => {
           const handler = (msg) => {
             if (msg.type === 'full-state') {
               s.engine.node.port.onmessage = s._origOnMessage;
               s.fsStorage.saveProject(cleanName, msg).then(() => {
-                s.display.flash('Saved', cleanName);
+                s.moduleDisplay('Saved', cleanName);
+                _returnToDiskMenu(s);
                 resolve();
               }).catch(err => {
-                s.display.flash('Save Error', err.message?.substring(0, 14) || 'Failed');
+                s.moduleDisplay('Save Error', err.message?.substring(0, 14) || 'Failed');
+                _returnToDiskMenu(s);
                 resolve();
               });
             }
@@ -534,7 +546,7 @@ export async function executeDiskOp(s, op, filename) {
           };
           s.engine.send({ type: 'query-full-state' });
         });
-        break;
+        return;
       }
 
       case 'save-sequences': {
@@ -544,7 +556,12 @@ export async function executeDiskOp(s, op, filename) {
             if (msg.type === 'full-state') {
               s.engine.node.port.onmessage = s._origOnMessage;
               s.fsStorage.saveSequences(cleanName, msg.patterns, msg.songs).then(() => {
-                s.display.flash('Seq Saved', cleanName);
+                s.moduleDisplay('Seq Saved', cleanName);
+                _returnToDiskMenu(s);
+                resolve();
+              }).catch(err => {
+                s.moduleDisplay('Save Error', err.message?.substring(0, 14) || 'Failed');
+                _returnToDiskMenu(s);
                 resolve();
               });
             }
@@ -556,7 +573,7 @@ export async function executeDiskOp(s, op, filename) {
           };
           s.engine.send({ type: 'query-full-state' });
         });
-        break;
+        return;
       }
 
       case 'save-sounds': {
@@ -566,7 +583,12 @@ export async function executeDiskOp(s, op, filename) {
             if (msg.type === 'full-state') {
               s.engine.node.port.onmessage = s._origOnMessage;
               s.fsStorage.saveProject(cleanName, msg).then(() => {
-                s.display.flash('Snd Saved', cleanName);
+                s.moduleDisplay('Snd Saved', cleanName);
+                _returnToDiskMenu(s);
+                resolve();
+              }).catch(err => {
+                s.moduleDisplay('Save Error', err.message?.substring(0, 14) || 'Failed');
+                _returnToDiskMenu(s);
                 resolve();
               });
             }
@@ -578,7 +600,7 @@ export async function executeDiskOp(s, op, filename) {
           };
           s.engine.send({ type: 'query-full-state' });
         });
-        break;
+        return;
       }
 
       case 'load-sequences': {
@@ -586,11 +608,12 @@ export async function executeDiskOp(s, op, filename) {
         const project = await s.fsStorage.loadProject(filename);
         if (project?.patterns) {
           s.engine.send({ type: 'load-patterns', patterns: project.patterns });
-          s.display.flash('Seq Loaded', cleanName);
+          s.moduleDisplay('Seq Loaded', cleanName);
         } else {
-          s.display.flash('No Sequences', cleanName);
+          s.moduleDisplay('No Sequences', cleanName);
         }
-        break;
+        _returnToDiskMenu(s);
+        return;
       }
 
       case 'load-sounds': {
@@ -602,11 +625,12 @@ export async function executeDiskOp(s, op, filename) {
               s.engine.send({ type: 'load-sample', pad: slot.slot, buffer: slot.buffer.buffer });
             }
           }
-          s.display.flash('Snd Loaded', cleanName);
+          s.moduleDisplay('Snd Loaded', cleanName);
         } else {
-          s.display.flash('No Sounds', cleanName);
+          s.moduleDisplay('No Sounds', cleanName);
         }
-        break;
+        _returnToDiskMenu(s);
+        return;
       }
 
       case 'cat-sequences': {
@@ -669,18 +693,6 @@ export async function executeDiskOp(s, op, filename) {
     s.moduleDisplay('Disk Error', e.message?.substring(0, 16) || 'Failed');
   }
 
-  // Return to disk menu after flash (save confirmations, errors)
-  // Load operations stay on screen until user presses a module button
-  if (op?.startsWith('save') || op?.startsWith('cat')) {
-    // save ops already flash and return via display.flash timeout
-  }
-  // Only auto-return for save-all entered via disk-name (option 9)
-  // All other operations return to disk menu for the next action
-  setTimeout(() => {
-    if (s.activeModule === 'disk' && s.editParam !== 'catalog-browse' && s.editParam !== 'disk-browse') {
-      s.editParam = 'module-func';
-      s.numericBuffer = '';
-      s.moduleDisplay('DISK', 'Enter option #');
-    }
-  }, 2000);
+  // If we got here via catch or unhandled op, return to disk menu
+  _returnToDiskMenu(s);
 }
