@@ -157,8 +157,10 @@ class SP1200Processor extends AudioWorkletProcessor {
 
       case 'set-bank':
         this.currentBank = msg.bank;
-        // Load current bank's samples into voices
+        // Load current bank's samples into idle voices only
+        // Active voices keep their current sample (sequencer events use per-note slots)
         for (let i = 0; i < NUM_PADS; i++) {
+          if (this.voices[i].active) continue; // don't interrupt playing voices
           const s = this.sampleSlots[this.currentBank * NUM_PADS + i];
           if (s.sample) {
             this.voices[i].sample = s.sample;
