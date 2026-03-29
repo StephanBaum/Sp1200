@@ -210,10 +210,9 @@ export class DisplayUI {
     }
   }
 
-  // ── VU meter for sampling ──────────────────────────────────────────────
+  // ── VU meter for sampling — CSS-based for stable rendering ──────────────
   showVU(level, threshold) {
-    const n = Math.round(level * 16);
-    // Peak hold: track max level, hold then decay
+    // Peak hold
     if (level > (this._vuPeak || 0)) {
       this._vuPeak = level;
       this._vuPeakHold = 30;
@@ -223,24 +222,35 @@ export class DisplayUI {
     } else if (this._vuPeak > 0) {
       this._vuPeak = Math.max(0, (this._vuPeak || 0) - 0.02);
     }
-    const peakPos = Math.round((this._vuPeak || 0) * 15);
-    let bar = '\u2588'.repeat(n) + '\u2591'.repeat(16 - n);
-    // Place peak hold marker
-    if ((this._vuPeak || 0) > 0 && peakPos >= n && peakPos < 16) {
-      const chars = bar.split('');
-      chars[peakPos] = '\u2758';
-      bar = chars.join('');
+
+    // Create or reuse VU container
+    let vu = this.line2El.querySelector('.vu-meter');
+    if (!vu) {
+      this.line2El.textContent = '';
+      vu = document.createElement('div');
+      vu.className = 'vu-meter';
+      vu.style.cssText = 'position:relative;width:100%;height:100%;background:#3a5a1a;border-radius:2px;overflow:hidden;';
+      vu.innerHTML =
+        '<div class="vu-fill" style="position:absolute;left:0;top:0;bottom:0;background:#1a2a08;transition:width 0.06s;border-radius:2px;"></div>' +
+        '<div class="vu-peak" style="position:absolute;top:0;bottom:0;width:2px;background:#1a2a08;opacity:0.6;"></div>' +
+        '<div class="vu-thresh" style="position:absolute;top:0;bottom:0;width:2px;background:#0a1a04;display:none;"></div>';
+      this.line2El.appendChild(vu);
     }
-    // Place threshold marker if provided
+
+    const fill = vu.querySelector('.vu-fill');
+    const peak = vu.querySelector('.vu-peak');
+    const thresh = vu.querySelector('.vu-thresh');
+
+    fill.style.width = (level * 100) + '%';
+    peak.style.left = ((this._vuPeak || 0) * 100) + '%';
+    peak.style.display = (this._vuPeak || 0) > 0.01 ? '' : 'none';
+
     if (threshold != null && threshold > 0) {
-      const threshPos = Math.round(threshold * 15);
-      if (threshPos >= 0 && threshPos < 16) {
-        const chars = bar.split('');
-        chars[threshPos] = '\u2502'; // │ box drawing vertical line as threshold
-        bar = chars.join('');
-      }
+      thresh.style.left = (threshold * 100) + '%';
+      thresh.style.display = '';
+    } else {
+      thresh.style.display = 'none';
     }
-    this.setLine2(bar);
   }
 
   // ── Knob value (temporary) ─────────────────────────────────────────────
