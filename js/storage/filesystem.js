@@ -98,12 +98,12 @@ export class FileSystemStorage {
     return items;
   }
 
-  /** Save a complete project (samples + sequences + settings) */
+  /** Save a complete project (samples + sequences + settings) — always saves to root */
   async saveProject(name, projectData) {
-    const dir = this._currentDirHandle || this.dirHandle;
+    const dir = this.dirHandle; // always save to root, not browsed subdirectory
     if (!dir) throw new Error('No folder selected');
 
-    // Create project folder
+    // Create project folder in root
     const projDir = await dir.getDirectoryHandle(name, { create: true });
 
     // Save manifest (sequences, settings, sample metadata)
@@ -216,9 +216,9 @@ export class FileSystemStorage {
     }
   }
 
-  /** Save sequences only to an existing project */
+  /** Save sequences only to an existing project — always saves to root */
   async saveSequences(name, patterns, songs) {
-    const dir = this._currentDirHandle || this.dirHandle;
+    const dir = this.dirHandle; // always save to root
     if (!dir) throw new Error('No folder selected');
 
     let projDir;

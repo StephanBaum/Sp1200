@@ -652,7 +652,7 @@ export async function executeDiskOp(s, op, filename) {
             s._catalogIdx = 0;
             s.editParam = 'catalog-browse';
             const e = entries[0];
-            s.moduleDisplay('Seg ' + String(e.num).padStart(2, '0') + ' ' + e.bars + 'bar', entries.length + ' segs  Use ^v');
+            s.moduleDisplay('Seg ' + String(e.num).padStart(2, '0') + ' ' + e.bars + 'bar', entries.length + ' segs  Slider');
           }
         } catch {
           s.moduleDisplay(cleanName, 'Not a project');
@@ -681,7 +681,7 @@ export async function executeDiskOp(s, op, filename) {
             s._catalogIdx = 0;
             s.editParam = 'catalog-browse';
             const e = entries[0];
-            s.moduleDisplay(e.label + ' ' + e.name, entries.length + ' snds  Use ^v');
+            s.moduleDisplay(e.label + ' ' + e.name, entries.length + ' snds  Slider');
           }
         } catch {
           s.moduleDisplay(cleanName, 'Not a project');
