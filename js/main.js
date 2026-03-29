@@ -439,40 +439,37 @@ async function startVUMonitoring() {
     const ctx = engine.context;
     if (ctx.state === 'suspended') await ctx.resume();
 
-    if (micStream) {
-      micSource = ctx.createMediaStreamSource(micStream);
-      gainNode = ctx.createGain();
-      gainNode.gain.value = getSampleGain();
-      micAnalyser = ctx.createAnalyser();
-      micAnalyser.fftSize = 256;
-      micSource.connect(gainNode);
-      gainNode.connect(micAnalyser);
-    }
-
-    // Show hint if no audio source
     if (!micStream) {
       display.setLine2('Press 8: Sys Aud');
+      return;
     }
 
-    const dataArray = micAnalyser ? new Uint8Array(micAnalyser.frequencyBinCount) : null;
+    micSource = ctx.createMediaStreamSource(micStream);
+    gainNode = ctx.createGain();
+    gainNode.gain.value = getSampleGain();
+    micAnalyser = ctx.createAnalyser();
+    micAnalyser.fftSize = 256;
+    micSource.connect(gainNode);
+    gainNode.connect(micAnalyser);
+
+    const dataArray = new Uint8Array(micAnalyser.frequencyBinCount);
     function drawVU() {
+      if (!micAnalyser) return;
       // Stop VU when leaving sample module
       if (state?.activeModule !== 'sample') {
         if (vuAnimFrame) { cancelAnimationFrame(vuAnimFrame); vuAnimFrame = null; }
         return;
       }
       vuAnimFrame = requestAnimationFrame(drawVU);
-      let level = 0;
-      if (micAnalyser && dataArray) {
-        if (gainNode) gainNode.gain.value = getSampleGain();
-        micAnalyser.getByteTimeDomainData(dataArray);
-        let sum = 0;
-        for (let i = 0; i < dataArray.length; i++) {
-          const v = (dataArray[i] - 128) / 128;
-          sum += v * v;
-        }
-        level = Math.min(1, Math.sqrt(sum / dataArray.length) * 4);
+      if (gainNode) gainNode.gain.value = getSampleGain();
+      micAnalyser.getByteTimeDomainData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        const v = (dataArray[i] - 128) / 128;
+        sum += v * v;
       }
+      const rms = Math.sqrt(sum / dataArray.length);
+      const level = Math.min(1, rms * 4);
       const showThreshold = (state?.editParam === 'threshold' || sampleArmed)
         ? (state?.sampleThreshold || 0.05) : undefined;
       display.showVU(level, showThreshold);
