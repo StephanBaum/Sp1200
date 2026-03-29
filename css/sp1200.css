@@ -93,12 +93,12 @@ body {
   height: 4.5%;
   z-index: 15;
   pointer-events: none;
-  background: #4a6a28;
+  background: #6a9a38;
   border: 2px solid #5a5a30;
   border-radius: 4px;
   box-shadow:
-    inset 0 0 8px rgba(0, 0, 0, 0.3),
-    inset 0 0 20px rgba(80, 140, 40, 0.15);
+    inset 0 0 12px rgba(100, 170, 50, 0.3),
+    inset 0 0 30px rgba(120, 190, 60, 0.15);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -112,7 +112,9 @@ body {
   font-size: 13px;
   font-weight: bold;
   color: #1a2a08;
-  text-shadow: 0 0 1px rgba(26, 42, 8, 0.5);
+  text-shadow:
+    0 0 1px rgba(26, 42, 8, 0.5),
+    0 0 3px rgba(40, 60, 15, 0.3);
   letter-spacing: 0;
   white-space: pre;
   line-height: 1.35;
@@ -238,7 +240,7 @@ body {
   display: flex;
   flex-direction: column;
   padding: 1px 3px;
-  background: #4a6a28;
+  background: #6a9a38;
   z-index: 2;
 }
 .lcd-bars-row {
@@ -270,10 +272,10 @@ body {
   line-height: 1.2;
   z-index: 3;
   text-shadow:
-    -2px -2px 0 #4a6a28, 2px -2px 0 #4a6a28,
-    -2px 2px 0 #4a6a28, 2px 2px 0 #4a6a28,
-    0 -2px 0 #4a6a28, 0 2px 0 #4a6a28,
-    -2px 0 0 #4a6a28, 2px 0 0 #4a6a28;
+    -2px -2px 0 #6a9a38, 2px -2px 0 #6a9a38,
+    -2px 2px 0 #6a9a38, 2px 2px 0 #6a9a38,
+    0 -2px 0 #6a9a38, 0 2px 0 #6a9a38,
+    -2px 0 0 #6a9a38, 2px 0 0 #6a9a38;
 }
 .lcd-bars-labels span {
   flex: 1;

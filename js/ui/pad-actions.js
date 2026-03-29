@@ -142,6 +142,11 @@ export function bindPadActions(s) {
           s.editParam = s.activeModule ? 'module-func' : null;
         }
         if (s.pendingAction && s.editParam !== 'select-pad') s.pendingAction = null;
+      } else if (s.activeModule === 'sample' && !s.pendingAction) {
+        // In sample module: tap pad to select it as sample target
+        s.selectedSamplePad = pad;
+        const label = _padLabel(s, pad);
+        s.display.flash('Sample → ' + label, '');
       } else if (s.eraseMode && s.playing) {
         // Start continuous erase — events removed as playhead passes
         s.engine.send({ type: 'erase-track-start', pad });

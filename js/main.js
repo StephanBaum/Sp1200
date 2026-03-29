@@ -34,6 +34,15 @@ let micAnalyser = null;
 let micSource = null;
 let vuAnimFrame = null;
 let sampleArmed = false;
+let gainNode = null; // Web Audio GainNode for applying input gain
+
+function getSampleGain() {
+  // Combine knob position (0-2x) with preamp level (+0/+20/+40 dB)
+  const knob = state?._gainKnob ?? 0.75;
+  const dbIndex = state?.sampleGainIndex ?? 0;
+  const dbGains = [1.0, 10.0, 100.0]; // +0dB, +20dB, +40dB as linear multipliers
+  return knob * 2 * dbGains[dbIndex];
+}
 
 async function init() {
   if (initialized) return;
@@ -63,6 +72,22 @@ async function init() {
   const midi = new MIDIInput(engine);
   midi.state = state;
   midi.init();
+
+  // Acquire audio input stream once (system audio or mic) — kept alive for session
+  if (!micStream) {
+    try {
+      micStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      micStream.getVideoTracks().forEach(t => t.stop());
+      console.log('System audio stream acquired');
+    } catch (_) {
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.log('Mic stream acquired');
+      } catch (e) {
+        console.warn('No audio input available:', e.message);
+      }
+    }
+  }
 
   engine.onMessage((msg) => {
     switch (msg.type) {
@@ -212,10 +237,13 @@ async function init() {
       return;
     }
 
-    // Normal display
+    // Normal display — unlock if no module/edit is using the display
+    if (!state.activeModule && !state.editParam) {
+      display.unlock();
+    }
     if (e.detail.mode === 'pitch') {
       display.showTuneLevels(e.detail.values);
-    } else {
+    } else if (e.detail.mode === 'volume' || e.detail.mode === 'decay') {
       display.showMixLevels(e.detail.values);
     }
   });
@@ -291,7 +319,10 @@ async function init() {
       angle = Math.max(-120, Math.min(120, startAngle + delta));
       knob.style.transform = `rotate(${angle}deg)`;
       const normalized = (angle + 120) / 240;
-      if (knob.id === 'knob-gain') engine.setParam('gain', 0, normalized);
+      if (knob.id === 'knob-gain') {
+        engine.setParam('gain', 0, normalized);
+        if (state) state._gainKnob = normalized;
+      }
       if (knob.id === 'knob-mix-vol') engine.setParam('mix-volume', 0, normalized);
       if (knob.id === 'knob-metro-vol') engine.send({ type: 'set-metronome-vol', vol: normalized });
       display.showKnobValue(names[knob.id] || '', normalized);
@@ -381,14 +412,19 @@ async function startVUMonitoring() {
     if (ctx.state === 'suspended') await ctx.resume();
 
     micSource = ctx.createMediaStreamSource(micStream);
+    gainNode = ctx.createGain();
+    gainNode.gain.value = getSampleGain();
     micAnalyser = ctx.createAnalyser();
     micAnalyser.fftSize = 256;
-    micSource.connect(micAnalyser);
+    micSource.connect(gainNode);
+    gainNode.connect(micAnalyser);
 
     const dataArray = new Uint8Array(micAnalyser.frequencyBinCount);
     function drawVU() {
       if (!micAnalyser) return;
       vuAnimFrame = requestAnimationFrame(drawVU);
+      // Update gain in real-time as knob/level changes
+      if (gainNode) gainNode.gain.value = getSampleGain();
       micAnalyser.getByteTimeDomainData(dataArray);
       let sum = 0;
       for (let i = 0; i < dataArray.length; i++) {
@@ -413,9 +449,11 @@ async function startVUMonitoring() {
 
 function stopVUMonitoring() {
   if (vuAnimFrame) { cancelAnimationFrame(vuAnimFrame); vuAnimFrame = null; }
+  // Disconnect nodes but keep the stream alive for reuse
   if (micSource) { micSource.disconnect(); micSource = null; }
+  if (gainNode) { gainNode.disconnect(); gainNode = null; }
   if (micAnalyser) { micAnalyser = null; }
-  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  // Do NOT stop micStream — keep it alive so we don't re-prompt
   sampleArmed = false;
 }
 
@@ -441,16 +479,22 @@ async function startForceRecording() {
         }
       }
     }
+    const ctx = engine.context;
+    if (ctx.state === 'suspended') await ctx.resume();
     if (!micAnalyser) {
-      const ctx = engine.context;
-      if (ctx.state === 'suspended') await ctx.resume();
       micSource = ctx.createMediaStreamSource(micStream);
+      gainNode = ctx.createGain();
+      gainNode.gain.value = getSampleGain();
       micAnalyser = ctx.createAnalyser();
       micAnalyser.fftSize = 256;
-      micSource.connect(micAnalyser);
+      micSource.connect(gainNode);
+      gainNode.connect(micAnalyser);
     }
 
-    micRecorder = new MediaRecorder(micStream);
+    // Record from gained signal, not raw stream
+    const recDest = ctx.createMediaStreamDestination();
+    gainNode.connect(recDest);
+    micRecorder = new MediaRecorder(recDest.stream);
     micChunks = [];
     micRecorder.ondataavailable = (e) => { if (e.data.size > 0) micChunks.push(e.data); };
     micRecorder.onstop = async () => {
@@ -477,8 +521,13 @@ async function startForceRecording() {
     // VU during recording
     const dataArray = new Uint8Array(micAnalyser.frequencyBinCount);
     function drawRecVU() {
-      if (!micRecorder || micRecorder.state !== 'recording') return;
+      if (!micRecorder || micRecorder.state !== 'recording') {
+        // Disconnect recording destination when done
+        try { gainNode?.disconnect(recDest); } catch (_) {}
+        return;
+      }
       vuAnimFrame = requestAnimationFrame(drawRecVU);
+      if (gainNode) gainNode.gain.value = getSampleGain();
       micAnalyser.getByteTimeDomainData(dataArray);
       let sum = 0;
       for (let i = 0; i < dataArray.length; i++) {

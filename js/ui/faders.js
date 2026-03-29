@@ -31,7 +31,7 @@ export class FadersUI {
         const pos = 1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
         this.faderPos[index] = pos;
         // Absolute: fader position IS the value, written on touch
-        this.params[this.mode][index] = pos;
+        if (this.params[this.mode]) this.params[this.mode][index] = pos;
         this._updatePosition(index);
         this._sendValue(index);
         this._notifyDisplay();
@@ -50,8 +50,9 @@ export class FadersUI {
   _bindKeyboard() {
     document.addEventListener('fader-key', (e) => {
       const { index, delta } = e.detail;
-      const val = Math.max(0, Math.min(1, this.params[this.mode][index] + delta));
-      this.params[this.mode][index] = val;
+      const current = this.params[this.mode]?.[index] ?? this.faderPos[index];
+      const val = Math.max(0, Math.min(1, current + delta));
+      if (this.params[this.mode]) this.params[this.mode][index] = val;
       this.faderPos[index] = val;
       this._updatePosition(index);
       this._sendValue(index);
@@ -89,7 +90,7 @@ export class FadersUI {
   }
 
   _notifyDisplay() {
-    const vals = Array.from(this.params[this.mode]);
+    const vals = this.params[this.mode] ? Array.from(this.params[this.mode]) : Array.from(this.faderPos);
     document.dispatchEvent(new CustomEvent('fader-update', { detail: { values: vals, mode: this.mode } }));
   }
 }
