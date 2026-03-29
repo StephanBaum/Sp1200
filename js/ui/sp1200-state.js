@@ -125,7 +125,7 @@ export class SP1200State {
       }
       setTimeout(() => {
         if (this.activeModule === 'sample') {
-          this.editParam = 'module-func';
+          this.editParam = 'vu-mode';
           this.display.setLine1(this.vuPadLabel());
           document.dispatchEvent(new Event('sample-start-vu'));
         }
