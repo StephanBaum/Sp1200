@@ -121,7 +121,7 @@ export class SP1200State {
       if (e.detail.success) {
         this.moduleDisplay('Sample is Good', '');
       } else {
-        this.moduleDisplay('Sample Overload', '');
+        this.moduleDisplay('Sample Failed', e.detail.error || 'Check mic');
       }
       setTimeout(() => {
         if (this.activeModule === 'sample') {

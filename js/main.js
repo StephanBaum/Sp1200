@@ -239,10 +239,21 @@ async function init() {
 // ── VU Monitoring ────────────────────────────────────────────────────────
 async function startVUMonitoring() {
   try {
+    // Ensure AudioContext is running
+    await engine.resume();
+
     if (!micStream) {
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (micErr) {
+        console.warn('getUserMedia failed:', micErr.message);
+        display.setLine2('No mic - use D&D');
+        return;
+      }
     }
     const ctx = engine.context;
+    if (ctx.state === 'suspended') await ctx.resume();
+
     micSource = ctx.createMediaStreamSource(micStream);
     micAnalyser = ctx.createAnalyser();
     micAnalyser.fftSize = 256;
@@ -269,8 +280,8 @@ async function startVUMonitoring() {
     }
     drawVU();
   } catch (err) {
-    console.error('Mic access denied:', err);
-    display.showVU(0);
+    console.error('VU monitoring failed:', err);
+    display.setLine2('VU Error');
   }
 }
 
@@ -285,11 +296,20 @@ function stopVUMonitoring() {
 // ── Force Recording (Sample option 9) ────────────────────────────────────
 async function startForceRecording() {
   try {
+    await engine.resume();
+
     if (!micStream) {
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (micErr) {
+        console.error('No mic for recording:', micErr.message);
+        document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false, error: 'No mic' } }));
+        return;
+      }
     }
     if (!micAnalyser) {
       const ctx = engine.context;
+      if (ctx.state === 'suspended') await ctx.resume();
       micSource = ctx.createMediaStreamSource(micStream);
       micAnalyser = ctx.createAnalyser();
       micAnalyser.fftSize = 256;
@@ -301,16 +321,18 @@ async function startForceRecording() {
     micRecorder.ondataavailable = (e) => { if (e.data.size > 0) micChunks.push(e.data); };
     micRecorder.onstop = async () => {
       const blob = new Blob(micChunks, { type: 'audio/webm' });
+      console.log('Sample recorded:', blob.size, 'bytes');
       try {
         const processed = await loadSampleFromFile(engine.context, await blob.arrayBuffer());
         const targetPad = state?.selectedSamplePad ?? selectedPad;
+        console.log('Sample processed:', processed.length, 'samples → pad', targetPad);
         engine.loadSample(targetPad, processed);
         sampleMemory.allocate(sampleMemory.getBank(targetPad), processed.length);
         display.setMemory(sampleMemory.getRemainingSeconds(sampleMemory.getBank(targetPad)));
         document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: true } }));
       } catch (err) {
-        console.error('Sample processing failed:', err);
-        document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false } }));
+        console.error('Sample decode failed:', err);
+        document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false, error: err.message } }));
       }
     };
     micRecorder.start();
@@ -339,7 +361,7 @@ async function startForceRecording() {
     }, (state?.sampleLength || 2.5) * 1000);
   } catch (err) {
     console.error('Recording failed:', err);
-    document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false } }));
+    document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false, error: err.message } }));
   }
 }
 
