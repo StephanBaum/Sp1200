@@ -11,7 +11,7 @@ export class PadsUI {
       el.addEventListener('mousedown', (e) => {
         // Don't trigger sound when selecting a pad for a function or erasing
         if (this.state?.eraseMode && this.state?.playing) return;
-        if (this.state?.editParam === 'select-pad') return;
+        if (this.state?.editParam === 'select-pad' || this.state?.editParam === 'channel-assign-num') return;
 
         const pad = parseInt(el.dataset.pad, 10);
         const velocity = this._velocityFromClick(e, el);

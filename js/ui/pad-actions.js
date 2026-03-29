@@ -6,7 +6,7 @@ export function bindPadActions(s) {
   document.querySelectorAll('.pad').forEach(el => {
     el.addEventListener('mousedown', () => {
       const pad = parseInt(el.dataset.pad, 10);
-      if (s.editParam === 'select-pad' && s.pendingAction) {
+      if ((s.editParam === 'select-pad' || s.editParam === 'channel-assign-num') && s.pendingAction) {
         switch (s.pendingAction) {
           case 'multi-pitch':
             s.engine.send({ type: 'multi-pitch', pad });
@@ -69,14 +69,17 @@ export function bindPadActions(s) {
               'E=' + String(s._truncEnd).padStart(5, '0') + '  L= NONE'
             );
             break;
-          case 'channel-assign':
-            // Screenshot: "Assign A6" / "Output Channel 7"
+          case 'channel-assign': {
+            // Show current channel, stay in select-pad for next pad
             s._pendingPad = pad;
-            s.editParam = 'channel-assign-num';
-            s.pendingAction = null;
             const ch = (s.channelAssign?.[pad] ?? pad) + 1;
-            s.moduleDisplay('Assign ' + _padLabel(s, pad), 'Output Channel ' + ch);
+            s.moduleDisplay('Assign ' + _padLabel(s, pad), 'Ch ' + ch + '  Type # chg');
+            // Stay in select-pad with channel-assign pending
+            // User can type a number to change, or tap another pad to view
+            s.editParam = 'channel-assign-num';
+            s.pendingAction = 'channel-assign';
             break;
+          }
           case 'reverse-sound':
             s._pendingPad = pad;
             s.editParam = 'reverse-confirm';
