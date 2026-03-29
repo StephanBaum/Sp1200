@@ -237,12 +237,18 @@ async function init() {
 }
 
 // ── Audio Input ──────────────────────────────────────────────────────────
+// Captures system audio via getDisplayMedia (select a tab/screen to sample from).
+// The video track is kept alive (required by browser) but ignored.
 async function getAudioInput() {
   if (micStream) return micStream;
   try {
-    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    micStream = await navigator.mediaDevices.getDisplayMedia({
+      audio: true,
+      video: true, // required by spec, but we ignore the video
+    });
+    // Don't stop the video track — some browsers kill audio if video is stopped
   } catch (err) {
-    console.error('No audio input available:', err);
+    console.error('Audio capture denied:', err);
     return null;
   }
   return micStream;
@@ -254,16 +260,18 @@ async function startVUMonitoring() {
     if (!micStream) {
       const stream = await getAudioInput();
       if (!stream) {
-        // No mic access — show flat VU bar, don't fail
         display.showVU(0);
         return;
       }
     }
-    const ctx = engine.context;
-    micSource = ctx.createMediaStreamSource(micStream);
-    micAnalyser = ctx.createAnalyser();
-    micAnalyser.fftSize = 256;
-    micSource.connect(micAnalyser);
+    // Reconnect analyser (may have been disconnected by stopVUMonitoring)
+    if (!micAnalyser) {
+      const ctx = engine.context;
+      micSource = ctx.createMediaStreamSource(micStream);
+      micAnalyser = ctx.createAnalyser();
+      micAnalyser.fftSize = 256;
+      micSource.connect(micAnalyser);
+    }
 
     const dataArray = new Uint8Array(micAnalyser.frequencyBinCount);
     function drawVU() {
@@ -294,7 +302,7 @@ function stopVUMonitoring() {
   if (vuAnimFrame) { cancelAnimationFrame(vuAnimFrame); vuAnimFrame = null; }
   if (micSource) { micSource.disconnect(); micSource = null; }
   if (micAnalyser) { micAnalyser = null; }
-  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  // Keep micStream alive so we don't need to re-prompt for permission
   sampleArmed = false;
 }
 
