@@ -74,7 +74,7 @@ export function bindPadActions(s) {
             // Show current channel, stay in select-pad for next pad
             s._pendingPad = pad;
             const ch = (s.channelAssign?.[pad] ?? pad) + 1;
-            s.moduleDisplay('Assign ' + _padLabel(s, pad), 'Ch ' + ch + '  Type # chg');
+            s.moduleDisplay('Assign ' + _padLabel(s, pad), 'Output Channel ' + ch);
             // Stay in select-pad with channel-assign pending
             // User can type a number to change, or tap another pad to view
             s.editParam = 'channel-assign-num';
