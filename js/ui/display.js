@@ -63,7 +63,7 @@ export class DisplayUI {
     const bpm = String(Math.round(this.bpm)).padStart(3, ' ');
 
     if (this.mode === 'segment' || this.mode === 'pattern') {
-      this.setLine1('Seg ' + seg + '    ' + bpm);
+      this.setLine1('Seg ' + seg + '   \u266A' + bpm);
       if (this.playing) {
         this.setLine2('Bar:' + (this.bar + 1) + ' Beat:' + (this.beat + 1));
       } else {
@@ -71,7 +71,7 @@ export class DisplayUI {
       }
     } else if (this.mode === 'song') {
       const song = String(this.song + 1).padStart(2, '0');
-      this.setLine1('Song ' + song + '   ' + bpm);
+      this.setLine1('Song ' + song + '  \u266A' + bpm);
       this.setLine2(' ');
     } else if (this.mode === 'step') {
       this.setLine1('StepPgm     ' + bpm);
@@ -86,7 +86,10 @@ export class DisplayUI {
     clearTimeout(this._flashTimer);
     this.setLine1(line1);
     if (line2 !== undefined) this.setLine2(line2);
-    this._flashTimer = setTimeout(() => this._refresh(), duration);
+    this._flashTimer = setTimeout(() => {
+      // Don't revert to default screen if display is locked (module active)
+      if (!this.locked) this._refresh();
+    }, duration);
   }
 
   // ── Module function display ────────────────────────────────────────────
