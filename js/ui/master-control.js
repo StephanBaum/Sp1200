@@ -4,7 +4,7 @@ export function bindMasterControl(s) {
   s.bindBtn('btn-tempo', () => {
     s.editParam = 'bpm';
     s.numericBuffer = '';
-    s.display.setMode('TEMPO');
+    s.moduleDisplay('Tempo: ' + Math.round(s.bpm), 'Use < > or keys');
     document.getElementById('btn-tempo').classList.add('active');
   });
 
@@ -224,7 +224,7 @@ export function handleNav(s, dir) {
       s.bpm = Math.max(30, Math.min(250, s.bpm + dir));
       s.engine.setBpm(s.bpm);
       s.display.setBpm(s.bpm);
-      s.moduleDisplay('Tempo ' + Math.round(s.bpm), 'BPM');
+      s.moduleDisplay('Tempo: ' + Math.round(s.bpm), 'BPM');
       break;
     case 'swing': {
       const SW = [50, 54, 58, 63, 67, 71];

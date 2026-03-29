@@ -185,7 +185,7 @@ export function execProgFunction(s, func, btn) {
       } else {
         s.editParam = 'bpm';
         s.numericBuffer = '';
-        s.moduleDisplay('Tempo ' + Math.round(s.bpm), 'Use +/- or keys');
+        s.moduleDisplay('Tempo: ' + Math.round(s.bpm), 'Use < > or keys');
       }
       break;
 
