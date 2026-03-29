@@ -19,6 +19,11 @@ export class PadsUI {
         this.engine.trigger(pad, velocity, bank);
         this._flash(pad);
       });
+      el.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const pad = parseInt(el.dataset.pad, 10);
+        document.dispatchEvent(new CustomEvent('pad-right-click', { detail: { pad } }));
+      });
     });
   }
   _velocityFromClick(event, element) {

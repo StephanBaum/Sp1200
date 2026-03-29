@@ -79,4 +79,30 @@ describe('Song', () => {
     s.setTempo(0, 999); // clamped
     expect(s.songs[0].tempo).toBe(250);
   });
+
+  it('sub-song jumps to another song and returns', () => {
+    const s = new Song();
+    s.addStep(0, 0, { type: 'segment', value: 1 });
+    s.addStep(0, 1, { type: 'sub-song', value: 1 });
+    s.addStep(0, 2, { type: 'segment', value: 3 });
+    s.addStep(0, 3, { type: 'end' });
+    s.addStep(1, 0, { type: 'segment', value: 2 });
+    s.addStep(1, 1, { type: 'end' });
+
+    s.start(0);
+    expect(s.getNextSegment()).toEqual({ segment: 1 });
+    expect(s.getNextSegment()).toEqual({ segment: 2 });
+    expect(s.getNextSegment()).toEqual({ segment: 3 });
+    expect(s.getNextSegment()).toBeNull();
+  });
+
+  it('self-referencing sub-song loops indefinitely', () => {
+    const s = new Song();
+    s.addStep(0, 0, { type: 'segment', value: 1 });
+    s.addStep(0, 1, { type: 'sub-song', value: 0 });
+    s.start(0);
+    expect(s.getNextSegment()).toEqual({ segment: 1 });
+    expect(s.getNextSegment()).toEqual({ segment: 1 });
+    expect(s.getNextSegment()).toEqual({ segment: 1 });
+  });
 });

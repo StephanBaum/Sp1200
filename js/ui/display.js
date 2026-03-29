@@ -200,7 +200,25 @@ export class DisplayUI {
   // ── VU meter for sampling ──────────────────────────────────────────────
   showVU(level) {
     const n = Math.round(level * 16);
-    this.setLine2('\u2588'.repeat(n) + '\u2591'.repeat(16 - n));
+    // Peak hold: track max level, hold then decay
+    if (level > (this._vuPeak || 0)) {
+      this._vuPeak = level;
+      this._vuPeakHold = 30; // hold for ~30 frames
+    }
+    if (this._vuPeakHold > 0) {
+      this._vuPeakHold--;
+    } else if (this._vuPeak > 0) {
+      this._vuPeak = Math.max(0, (this._vuPeak || 0) - 0.02);
+    }
+    const peakPos = Math.round((this._vuPeak || 0) * 15);
+    let bar = '\u2588'.repeat(n) + '\u2591'.repeat(16 - n);
+    // Place peak hold marker if it's beyond the current level
+    if ((this._vuPeak || 0) > 0 && peakPos >= n && peakPos < 16) {
+      const chars = bar.split('');
+      chars[peakPos] = '\u2586'; // ▆ lower three quarters block as peak marker
+      bar = chars.join('');
+    }
+    this.setLine2(bar);
   }
 
   // ── Knob value (temporary) ─────────────────────────────────────────────

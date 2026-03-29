@@ -57,6 +57,7 @@ async function init() {
   keyboard = new KeyboardUI(engine, display);
   keyboard.state = state;
   stepEdit = new StepEditUI(engine, display);
+  stepEdit.state = state;
 
   engine.onMessage((msg) => {
     switch (msg.type) {
@@ -122,6 +123,16 @@ async function init() {
         display.flash('Truncated', msg.length + ' samples');
         if (state) {
           display.setMemory(sampleMemory.getRemainingSeconds(state.currentBank));
+        }
+        break;
+      case 'step-events':
+        if (stepEdit?.active) {
+          const banks = ['A','B','C','D'];
+          const names = msg.events.slice(0, 4).map(e => {
+            const pad = (e.track % 8) + 1;
+            return banks[state?.currentBank || 0] + pad;
+          });
+          display.setLine2(names.join(' ') || 'AC:' + (state?.quantizeLabel || '1/16'));
         }
         break;
     }
@@ -304,6 +315,27 @@ async function init() {
     sp.classList.remove('dragover');
     const file = e.dataTransfer.files[0];
     if (file) await loadFileToSelectedPad(file);
+  });
+
+  document.addEventListener('pad-right-click', async (e) => {
+    const pad = e.detail.pad;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'audio/*';
+    input.onchange = async () => {
+      if (!input.files.length) return;
+      const file = input.files[0];
+      const arrayBuffer = await file.arrayBuffer();
+      const processed = await loadSampleFromFile(engine.context, arrayBuffer);
+      const bank = state?.currentBank || 0;
+      const bankPad = bank * 8 + pad;
+      engine.loadSample(bankPad, processed);
+      sampleMemory.allocate(bank, processed.length);
+      display.setMemory(sampleMemory.getRemainingSeconds(bank));
+      const bankName = ['A', 'B', 'C', 'D'][bank];
+      display.flash('Loaded', bankName + (pad + 1));
+    };
+    input.click();
   });
 
   display.setMemory(BANK_SAMPLE_TIME);

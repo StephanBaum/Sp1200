@@ -321,6 +321,28 @@ export function bindKeypad(s) {
         return;
       }
 
+      // ── Sub Song entry (song mode) ──────────────────────────────────
+      if (s.editParam === 'subsong-entry') {
+        s.numericBuffer += key;
+        s.display.setLine2('Song #: ' + s.numericBuffer.padStart(2, '_'));
+        if (s.numericBuffer.length >= 2) {
+          const songNum = parseInt(s.numericBuffer, 10);
+          if (songNum >= 0 && songNum < 100) {
+            s.engine.send({
+              type: 'song-add-step',
+              song: s.currentSong,
+              step: 999,
+              stepType: 'sub-song',
+              value: songNum,
+            });
+            s.display.flash('Sub Song', 'Song ' + s.numericBuffer);
+          }
+          s.numericBuffer = '';
+          s.editParam = null;
+        }
+        return;
+      }
+
       // ── Trigger type (song mode) ──────────────────────────────────────
       if (s.editParam === 'trigger-type') {
         const types = { '1': '1/4', '2': '1/8', '3': '1/16', '4': '1/32', '5': '1/32T', '6': 'Click' };

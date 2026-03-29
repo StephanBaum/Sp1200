@@ -208,6 +208,18 @@ class SP1200Processor extends AudioWorkletProcessor {
         break;
       }
 
+      case 'query-step-events': {
+        const pattern = this.patterns[this.currentPatternIndex];
+        const tick = msg.tick;
+        const events = pattern.getEventsAtTick(tick);
+        this.port.postMessage({
+          type: 'step-events',
+          tick,
+          events: events.map(e => ({ track: e.track, velocity: e.velocity })),
+        });
+        break;
+      }
+
       case 'song-chain': {
         const songNum = msg.song ?? 0;
         this.song.songs[songNum].steps = [];

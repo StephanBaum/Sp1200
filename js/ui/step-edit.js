@@ -4,6 +4,7 @@ export class StepEditUI {
   constructor(engine, display) {
     this.engine = engine;
     this.display = display;
+    this.state = null;
     this.active = false;
     this.currentStep = 0;
     this.quantizeGrid = PPQN / 4; // default 1/16
@@ -57,12 +58,21 @@ export class StepEditUI {
         if (!this.active) return;
         const track = parseInt(el.dataset.pad, 10);
         const tick = this.currentStep * this.quantizeGrid;
-        this.engine.send({
-          type: 'step-edit',
-          step: tick,
-          track,
-          event: { velocity: 100, pitchOffset: 0 }
-        });
+        if (this.state?.eraseMode) {
+          this.engine.send({
+            type: 'step-edit',
+            track,
+            tick: tick,
+            remove: true,
+          });
+        } else {
+          this.engine.send({
+            type: 'step-edit',
+            step: tick,
+            track,
+            event: { velocity: 100, pitchOffset: 0 }
+          });
+        }
         this._updateDisplay();
         // Flash the pad
         el.classList.add('triggered');
@@ -83,5 +93,7 @@ export class StepEditUI {
 
     this.display.setLine1('M:' + String(measure).padStart(2, '0') + ' B:' + String(beat).padStart(2, '0') + ' S:' + String(sub).padStart(2, '0'));
     this.display.setLine2('AC:' + grid);
+
+    this.engine.send({ type: 'query-step-events', tick: this.currentStep * this.quantizeGrid });
   }
 }

@@ -100,6 +100,14 @@ export function execProgFunction(s, func, btn) {
       s.moduleDisplay('Mix Change', 'Enter mix # 1-8');
       break;
 
+    case 'subsong':
+      if (s.mode === 'song') {
+        s.editParam = 'subsong-entry';
+        s.numericBuffer = '';
+        s.moduleDisplay('Sub Song', 'Song #: __');
+      }
+      break;
+
     // ── Segment mode functions (lower labels) ─────────────────────────
 
     case 'metronome':

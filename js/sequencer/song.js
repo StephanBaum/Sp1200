@@ -55,6 +55,12 @@ export class Song {
         case 'segment':
           return { segment: step.value };
         case 'end':
+          if (this.repeatStack.length > 0) {
+            const parent = this.repeatStack.pop();
+            this.currentSong = parent.song;
+            this.currentStep = parent.step;
+            return this.getNextSegment();
+          }
           return null;
         case 'tempo-change':
           return { tempoChange: step.value };
