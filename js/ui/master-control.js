@@ -314,8 +314,38 @@ export function handleNav(s, dir) {
       break;
     }
     case 'threshold':
+      s.sampleThreshold = Math.max(0, Math.min(1, (s.sampleThreshold || 0.05) + dir * 0.05));
+      s.moduleDisplay('Threshold  #1', 'Level: ' + Math.round(s.sampleThreshold * 100) + '%');
+      break;
     case 'sample-length':
-    case 'default-decay':
+      s.sampleLength = Math.max(0.1, Math.min(2.5, (s.sampleLength || 2.5) + dir * 0.1));
+      s.sampleLength = Math.round(s.sampleLength * 10) / 10;
+      s.moduleDisplay('Length: ' + s.sampleLength.toFixed(1) + ' secs', 'Use Slider #1');
+      break;
+    case 'default-decay': {
+      const cur = s._defaultDecay || 16;
+      s._defaultDecay = Math.max(0, Math.min(31, cur + dir));
+      s.engine.send({ type: 'set-default-decay', value: s._defaultDecay });
+      s.moduleDisplay('Default Decay', 'Value: ' + s._defaultDecay);
+      break;
+    }
+    case 'special-menu':
+      if (s._specialCatalog?.length) {
+        s._specialIdx = Math.max(0, Math.min(s._specialCatalog.length - 1, (s._specialIdx || 0) + dir));
+        const entry = s._specialCatalog[s._specialIdx];
+        s.moduleDisplay(entry.num + ' ' + entry.name, 'Use Slider or #');
+      }
+      break;
+    case 'catalog-browse':
+      if (s._catalogEntries?.length) {
+        s._catalogIdx = Math.max(0, Math.min(s._catalogEntries.length - 1, (s._catalogIdx || 0) + dir));
+        const e = s._catalogEntries[s._catalogIdx];
+        if (e.num !== undefined) {
+          s.display.setLine1('Seg ' + String(e.num).padStart(2, '0') + ' ' + e.bars + 'bar');
+        } else {
+          s.display.setLine1(e.label + ' ' + e.name);
+        }
+      }
       break;
     case 'channel-assign-num': {
       if (!s.channelAssign) s.channelAssign = new Uint8Array(8);
