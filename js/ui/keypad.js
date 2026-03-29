@@ -322,6 +322,49 @@ export function bindKeypad(s) {
       }
 
       // ── Sub Song entry (song mode) ──────────────────────────────────
+      if (s.editParam === 'tempo-change-dir') {
+        if (key === '1' || key === '2') {
+          s._tempoDir = key === '1' ? 'accel' : 'ritard';
+          s.editParam = 'tempo-change-amount';
+          s.numericBuffer = '';
+          s.moduleDisplay('Change: __ BPM', 'Over: __ Beats');
+        }
+        return;
+      }
+
+      if (s.editParam === 'tempo-change-amount') {
+        s.numericBuffer += key;
+        s.display.setLine1('Change: ' + s.numericBuffer.padStart(2, '_') + ' BPM');
+        if (s.numericBuffer.length >= 2) {
+          s._tempoAmount = parseInt(s.numericBuffer, 10);
+          s.editParam = 'tempo-change-beats';
+          s.numericBuffer = '';
+        }
+        return;
+      }
+
+      if (s.editParam === 'tempo-change-beats') {
+        s.numericBuffer += key;
+        s.display.setLine2('Over: ' + s.numericBuffer.padStart(2, '_') + ' Beats');
+        if (s.numericBuffer.length >= 2) {
+          const beats = parseInt(s.numericBuffer, 10);
+          s.engine.send({
+            type: 'song-add-step',
+            song: s.currentSong,
+            step: 999,
+            stepType: 'tempo-change',
+            value: { amount: s._tempoAmount, beats, direction: s._tempoDir },
+          });
+          s.display.flash(
+            'Tempo ' + (s._tempoDir === 'accel' ? '+' : '-') + s._tempoAmount,
+            'Over ' + beats + ' beats'
+          );
+          s.numericBuffer = '';
+          s.editParam = null;
+        }
+        return;
+      }
+
       if (s.editParam === 'subsong-entry') {
         s.numericBuffer += key;
         s.display.setLine2('Song #: ' + s.numericBuffer.padStart(2, '_'));
@@ -416,7 +459,7 @@ export function bindKeypad(s) {
         return;
       }
 
-      if (s.editParam === 'disk-name') {
+      if (s.editParam === 'disk-name' || s.editParam === 'name-sound-edit' || s.editParam === 'create-folder') {
         if (key === '7') {
           // Backspace
           if (s.diskNameBuffer.length > 0) {
@@ -429,7 +472,10 @@ export function bindKeypad(s) {
           s.diskNameBuffer += key;
           s.diskNameCursor = s.diskNameBuffer.length;
         }
-        s.moduleDisplay('Save All As', s.diskNameBuffer.substring(0, 16) || '_');
+        const _nameLabel = s.editParam === 'name-sound-edit'
+          ? 'Name ' + _padLabel(s, s._pendingPad)
+          : s.editParam === 'create-folder' ? 'Create Folder' : 'Save All As';
+        s.moduleDisplay(_nameLabel, s.diskNameBuffer.substring(0, 16) || '_');
         return;
       }
 

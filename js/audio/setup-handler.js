@@ -12,6 +12,7 @@ export class SetupHandler {
       case 'multi-level': return this._multiLevel(msg);
       case 'exit-multi': return this._exitMulti(msg);
       case 'dynamic-buttons': return this._dynamicButtons(msg);
+      case 'dynamic-alloc': return this._dynamicAlloc(msg);
       case 'define-mix': return this._defineMix(msg);
       case 'select-mix': return this._selectMix(msg);
       case 'channel-assign': return this._channelAssign(msg);
@@ -95,6 +96,13 @@ export class SetupHandler {
     const p = this.processor;
     p.dynamicButtons = !!msg.enabled;
     p.port.postMessage({ type: 'dynamic-buttons', enabled: p.dynamicButtons });
+    return true;
+  }
+
+  _dynamicAlloc(msg) {
+    const p = this.processor;
+    p.dynamicAlloc = !!msg.enabled;
+    p.port.postMessage({ type: 'dynamic-alloc', enabled: p.dynamicAlloc });
     return true;
   }
 
@@ -338,7 +346,24 @@ export class SetupHandler {
     const p = this.processor;
     const from = msg.from;
     const to = msg.to;
-    if (from >= 0 && from < MAX_PATTERNS && to >= 0 && to < MAX_PATTERNS && from !== to) {
+    if (from < 0 || from >= MAX_PATTERNS || to < 0 || to >= MAX_PATTERNS) return true;
+
+    if (from === to) {
+      // Self-copy: double the pattern by appending
+      const pat = p.patterns[from];
+      const origTicks = pat.totalTicks;
+      const origBars = pat.bars;
+      pat.setBars(origBars * 2);
+      for (let t = 0; t < pat.tracks.length; t++) {
+        const origEvents = [...pat.tracks[t].events];
+        for (const e of origEvents) {
+          pat.tracks[t].addEvent(new PatternEvent(
+            e.tick + origTicks, e.velocity, e.pitchOffset,
+            { slot: e.slot, pitch: e.pitch, decay: e.decay, mixVolume: e.mixVolume }
+          ));
+        }
+      }
+    } else {
       const srcPat = p.patterns[from];
       const dstPat = p.patterns[to];
       dstPat.clear();
@@ -348,8 +373,8 @@ export class SetupHandler {
           dstPat.addEvent(t, new PatternEvent(ev.tick, ev.velocity, ev.pitchOffset));
         }
       }
-      p.port.postMessage({ type: 'segment-copied', from, to });
     }
+    p.port.postMessage({ type: 'segment-copied', from, to });
     return true;
   }
 }

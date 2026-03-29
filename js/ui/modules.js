@@ -298,6 +298,12 @@ export function handleModuleFunction(s, funcNum) {
         s.diskNameCursor = 0;
         s.moduleDisplay('Save All As', s.diskNameBuffer);
         break;
+      case 27:
+        s.editParam = 'create-folder';
+        s.diskNameBuffer = '';
+        s.diskNameCursor = 0;
+        s.moduleDisplay('Create Folder', '________________');
+        break;
       default:
         s.moduleDisplay('Disk ' + funcNum, 'Not available');
     }
@@ -318,9 +324,35 @@ export function handleSpecialFunction(s, funcNum) {
       s.editParam = 'clear-all-confirm';
       s.moduleDisplay('Clear ALL mem?', 'YES/NO');
       break;
-    case 13: // Memory Remaining
-      s.moduleDisplay('Sound Mem:', 'Seq Mem: Free');
+    case 13: { // Memory Remaining
+      // Calculate sample memory usage
+      const MAX_SAMPLE_SECS = 10; // SP-1200: 10 seconds total @ 26.04kHz
+      const SP1200_SR = 26040;
+      const MAX_SAMPLES = MAX_SAMPLE_SECS * SP1200_SR;
+      let totalSamples = 0;
+      if (s.engine && s.engine._sampleSlots) {
+        for (const slot of s.engine._sampleSlots) {
+          if (slot && slot.sample) totalSamples += slot.sample.length;
+        }
+      }
+      const usedSecs = (totalSamples / SP1200_SR).toFixed(1);
+      const remainSecs = Math.max(0, MAX_SAMPLE_SECS - totalSamples / SP1200_SR).toFixed(1);
+
+      // Estimate sequence memory usage (% of patterns with events)
+      let usedPatterns = 0;
+      const totalPatterns = 99;
+      if (s.engine && s.engine._patterns) {
+        for (const pat of s.engine._patterns) {
+          if (pat && pat.tracks) {
+            const hasEvents = pat.tracks.some(t => t.events && t.events.length > 0);
+            if (hasEvents) usedPatterns++;
+          }
+        }
+      }
+      const seqPct = Math.round((usedPatterns / totalPatterns) * 100);
+      s.moduleDisplay('Snd:' + remainSecs + 's free', 'Seq:' + seqPct + '% used');
       break;
+    }
     case 15: // Clear Sound Memory
       s.editParam = 'clear-sounds-confirm';
       s.moduleDisplay('Clear Sounds?', 'YES/NO');
@@ -342,6 +374,11 @@ export function handleSpecialFunction(s, funcNum) {
     case 19: // Default Decay
       s.editParam = 'default-decay';
       s.moduleDisplay('Default Decay', 'Use Slider #1');
+      break;
+    case 21: // Name Sound
+      s.editParam = 'select-pad';
+      s.pendingAction = 'name-sound';
+      s.moduleDisplay('Name Sound', 'Select Pad');
       break;
     case 22: // Dynamic Allocation
       s.editParam = 'dynamic-alloc-confirm';

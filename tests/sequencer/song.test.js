@@ -105,4 +105,14 @@ describe('Song', () => {
     expect(s.getNextSegment()).toEqual({ segment: 1 });
     expect(s.getNextSegment()).toEqual({ segment: 1 });
   });
+
+  it('tempo-change step can include direction and beats for gradual ramp', () => {
+    const s = new Song();
+    s.addStep(0, 0, { type: 'tempo-change', value: { amount: 10, beats: 8, direction: 'accel' } });
+    s.start(0);
+    const result = s.getNextSegment();
+    expect(result.tempoChange.amount).toBe(10);
+    expect(result.tempoChange.beats).toBe(8);
+    expect(result.tempoChange.direction).toBe('accel');
+  });
 });

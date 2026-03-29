@@ -127,6 +127,15 @@ export function bindPadActions(s) {
             s.editParam = 'module-func';
             s.pendingAction = null;
             break;
+          case 'name-sound':
+            s._pendingPad = pad;
+            s._pendingBank = s.currentBank;
+            s.editParam = 'name-sound-edit';
+            s.pendingAction = null;
+            s.diskNameBuffer = '';
+            s.diskNameCursor = 0;
+            s.moduleDisplay('Name ' + _padLabel(s, pad), '________________');
+            break;
         }
         // Return to module-func if still in select-pad
         if (s.editParam === 'select-pad') {

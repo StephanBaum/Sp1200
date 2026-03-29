@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "fake-indexeddb": "^6.2.5",
     "vite": "^8.0.3",
     "vitest": "^4.1.2"
   },

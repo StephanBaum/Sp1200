@@ -178,9 +178,15 @@ export function execProgFunction(s, func, btn) {
     // ── Both modes ────────────────────────────────────────────────────
 
     case 'tempo-change':
-      s.editParam = 'bpm';
-      s.numericBuffer = '';
-      s.moduleDisplay('Tempo ' + Math.round(s.bpm), 'Use +/- or keys');
+      if (s.mode === 'song') {
+        s.editParam = 'tempo-change-dir';
+        s.numericBuffer = '';
+        s.moduleDisplay('Tempo Change', '1=Accel 2=Ritard');
+      } else {
+        s.editParam = 'bpm';
+        s.numericBuffer = '';
+        s.moduleDisplay('Tempo ' + Math.round(s.bpm), 'Use +/- or keys');
+      }
       break;
 
     case 'auto-correct':

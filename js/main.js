@@ -191,7 +191,7 @@ async function init() {
       state.engine.send({ type: 'set-default-decay', value: decayVal });
       return;
     }
-    if (state.editParam === 'disk-name') {
+    if (state.editParam === 'disk-name' || state.editParam === 'name-sound-edit' || state.editParam === 'create-folder') {
       // Slider 1 cycles through characters at cursor position
       const chars = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.';
       const charIdx = Math.floor(slider1 * (chars.length - 1));
@@ -200,7 +200,10 @@ async function init() {
       while (buf.length <= state.diskNameCursor) buf.push(' ');
       buf[state.diskNameCursor] = ch;
       state.diskNameBuffer = buf.join('');
-      state.moduleDisplay('Save All As', state.diskNameBuffer.substring(0, 16));
+      const _faderLabel = state.editParam === 'name-sound-edit'
+        ? 'Name ' + ['A','B','C','D'][state._pendingBank ?? state.currentBank] + ((state._pendingPad ?? 0) + 1)
+        : state.editParam === 'create-folder' ? 'Create Folder' : 'Save All As';
+      state.moduleDisplay(_faderLabel, state.diskNameBuffer.substring(0, 16));
       return;
     }
 
@@ -435,6 +438,7 @@ async function startForceRecording() {
         const bankPad = (state?.currentBank || 0) * 8 + targetPad;
         console.log('Sample processed:', processed.length, 'samples → pad', bankPad);
         engine.loadSample(bankPad, processed);
+        if (storage) storage.cacheSample(bankPad, processed, { pitch: 1.0, decay: 1.0, reversed: false });
         sampleMemory.allocate(state?.currentBank || 0, processed.length);
         display.setMemory(sampleMemory.getRemainingSeconds(state?.currentBank || 0));
         document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: true } }));
@@ -486,6 +490,7 @@ async function loadFileToSelectedPad(file) {
   const bank = state?.currentBank || 0;
   const bankPad = bank * 8 + selectedPad;
   engine.loadSample(bankPad, processed);
+  if (storage) storage.cacheSample(bankPad, processed, { pitch: 1.0, decay: 1.0, reversed: false });
   sampleMemory.allocate(bank, processed.length);
   display.setMemory(sampleMemory.getRemainingSeconds(bank));
   const bankName = ['A', 'B', 'C', 'D'][bank];

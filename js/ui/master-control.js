@@ -182,6 +182,26 @@ export function confirmEntry(s) {
         }
         return;
       }
+      case 'name-sound-edit':
+        s.engine.send({
+          type: 'set-sample-name',
+          pad: s._pendingPad,
+          bank: s._pendingBank ?? s.currentBank,
+          name: s.diskNameBuffer.trim(),
+        });
+        s.display.flash('Named', s.diskNameBuffer.trim() || '(empty)');
+        s._pendingPad = null;
+        s._pendingBank = null;
+        s.editParam = 'module-func';
+        break;
+      case 'create-folder':
+        if (s.diskNameBuffer.trim()) {
+          s.display.flash('Folder Created', s.diskNameBuffer.trim() + '/');
+        } else {
+          s.display.flash('Cancelled', '');
+        }
+        s.editParam = 'module-func';
+        break;
     }
   }
 
@@ -263,10 +283,15 @@ export function handleNav(s, dir) {
         s.moduleDisplay(s.diskCurrentFile, (s.diskFileIndex + 1) + '/' + s.diskFiles.length);
       }
       break;
-    case 'disk-name': {
+    case 'disk-name':
+    case 'name-sound-edit':
+    case 'create-folder': {
       s.diskNameCursor = Math.max(0, Math.min(s.diskNameBuffer.length, s.diskNameCursor + dir));
       const displayName = s.diskNameBuffer.substring(0, s.diskNameCursor) + '_' + s.diskNameBuffer.substring(s.diskNameCursor);
-      s.moduleDisplay('Save All As', displayName.substring(0, 16));
+      const _navLabel = s.editParam === 'name-sound-edit'
+        ? 'Name ' + ['A','B','C','D'][s._pendingBank ?? s.currentBank] + ((s._pendingPad ?? 0) + 1)
+        : s.editParam === 'create-folder' ? 'Create Folder' : 'Save All As';
+      s.moduleDisplay(_navLabel, displayName.substring(0, 16));
       break;
     }
     default:

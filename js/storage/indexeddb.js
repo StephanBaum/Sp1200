@@ -1,5 +1,5 @@
 const DB_NAME = 'sp1200';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export class SP1200Storage {
   constructor() {
@@ -14,6 +14,9 @@ export class SP1200Storage {
         // Store for complete disk images (sounds + sequences)
         if (!db.objectStoreNames.contains('disks')) {
           db.createObjectStore('disks', { keyPath: 'name' });
+        }
+        if (!db.objectStoreNames.contains('cache')) {
+          db.createObjectStore('cache', { keyPath: 'slot' });
         }
       };
       req.onsuccess = (e) => { this.db = e.target.result; resolve(); };
@@ -68,6 +71,33 @@ export class SP1200Storage {
       return this._put('disks', existing);
     }
     return this.saveAll(name, { sounds, sequences: [] });
+  }
+
+  async cacheSample(slot, buffer, settings = {}) {
+    return this._put('cache', {
+      slot,
+      buffer: Array.from(buffer),
+      settings,
+      timestamp: Date.now(),
+    });
+  }
+
+  async getCachedSample(slot) {
+    const data = await this._get('cache', slot);
+    if (!data) return null;
+    return {
+      buffer: new Float32Array(data.buffer),
+      settings: data.settings,
+    };
+  }
+
+  async clearCache() {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('cache', 'readwrite');
+      tx.objectStore('cache').clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = (e) => reject(e.target.error);
+    });
   }
 
   async _put(store, data) {

@@ -255,12 +255,19 @@ describe('SetupHandler', () => {
     expect(proc.patterns[5].tracks[3].events[0].tick).toBe(48);
   });
 
-  it('copy-segment does not copy to same index', () => {
-    proc.patterns[2].addEvent(0, new PatternEvent(0, 100));
-    handler.handle({ type: 'copy-segment', from: 2, to: 2 });
-    // Should not post message since from === to
-    const msgs = proc.port.postMessage.mock.calls.map(c => c[0]);
-    expect(msgs.find(m => m.type === 'segment-copied')).toBeUndefined();
+  it('copy-segment to itself doubles the pattern', () => {
+    proc.patterns[0].setBars(2);
+    proc.patterns[0].addEvent(0, new PatternEvent(0, 100));
+    proc.patterns[0].addEvent(1, new PatternEvent(48, 80));
+
+    handler.handle({ type: 'copy-segment', from: 0, to: 0 });
+
+    expect(proc.patterns[0].bars).toBe(4);
+    expect(proc.patterns[0].tracks[0].events.length).toBe(2);
+    expect(proc.patterns[0].tracks[1].events.length).toBe(2);
+    const origTicks = 2 * 96 * 4; // 768
+    expect(proc.patterns[0].tracks[0].events[1].tick).toBe(origTicks);
+    expect(proc.patterns[0].tracks[1].events[1].tick).toBe(48 + origTicks);
   });
 
   // ── erase-track ──────────────────────────────────────────────────────────

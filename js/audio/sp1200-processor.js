@@ -27,6 +27,7 @@ class SP1200Processor extends AudioWorkletProcessor {
     // Sample slots: 32 (4 banks × 8 pads) — hold sample data + per-slot settings
     this.sampleSlots = Array.from({ length: TOTAL_PADS }, () => ({
       sample: null,
+      name: '',
       pitch: BASE_PITCH_STEP,
       decayRate: 1.0,
       reversed: false,
@@ -74,6 +75,7 @@ class SP1200Processor extends AudioWorkletProcessor {
     // Setup module state
     this.mixSnapshots = Array.from({ length: 8 }, () => new Float32Array(8).fill(0.75));
     this.dynamicButtons = false;
+    this.dynamicAlloc = false;
     this.padModes = new Array(8).fill('tune');
     this._multiBackup = null;
     this.channelAssign = new Uint8Array(8);
@@ -95,6 +97,9 @@ class SP1200Processor extends AudioWorkletProcessor {
 
     // Setup handler for setup-module messages
     this.setup = new SetupHandler(this);
+
+    // Gradual tempo ramp state (accelerando / ritardando)
+    this._tempoRamp = null; // { targetBpm, bpmPerTick, ticksRemaining }
 
     this.port.onmessage = (e) => this._handleMessage(e.data);
   }
@@ -378,6 +383,34 @@ class SP1200Processor extends AudioWorkletProcessor {
         }
         break;
 
+      case 'query-full-state': {
+        const slots = this.sampleSlots.map((s, i) => ({
+          slot: i,
+          hasSample: !!s.sample,
+          buffer: s.sample ? Array.from(s.sample) : null,
+          pitch: s.pitch, decayRate: s.decayRate, reversed: s.reversed,
+          loopEnabled: s.loopEnabled, loopStart: s.loopStart, loopEnd: s.loopEnd,
+          startPoint: s.startPoint, endPoint: s.endPoint,
+          name: s.name || '',
+        }));
+        const patterns = this.patterns.map(p => p.serialize());
+        this.port.postMessage({
+          type: 'full-state',
+          slots, patterns,
+          bpm: this.clock.bpm,
+          swing: this.swingPercent,
+        });
+        break;
+      }
+
+      case 'set-sample-name': {
+        const slotIdx = (msg.bank ?? this.currentBank) * NUM_PADS + msg.pad;
+        if (slotIdx >= 0 && slotIdx < TOTAL_PADS) {
+          this.sampleSlots[slotIdx].name = msg.name || '';
+        }
+        break;
+      }
+
       default:
         break;
     }
@@ -413,6 +446,7 @@ class SP1200Processor extends AudioWorkletProcessor {
         this.isRecording = false;
         this.songPlaying = false;
         this.patternTick = 0;
+        this._tempoRamp = null;
         this.erasingPads.clear();
         this._justRecorded.clear();
         this.clock.stop();
@@ -528,6 +562,26 @@ class SP1200Processor extends AudioWorkletProcessor {
       voice.perNoteLock = false;
     }
 
+    // Dynamic allocation: steal an inactive voice to continue the current sound
+    if (this.dynamicAlloc && voice.active) {
+      for (let i = 0; i < NUM_PADS; i++) {
+        if (i !== pad && !this.voices[i].active) {
+          const steal = this.voices[i];
+          steal.sample = voice.sample;
+          steal.position = voice.position;
+          steal.velocity = voice.velocity;
+          steal.decayLevel = voice.decayLevel;
+          steal.decayRate = voice.decayRate;
+          steal.pitch = voice.pitch;
+          steal.reversed = voice.reversed;
+          steal.startPoint = voice.startPoint;
+          steal.endPoint = voice.endPoint;
+          steal.active = true;
+          break;
+        }
+      }
+    }
+
     voice.trigger(velocity);
     this.port.postMessage({ type: 'trigger-visual', pad, velocity });
 
@@ -558,6 +612,15 @@ class SP1200Processor extends AudioWorkletProcessor {
   // Sequencer tick processing
   // -------------------------------------------------------------------------
   _processTick(clockTick) {
+    if (this._tempoRamp) {
+      this.clock.setBpm(this.clock.bpm + this._tempoRamp.bpmPerTick);
+      this._tempoRamp.ticksRemaining--;
+      if (this._tempoRamp.ticksRemaining <= 0) {
+        this.clock.setBpm(this._tempoRamp.targetBpm);
+        this._tempoRamp = null;
+      }
+    }
+
     let patternIndex = this.currentPatternIndex;
     if (this.mode === 'song' && this.songPlaying) {
       patternIndex = this.song.currentPattern();
@@ -628,7 +691,21 @@ class SP1200Processor extends AudioWorkletProcessor {
         while (next !== null && next.segment === undefined) {
           if (next.tempoChange) {
             const tc = next.tempoChange;
-            this.clock.setBpm(typeof tc === 'number' ? tc : (tc.amount || this.clock.bpm));
+            if (typeof tc === 'number') {
+              this.clock.setBpm(tc);
+            } else if (tc.beats && tc.beats > 0) {
+              const totalTicks = tc.beats * PPQN;
+              const currentBpm = this.clock.bpm;
+              const delta = tc.direction === 'accel' ? tc.amount : -tc.amount;
+              this._tempoRamp = {
+                targetBpm: Math.max(BPM_MIN, Math.min(BPM_MAX, currentBpm + delta)),
+                bpmPerTick: delta / totalTicks,
+                ticksRemaining: totalTicks,
+              };
+            } else {
+              const delta = tc.direction === 'accel' ? (tc.amount || 0) : -(tc.amount || 0);
+              this.clock.setBpm(Math.max(BPM_MIN, Math.min(BPM_MAX, this.clock.bpm + delta)));
+            }
           } else if (next.mixChange !== undefined) {
             const slot = next.mixChange;
             if (slot >= 0 && slot < 8) {
