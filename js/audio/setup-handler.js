@@ -1,4 +1,4 @@
-import { NUM_PADS, MAX_PATTERNS, BASE_PITCH_STEP } from '../constants.js';
+import { NUM_PADS, TOTAL_PADS, MAX_PATTERNS, BASE_PITCH_STEP } from '../constants.js';
 import { PatternEvent } from '../sequencer/pattern.js';
 
 export class SetupHandler {
@@ -21,7 +21,10 @@ export class SetupHandler {
       case 'erase-segment': return this._eraseSegment(msg);
       case 'copy-segment': return this._copySegment(msg);
       case 'truncate': return this._truncate(msg);
+      case 'truncate-permanent': return this._truncatePermanent(msg);
       case 'erase-track': return this._eraseTrack(msg);
+      case 'erase-track-start': return this._eraseTrackStart(msg);
+      case 'erase-track-stop': return this._eraseTrackStop(msg);
       case 'copy-sound': return this._copySound(msg);
       case 'swap-sounds': return this._swapSounds(msg);
       default: return false;
@@ -31,15 +34,16 @@ export class SetupHandler {
   _multiPitch(msg) {
     const p = this.processor;
     const src = msg.pad;
-    if (src >= 0 && src < NUM_PADS && p.voices[src].sample) {
+    const slotIdx = p.currentBank * NUM_PADS + src;
+    const srcSlot = p.sampleSlots[slotIdx];
+    if (src >= 0 && src < NUM_PADS && srcSlot.sample) {
       p._multiBackup = p.voices.map(v => ({
         sample: v.sample,
         pitch: v.pitch,
         velocity: v.velocity,
       }));
-      const sampleRef = p.voices[src].sample;
       for (let i = 0; i < NUM_PADS; i++) {
-        p.voices[i].loadSample(sampleRef);
+        p.voices[i].loadSample(srcSlot.sample);
         const semitones = -8 + (i * 15 / 7);
         p.voices[i].setPitch(BASE_PITCH_STEP * Math.pow(2, semitones / 12));
       }
@@ -51,15 +55,16 @@ export class SetupHandler {
   _multiLevel(msg) {
     const p = this.processor;
     const src = msg.pad;
-    if (src >= 0 && src < NUM_PADS && p.voices[src].sample) {
+    const slotIdx = p.currentBank * NUM_PADS + src;
+    const srcSlot = p.sampleSlots[slotIdx];
+    if (src >= 0 && src < NUM_PADS && srcSlot.sample) {
       p._multiBackup = p.voices.map(v => ({
         sample: v.sample,
         pitch: v.pitch,
         velocity: v.velocity,
       }));
-      const sampleRef = p.voices[src].sample;
       for (let i = 0; i < NUM_PADS; i++) {
-        p.voices[i].loadSample(sampleRef);
+        p.voices[i].loadSample(srcSlot.sample);
         p.voices[i].setPitch(BASE_PITCH_STEP);
         p.mixer.setVolume(i, (i + 1) / NUM_PADS);
       }
@@ -140,10 +145,16 @@ export class SetupHandler {
   _deleteSound(msg) {
     const p = this.processor;
     const pad = msg.pad;
-    if (pad >= 0 && pad < NUM_PADS) {
-      p.voices[pad].sample = null;
-      p.voices[pad].active = false;
-      p.voices[pad].position = 0;
+    const bank = msg.bank ?? p.currentBank;
+    const slotIdx = bank * NUM_PADS + pad;
+    if (slotIdx >= 0 && slotIdx < TOTAL_PADS) {
+      p.sampleSlots[slotIdx].sample = null;
+      // Clear voice if in current bank
+      if (bank === p.currentBank && pad >= 0 && pad < NUM_PADS) {
+        p.voices[pad].sample = null;
+        p.voices[pad].active = false;
+        p.voices[pad].position = 0;
+      }
       p.port.postMessage({ type: 'sound-deleted', pad });
     }
     return true;
@@ -152,10 +163,15 @@ export class SetupHandler {
   _reverseSound(msg) {
     const p = this.processor;
     const pad = msg.pad;
-    if (pad >= 0 && pad < NUM_PADS) {
-      const voice = p.voices[pad];
-      voice.reversed = !voice.reversed;
-      p.port.postMessage({ type: 'reverse-toggled', pad, reversed: voice.reversed });
+    const bank = msg.bank ?? p.currentBank;
+    const slotIdx = bank * NUM_PADS + pad;
+    if (slotIdx >= 0 && slotIdx < TOTAL_PADS) {
+      const slot = p.sampleSlots[slotIdx];
+      slot.reversed = !slot.reversed;
+    }
+    if (pad >= 0 && pad < NUM_PADS && bank === p.currentBank) {
+      p.voices[pad].reversed = p.sampleSlots[slotIdx].reversed;
+      p.port.postMessage({ type: 'reverse-toggled', pad, reversed: p.voices[pad].reversed });
     }
     return true;
   }
@@ -188,6 +204,7 @@ export class SetupHandler {
   }
 
   _eraseTrack(msg) {
+    // Legacy one-shot erase (kept for compatibility)
     const p = this.processor;
     const pat = p.patterns[p.currentPatternIndex];
     if (msg.pad >= 0 && msg.pad < pat.tracks.length) {
@@ -200,15 +217,43 @@ export class SetupHandler {
     return true;
   }
 
+  _eraseTrackStart(msg) {
+    const p = this.processor;
+    if (msg.pad >= 0 && msg.pad < NUM_PADS) {
+      p.erasingPads.add(msg.pad);
+    }
+    return true;
+  }
+
+  _eraseTrackStop(msg) {
+    const p = this.processor;
+    if (msg.pad >= 0 && msg.pad < NUM_PADS) {
+      p.erasingPads.delete(msg.pad);
+    }
+    return true;
+  }
+
   _copySound(msg) {
     const p = this.processor;
-    const from = msg.from;
+    const from = msg.from; // slot index (bank*8+pad)
     const to = msg.to;
-    if (from >= 0 && from < p.voices.length && to >= 0 && to < p.voices.length) {
-      if (p.voices[from].sample) {
-        p.voices[to].loadSample(new Float32Array(p.voices[from].sample));
-      } else {
-        p.voices[to].sample = null;
+    if (from >= 0 && from < TOTAL_PADS && to >= 0 && to < TOTAL_PADS) {
+      const srcSlot = p.sampleSlots[from];
+      const dstSlot = p.sampleSlots[to];
+      // Share sample buffer by reference (like real SP-1200)
+      dstSlot.sample = srcSlot.sample;
+      dstSlot.startPoint = srcSlot.startPoint;
+      dstSlot.endPoint = srcSlot.endPoint;
+      dstSlot.loopEnabled = srcSlot.loopEnabled;
+      dstSlot.loopStart = srcSlot.loopStart;
+      dstSlot.loopEnd = srcSlot.loopEnd;
+      dstSlot.reversed = srcSlot.reversed;
+      dstSlot.pitch = srcSlot.pitch;
+      dstSlot.decayRate = srcSlot.decayRate;
+      // Update voice if destination is in the current bank
+      const dstVoice = to % NUM_PADS;
+      if (Math.floor(to / NUM_PADS) === p.currentBank) {
+        this._loadSlotIntoVoice(dstVoice, dstSlot);
       }
       p.port.postMessage({ type: 'sound-copied', from, to });
     }
@@ -217,24 +262,76 @@ export class SetupHandler {
 
   _swapSounds(msg) {
     const p = this.processor;
-    const a = msg.padA;
+    const a = msg.padA; // slot index (bank*8+pad)
     const b = msg.padB;
-    if (a >= 0 && a < p.voices.length && b >= 0 && b < p.voices.length) {
-      const tmpSample = p.voices[a].sample;
-      p.voices[a].sample = p.voices[b].sample;
-      p.voices[b].sample = tmpSample;
-      // Update start/end points
-      if (p.voices[a].sample) {
-        p.voices[a].startPoint = 0;
-        p.voices[a].endPoint = p.voices[a].sample.length - 1;
-      }
-      if (p.voices[b].sample) {
-        p.voices[b].startPoint = 0;
-        p.voices[b].endPoint = p.voices[b].sample.length - 1;
-      }
+    if (a >= 0 && a < TOTAL_PADS && b >= 0 && b < TOTAL_PADS) {
+      const slotA = p.sampleSlots[a];
+      const slotB = p.sampleSlots[b];
+      // Swap all slot properties
+      const tmp = { ...slotA };
+      Object.assign(slotA, slotB);
+      Object.assign(slotB, tmp);
+      // Update voices if either slot is in the current bank
+      const bankA = Math.floor(a / NUM_PADS);
+      const bankB = Math.floor(b / NUM_PADS);
+      if (bankA === p.currentBank) this._loadSlotIntoVoice(a % NUM_PADS, slotA);
+      if (bankB === p.currentBank) this._loadSlotIntoVoice(b % NUM_PADS, slotB);
       p.port.postMessage({ type: 'sounds-swapped', padA: a, padB: b });
     }
     return true;
+  }
+
+  _truncatePermanent(msg) {
+    const p = this.processor;
+    const pad = msg.pad;
+    const bank = msg.bank ?? p.currentBank;
+    const slotIdx = bank * NUM_PADS + pad;
+    if (slotIdx < 0 || slotIdx >= TOTAL_PADS) return true;
+    const slot = p.sampleSlots[slotIdx];
+    if (!slot.sample) return true;
+
+    const start = Math.max(0, Math.min(msg.start ?? 0, slot.sample.length - 1));
+    const end = Math.min(slot.sample.length - 1, Math.max(start, msg.end ?? slot.sample.length - 1));
+
+    // Slice sample (end inclusive)
+    const newSample = slot.sample.slice(start, end + 1);
+
+    // Adjust loop points relative to new buffer
+    if (slot.loopEnabled) {
+      slot.loopStart = Math.max(0, slot.loopStart - start);
+      slot.loopEnd = Math.min(newSample.length - 1, slot.loopEnd - start);
+      if (slot.loopStart >= newSample.length) slot.loopStart = 0;
+      if (slot.loopEnd < slot.loopStart) slot.loopEnd = newSample.length - 1;
+    }
+
+    slot.sample = newSample;
+    slot.startPoint = 0;
+    slot.endPoint = newSample.length - 1;
+
+    // Update voice if in current bank
+    if (bank === p.currentBank && pad >= 0 && pad < NUM_PADS) {
+      this._loadSlotIntoVoice(pad, slot);
+    }
+
+    p.port.postMessage({ type: 'truncated', pad, bank, length: newSample.length });
+    return true;
+  }
+
+  _loadSlotIntoVoice(voiceIdx, slot) {
+    const v = this.processor.voices[voiceIdx];
+    if (slot.sample) {
+      v.sample = slot.sample;
+      v.startPoint = slot.startPoint;
+      v.endPoint = slot.endPoint;
+      v.loopEnabled = slot.loopEnabled;
+      v.loopStart = slot.loopStart;
+      v.loopEnd = slot.loopEnd;
+      v.reversed = slot.reversed;
+      v.pitch = slot.pitch;
+      v.decayRate = slot.decayRate;
+    } else {
+      v.sample = null;
+    }
   }
 
   _copySegment(msg) {

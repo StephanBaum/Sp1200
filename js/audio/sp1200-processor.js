@@ -3,7 +3,7 @@
  * Uses ES module imports — Vite dev server resolves them for the AudioWorklet context.
  */
 
-import { PPQN, NUM_PADS, MAX_PATTERNS, BPM_MIN, BPM_MAX, SWING_MIN, SWING_MAX, FILTER_DYNAMIC, BASE_PITCH_STEP } from '../constants.js';
+import { PPQN, NUM_PADS, TOTAL_PADS, MAX_PATTERNS, BPM_MIN, BPM_MAX, SWING_MIN, SWING_MAX, FILTER_DYNAMIC, BASE_PITCH_STEP } from '../constants.js';
 import { Voice } from '../dsp/voice.js';
 import { SSM2044Filter, FixedFilter } from '../dsp/filters.js';
 import { Mixer } from '../dsp/mixer.js';
@@ -21,8 +21,20 @@ class SP1200Processor extends AudioWorkletProcessor {
   constructor(options) {
     super(options);
 
-    // Voices: 8 voices (one per pad)
+    // Voices: 8 voices (polyphony), one per physical pad
     this.voices = Array.from({ length: NUM_PADS }, (_, i) => new Voice(i));
+
+    // Sample slots: 32 (4 banks × 8 pads) — hold sample data + per-slot settings
+    this.sampleSlots = Array.from({ length: TOTAL_PADS }, () => ({
+      sample: null,
+      pitch: BASE_PITCH_STEP,
+      decayRate: 1.0,
+      reversed: false,
+      loopEnabled: false, loopStart: 0, loopEnd: 0,
+      startPoint: 0, endPoint: 0,
+    }));
+    // Current bank for the processor (set by UI)
+    this.currentBank = 0;
 
     // Filters: ch 0-1 → SSM2044 (wider cutoff for fuller bass), ch 2-5 → FixedFilter, ch 6-7 → none
     this.dynamicFilters = [new SSM2044Filter(12000, 0.1), new SSM2044Filter(12000, 0.1)];
@@ -74,6 +86,13 @@ class SP1200Processor extends AudioWorkletProcessor {
     this.timeSig = '4/4';
     this.clickDivisor = 1;
 
+    // Real-time erase: pads currently held in erase mode
+    this.erasingPads = new Set();
+
+    // Recording: suppress sequencer playback for pads just recorded this pass
+    // Maps pad -> tick that was just recorded, to avoid double-trigger
+    this._justRecorded = new Map();
+
     // Setup handler for setup-module messages
     this.setup = new SetupHandler(this);
 
@@ -88,22 +107,69 @@ class SP1200Processor extends AudioWorkletProcessor {
     if (this.setup.handle(msg)) return;
 
     switch (msg.type) {
-      case 'trigger':
+      case 'trigger': {
+        // If bank specified, load that bank's sample into the voice before triggering
+        const bank = msg.bank ?? this.currentBank;
+        const slotIdx = bank * NUM_PADS + msg.pad;
+        const slot = this.sampleSlots[slotIdx];
+        if (slot?.sample) {
+          const v = this.voices[msg.pad];
+          v.sample = slot.sample;
+          v.startPoint = slot.startPoint;
+          v.endPoint = slot.endPoint;
+          v.loopEnabled = slot.loopEnabled;
+          v.loopStart = slot.loopStart;
+          v.loopEnd = slot.loopEnd;
+          v.reversed = slot.reversed;
+          v.pitch = slot.pitch;
+          v.decayRate = slot.decayRate;
+        }
         this._triggerVoice(msg.pad, msg.velocity ?? 127);
         break;
+      }
 
       case 'stop-voice':
         if (msg.pad >= 0 && msg.pad < NUM_PADS) this.voices[msg.pad].stop();
         break;
 
       case 'load-sample': {
-        const pad = msg.pad;
-        if (pad >= 0 && pad < NUM_PADS) {
+        const slot = msg.pad;  // pad index already includes bank offset from UI
+        if (slot >= 0 && slot < TOTAL_PADS) {
           const buf = new Float32Array(msg.buffer);
-          this.voices[pad].loadSample(buf);
+          const s = this.sampleSlots[slot];
+          s.sample = buf;
+          s.startPoint = 0;
+          s.endPoint = buf.length - 1;
+          s.loopEnd = buf.length - 1;
+          // Also load into the voice if it's in the current bank
+          const voiceIdx = slot % NUM_PADS;
+          if (Math.floor(slot / NUM_PADS) === this.currentBank) {
+            this.voices[voiceIdx].loadSample(buf);
+          }
         }
         break;
       }
+
+      case 'set-bank':
+        this.currentBank = msg.bank;
+        // Load current bank's samples into voices
+        for (let i = 0; i < NUM_PADS; i++) {
+          const s = this.sampleSlots[this.currentBank * NUM_PADS + i];
+          if (s.sample) {
+            this.voices[i].sample = s.sample;
+            this.voices[i].startPoint = s.startPoint;
+            this.voices[i].endPoint = s.endPoint;
+            this.voices[i].loopEnabled = s.loopEnabled;
+            this.voices[i].loopStart = s.loopStart;
+            this.voices[i].loopEnd = s.loopEnd;
+            this.voices[i].reversed = s.reversed;
+            this.voices[i].pitch = s.pitch;
+            this.voices[i].decayRate = s.decayRate;
+          } else {
+            this.voices[i].sample = null;
+          }
+        }
+        break;
 
       case 'set-param':
         this._setParam(msg.param, msg.pad, msg.value);
@@ -260,12 +326,14 @@ class SP1200Processor extends AudioWorkletProcessor {
 
       case 'clear-all':
         for (let i = 0; i < NUM_PADS; i++) { this.voices[i].sample = null; }
+        for (let i = 0; i < TOTAL_PADS; i++) { this.sampleSlots[i].sample = null; }
         for (let i = 0; i < MAX_PATTERNS; i++) this.patterns[i] = new Pattern();
         this.port.postMessage({ type: 'all-cleared' });
         break;
 
       case 'clear-sounds':
         for (let i = 0; i < NUM_PADS; i++) { this.voices[i].sample = null; }
+        for (let i = 0; i < TOTAL_PADS; i++) { this.sampleSlots[i].sample = null; }
         this.port.postMessage({ type: 'sounds-cleared' });
         break;
 
@@ -273,6 +341,24 @@ class SP1200Processor extends AudioWorkletProcessor {
         for (let i = 0; i < MAX_PATTERNS; i++) this.patterns[i] = new Pattern();
         this.port.postMessage({ type: 'sequences-cleared' });
         break;
+
+      case 'query-sample-info': {
+        const bank = msg.bank ?? this.currentBank;
+        const slotIdx = bank * NUM_PADS + msg.pad;
+        const slot = this.sampleSlots[slotIdx];
+        this.port.postMessage({
+          type: 'sample-info',
+          pad: msg.pad,
+          bank,
+          length: slot.sample ? slot.sample.length : 0,
+          startPoint: slot.startPoint,
+          endPoint: slot.endPoint,
+          loopStart: slot.loopStart,
+          loopEnd: slot.loopEnd,
+          loopEnabled: slot.loopEnabled,
+        });
+        break;
+      }
 
       case 'set-default-decay':
         for (let i = 0; i < NUM_PADS; i++) {
@@ -315,6 +401,8 @@ class SP1200Processor extends AudioWorkletProcessor {
         this.isRecording = false;
         this.songPlaying = false;
         this.patternTick = 0;
+        this.erasingPads.clear();
+        this._justRecorded.clear();
         this.clock.stop();
         for (const v of this.voices) v.stop();
         break;
@@ -336,27 +424,47 @@ class SP1200Processor extends AudioWorkletProcessor {
   _setParam(param, pad, value) {
     if (pad < 0 || pad >= NUM_PADS) return;
     const voice = this.voices[pad];
+    const slot = this.sampleSlots[this.currentBank * NUM_PADS + pad];
     switch (param) {
-      case 'pitch':
-        voice.setPitch(BASE_PITCH_STEP * Math.pow(2, value / 12));
+      case 'pitch': {
+        // Store for recording; only apply live if not locked by per-note playback
+        this._faderPitch = this._faderPitch || new Float64Array(NUM_PADS);
+        const pitchRate = BASE_PITCH_STEP * Math.pow(2, value / 12);
+        this._faderPitch[pad] = pitchRate;
+        slot.pitch = pitchRate;
+        if (!voice.perNoteLock) voice.setPitch(pitchRate);
         break;
+      }
       case 'volume':
-        this.mixer.setVolume(pad, value);
+        this._faderVolume = this._faderVolume || new Float64Array(NUM_PADS);
+        this._faderVolume[pad] = value;
+        if (!voice.perNoteLock) this.mixer.setVolume(pad, value);
         break;
       case 'pan':
         this.mixer.setPan(pad, value);
         break;
-      case 'decay':
-        voice.setDecay(value);
+      case 'decay': {
+        this._faderDecay = this._faderDecay || new Float64Array(NUM_PADS);
+        this._faderDecay[pad] = value;
+        slot.decayRate = voice.decayRate; // store after computing
+        if (!voice.perNoteLock) voice.setDecay(value);
+        slot.decayRate = voice.decayRate; // update after setDecay
         break;
+      }
       case 'reverse':
         voice.setReversed(!!value);
+        slot.reversed = !!value;
         break;
       case 'loop':
         voice.setLoop(!!value);
+        slot.loopEnabled = !!value;
         break;
       case 'truncate':
-        if (value && typeof value === 'object') voice.setTruncate(value.start, value.end);
+        if (value && typeof value === 'object') {
+          voice.setTruncate(value.start, value.end);
+          slot.startPoint = value.start;
+          slot.endPoint = value.end;
+        }
         break;
       case 'filter-cutoff':
         if (FILTER_DYNAMIC.includes(pad)) {
@@ -380,9 +488,35 @@ class SP1200Processor extends AudioWorkletProcessor {
   // -------------------------------------------------------------------------
   // Trigger a voice (also used from sequencer)
   // -------------------------------------------------------------------------
-  _triggerVoice(pad, velocity, fromSequencer = false) {
+  _triggerVoice(pad, velocity, fromSequencer = false, eventParams = null) {
     if (pad < 0 || pad >= NUM_PADS) return;
-    this.voices[pad].trigger(velocity);
+    const voice = this.voices[pad];
+
+    if (fromSequencer && eventParams) {
+      // Load sample from recorded slot (may be a different bank)
+      if (eventParams.slot !== null) {
+        const s = this.sampleSlots[eventParams.slot];
+        if (s?.sample) {
+          voice.sample = s.sample;
+          voice.startPoint = s.startPoint;
+          voice.endPoint = s.endPoint;
+          voice.loopEnabled = s.loopEnabled;
+          voice.loopStart = s.loopStart;
+          voice.loopEnd = s.loopEnd;
+          voice.reversed = s.reversed;
+        }
+      }
+      // Apply per-note params and lock so faders don't overwrite
+      if (eventParams.pitch !== null) voice.pitch = eventParams.pitch;
+      if (eventParams.decay !== null) voice.decayRate = eventParams.decay;
+      if (eventParams.mixVolume !== null) this.mixer.setVolume(pad, eventParams.mixVolume);
+      voice.perNoteLock = true;
+    } else {
+      // Manual trigger — unlock so faders work normally
+      voice.perNoteLock = false;
+    }
+
+    voice.trigger(velocity);
     this.port.postMessage({ type: 'trigger-visual', pad, velocity });
 
     if (!fromSequencer && this.isRecording && this.isPlaying) {
@@ -393,7 +527,18 @@ class SP1200Processor extends AudioWorkletProcessor {
       }
       const totalTicks = pattern.bars * PPQN * 4;
       quantizedTick = quantizedTick % totalTicks;
-      pattern.addEvent(pad, new PatternEvent(quantizedTick, velocity));
+
+      // Capture current state as per-note params
+      const params = {
+        slot: this.currentBank * NUM_PADS + pad,
+        pitch: this._faderPitch?.[pad] ?? this.voices[pad].pitch,
+        decay: this.voices[pad].decayRate,
+        mixVolume: this._faderVolume?.[pad] ?? this.mixer.channels[pad].volume,
+      };
+      pattern.addEvent(pad, new PatternEvent(quantizedTick, velocity, 0, params));
+
+      // Mark this pad+tick so the sequencer won't double-trigger it
+      this._justRecorded.set(pad, quantizedTick);
     }
   }
 
@@ -416,9 +561,29 @@ class SP1200Processor extends AudioWorkletProcessor {
     const pattern = this.patterns[patternIndex];
     const swungTick = applySwing(this.patternTick, this.swingPercent);
 
+    // Real-time erase: remove events for held pads near current tick
+    if (this.erasingPads.size > 0) {
+      const window = Math.max(1, this.quantizeGrid);
+      for (const pad of this.erasingPads) {
+        const track = pattern.tracks[pad];
+        track.events = track.events.filter(
+          e => Math.abs(e.tick - this.patternTick) > window
+        );
+      }
+    }
+
     const events = pattern.getEventsAtTick(swungTick);
     for (const ev of events) {
-      this._triggerVoice(ev.track, ev.velocity, true);
+      // Skip events that were just live-recorded to avoid double-trigger
+      if (this.isRecording && this._justRecorded.has(ev.track) &&
+          this._justRecorded.get(ev.track) === swungTick) {
+        this._justRecorded.delete(ev.track);
+        continue;
+      }
+      const evParams = (ev.slot !== null || ev.pitch !== null || ev.decay !== null || ev.mixVolume !== null)
+        ? { slot: ev.slot ?? null, pitch: ev.pitch ?? null, decay: ev.decay ?? null, mixVolume: ev.mixVolume ?? null }
+        : null;
+      this._triggerVoice(ev.track, ev.velocity, true, evParams);
     }
 
     // Metronome click on quarter-note boundaries
@@ -443,6 +608,7 @@ class SP1200Processor extends AudioWorkletProcessor {
 
     if (this.patternTick >= pattern.totalTicks) {
       this.patternTick = 0;
+      this._justRecorded.clear();
       this.port.postMessage({ type: 'pattern-end', patternIndex });
 
       if (this.mode === 'song' && this.songPlaying) {

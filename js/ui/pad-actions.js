@@ -49,9 +49,21 @@ export function bindPadActions(s) {
           case 'truncate':
             // Screenshot: "Truncate A1" then sample points
             s._pendingPad = pad;
+            s._pendingBank = s.currentBank;
             s.editParam = 'truncate-edit';
             s.pendingAction = null;
-            s.moduleDisplay('Truncate ' + _padLabel(s, pad), 'Use faders 1-6');
+            s._truncStart = 0;
+            s._truncEnd = 65535;
+            s._truncLoop = -1; // -1 = NONE
+            s._truncSampleLen = 0;
+            // Query engine for actual sample info
+            s.engine.send({ type: 'query-sample-info', pad, bank: s.currentBank });
+            // Switch faders to truncate mode
+            document.dispatchEvent(new CustomEvent('fader-mode-change', { detail: { mode: 'truncate' } }));
+            s.moduleDisplay(
+              'S=' + String(s._truncStart).padStart(5, '0') + '  ' + _padLabel(s, pad),
+              'E=' + String(s._truncEnd).padStart(5, '0') + '  L= NONE'
+            );
             break;
           case 'channel-assign':
             // Screenshot: "Assign A6" / "Output Channel 7"
@@ -77,30 +89,39 @@ export function bindPadActions(s) {
             break;
           case 'copy-sound-from':
             s._pendingPad = pad;
+            s._pendingBank = s.currentBank;
             s.editParam = 'select-pad';
             s.pendingAction = 'copy-sound-to';
             s.moduleDisplay('Copy ' + _padLabel(s, pad), 'Select Dest');
             break;
-          case 'copy-sound-to':
-            s.engine.send({ type: 'copy-sound', from: s._pendingPad, to: pad });
+          case 'copy-sound-to': {
+            const fromSlot = (s._pendingBank ?? s.currentBank) * 8 + s._pendingPad;
+            const toSlot = s.currentBank * 8 + pad;
+            s.engine.send({ type: 'copy-sound', from: fromSlot, to: toSlot });
             s.display.flash('Copied', _padLabel(s, s._pendingPad) + ' > ' + _padLabel(s, pad));
             s._pendingPad = null;
+            s._pendingBank = null;
             s.editParam = 'module-func';
             s.pendingAction = null;
             break;
+          }
           case 'swap-sound-from':
             s._pendingPad = pad;
+            s._pendingBank = s.currentBank;
             s.editParam = 'select-pad';
             s.pendingAction = 'swap-sound-to';
             s.moduleDisplay('Swap ' + _padLabel(s, pad), 'Select Second');
             break;
-          case 'swap-sound-to':
-            s.engine.send({ type: 'swap-sounds', padA: s._pendingPad, padB: pad });
+          case 'swap-sound-to': {
+            const fromSlot = (s._pendingBank ?? s.currentBank) * 8 + s._pendingPad;
+            const toSlot = s.currentBank * 8 + pad;
+            s.engine.send({ type: 'swap-sounds', padA: fromSlot, padB: toSlot });
             s.display.flash('Swapped', _padLabel(s, s._pendingPad) + ' <> ' + _padLabel(s, pad));
             s._pendingPad = null;
             s.editParam = 'module-func';
             s.pendingAction = null;
             break;
+          }
           case 'load-sound-pad':
             s.display.flash('Load Sound', _padLabel(s, pad));
             s.editParam = 'module-func';
@@ -113,7 +134,13 @@ export function bindPadActions(s) {
         }
         if (s.pendingAction && s.editParam !== 'select-pad') s.pendingAction = null;
       } else if (s.eraseMode && s.playing) {
-        s.engine.send({ type: 'erase-track', pad });
+        // Start continuous erase — events removed as playhead passes
+        s.engine.send({ type: 'erase-track-start', pad });
+        const stopErase = () => {
+          s.engine.send({ type: 'erase-track-stop', pad });
+          document.removeEventListener('mouseup', stopErase);
+        };
+        document.addEventListener('mouseup', stopErase);
       } else if (s.tapRepeatHeld) {
         const repeatPad = pad;
         const msPerQuarter = 60000 / s.bpm;
@@ -121,7 +148,7 @@ export function bindPadActions(s) {
         if (s._repeatInterval) clearInterval(s._repeatInterval);
         s._repeatInterval = setInterval(() => {
           if (!s.tapRepeatHeld) { clearInterval(s._repeatInterval); s._repeatInterval = null; return; }
-          s.engine.trigger(repeatPad, 100);
+          s.engine.trigger(repeatPad, 100, s.currentBank);
         }, Math.max(30, msPerStep));
       } else if (s.activeModule && !s.pendingAction) {
         // Pad clicked while module active but no pending action — stay in module, don't exit

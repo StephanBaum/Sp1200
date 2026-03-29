@@ -82,7 +82,7 @@ export function bindKeypad(s) {
 
       if (s.editParam === 'delete-confirm') {
         if (key === '9') {
-          s.engine.send({ type: 'delete-sound', pad: s._pendingPad });
+          s.engine.send({ type: 'delete-sound', pad: s._pendingPad, bank: s.currentBank });
           s.display.flash('Deleted', _padLabel(s, s._pendingPad));
         } else if (key === '7') {
           s.display.flash('Cancelled', '');
@@ -95,7 +95,7 @@ export function bindKeypad(s) {
 
       if (s.editParam === 'reverse-confirm') {
         if (key === '9') {
-          s.engine.send({ type: 'reverse-sound', pad: s._pendingPad });
+          s.engine.send({ type: 'reverse-sound', pad: s._pendingPad, bank: s.currentBank });
           s.display.flash('Reversed', _padLabel(s, s._pendingPad));
         } else if (key === '7') {
           s.display.flash('Cancelled', '');
@@ -246,12 +246,25 @@ export function bindKeypad(s) {
 
       if (s.editParam === 'truncate-confirm') {
         if (key === '9') {
-          s.engine.send({ type: 'truncate', pad: s._pendingPad });
+          s.engine.send({
+            type: 'truncate-permanent',
+            pad: s._pendingPad,
+            bank: s._pendingBank ?? s.currentBank,
+            start: s._truncStart ?? 0,
+            end: s._truncEnd ?? 65535,
+          });
           s.display.flash('Truncated', _padLabel(s, s._pendingPad));
         } else if (key === '7') {
           s.display.flash('Cancelled', '');
         }
+        // Restore fader mode
+        document.dispatchEvent(new CustomEvent('fader-mode-change', { detail: { mode: 'volume' } }));
         s._pendingPad = null;
+        s._pendingBank = null;
+        s._truncStart = null;
+        s._truncEnd = null;
+        s._truncLoop = null;
+        s._truncSampleLen = null;
         s.editParam = 'module-func';
         s.numericBuffer = '';
         return;

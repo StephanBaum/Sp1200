@@ -45,6 +45,7 @@ async function init() {
   faders = new FadersUI(engine);
   state = new SP1200State(engine, display);
   state.storage = storage;
+  pads.state = state;
   bindTransport(state);
   bindModules(state);
   bindProgramming(state);
@@ -54,6 +55,7 @@ async function init() {
   bindBanks(state);
   bindModeButton(state);
   keyboard = new KeyboardUI(engine, display);
+  keyboard.state = state;
   stepEdit = new StepEditUI(engine, display);
 
   engine.onMessage((msg) => {
@@ -101,6 +103,26 @@ async function init() {
         break;
       case 'pad-mode':
         display.flash('Pad ' + (msg.pad + 1), msg.mode === 'decay' ? 'Decay' : 'Tune');
+        break;
+      case 'sample-info':
+        if (state && state.editParam === 'truncate-edit') {
+          state._truncSampleLen = msg.length;
+          state._truncStart = msg.startPoint;
+          state._truncEnd = Math.min(msg.endPoint, 65535);
+          state._truncLoop = msg.loopEnabled ? msg.loopStart : -1;
+          const loopStr = state._truncLoop < 0 ? ' NONE' : String(state._truncLoop).padStart(5, '0');
+          const padLabel = ['A','B','C','D'][state._pendingBank] + ((state._pendingPad ?? 0) + 1);
+          state.moduleDisplay(
+            'S=' + String(state._truncStart).padStart(5, '0') + '  ' + padLabel,
+            'E=' + String(state._truncEnd).padStart(5, '0') + '  L=' + loopStr
+          );
+        }
+        break;
+      case 'truncated':
+        display.flash('Truncated', msg.length + ' samples');
+        if (state) {
+          display.setMemory(sampleMemory.getRemainingSeconds(state.currentBank));
+        }
         break;
     }
   });
@@ -177,6 +199,59 @@ async function init() {
     } else {
       display.showMixLevels(e.detail.values);
     }
+  });
+
+  // Truncate fader events — 6 faders map to start/end/loop coarse+fine
+  document.addEventListener('truncate-fader', (e) => {
+    if (!state || state.editParam !== 'truncate-edit') return;
+    const { index, value } = e.detail;
+    const maxLen = Math.max(state._truncSampleLen || 65535, 1);
+    const coarseStep = Math.max(1, Math.floor(maxLen / 100));
+    const fineStep = 1;
+
+    if (index === 0) {
+      // Start coarse
+      state._truncStart = Math.floor(value * maxLen);
+    } else if (index === 1) {
+      // Start fine
+      state._truncStart = Math.max(0, state._truncStart + Math.round((value - 0.5) * 2 * fineStep * 50));
+    } else if (index === 2) {
+      // End coarse
+      state._truncEnd = Math.floor(value * maxLen);
+    } else if (index === 3) {
+      // End fine
+      state._truncEnd = Math.max(0, state._truncEnd + Math.round((value - 0.5) * 2 * fineStep * 50));
+    } else if (index === 4) {
+      // Loop coarse (-1 = NONE when fader is at 0)
+      if (value < 0.01) {
+        state._truncLoop = -1;
+      } else {
+        state._truncLoop = Math.floor(value * maxLen);
+      }
+    } else if (index === 5) {
+      // Loop fine
+      if (state._truncLoop >= 0) {
+        state._truncLoop = Math.max(0, state._truncLoop + Math.round((value - 0.5) * 2 * fineStep * 50));
+      }
+    }
+
+    // Clamp values
+    state._truncStart = Math.max(0, Math.min(maxLen - 1, state._truncStart));
+    state._truncEnd = Math.max(state._truncStart, Math.min(maxLen - 1, state._truncEnd));
+    if (state._truncLoop >= 0) {
+      state._truncLoop = Math.max(state._truncStart, Math.min(state._truncEnd, state._truncLoop));
+    }
+
+    // Live preview
+    engine.setParam('truncate', state._pendingPad, { start: state._truncStart, end: state._truncEnd });
+
+    // Update display
+    const loopStr = state._truncLoop < 0 ? ' NONE' : String(state._truncLoop).padStart(5, '0');
+    const padLabel = ['A','B','C','D'][state._pendingBank ?? 0] + ((state._pendingPad ?? 0) + 1);
+    state.moduleDisplay(
+      'S=' + String(state._truncStart).padStart(5, '0') + '  ' + padLabel,
+      'E=' + String(state._truncEnd).padStart(5, '0') + '  L=' + loopStr
+    );
   });
 
   // Knobs — drag to rotate, show value on LCD. Default 75%
@@ -325,10 +400,11 @@ async function startForceRecording() {
       try {
         const processed = await loadSampleFromFile(engine.context, await blob.arrayBuffer());
         const targetPad = state?.selectedSamplePad ?? selectedPad;
-        console.log('Sample processed:', processed.length, 'samples → pad', targetPad);
-        engine.loadSample(targetPad, processed);
-        sampleMemory.allocate(sampleMemory.getBank(targetPad), processed.length);
-        display.setMemory(sampleMemory.getRemainingSeconds(sampleMemory.getBank(targetPad)));
+        const bankPad = (state?.currentBank || 0) * 8 + targetPad;
+        console.log('Sample processed:', processed.length, 'samples → pad', bankPad);
+        engine.loadSample(bankPad, processed);
+        sampleMemory.allocate(state?.currentBank || 0, processed.length);
+        display.setMemory(sampleMemory.getRemainingSeconds(state?.currentBank || 0));
         document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: true } }));
       } catch (err) {
         console.error('Sample decode failed:', err);
@@ -375,10 +451,13 @@ function stopRecording() {
 async function loadFileToSelectedPad(file) {
   const arrayBuffer = await file.arrayBuffer();
   const processed = await loadSampleFromFile(engine.context, arrayBuffer);
-  engine.loadSample(selectedPad, processed);
-  sampleMemory.allocate(sampleMemory.getBank(selectedPad), processed.length);
-  display.setMemory(sampleMemory.getRemainingSeconds(sampleMemory.getBank(selectedPad)));
-  display.flash('Loaded', 'Pad ' + (selectedPad + 1));
+  const bank = state?.currentBank || 0;
+  const bankPad = bank * 8 + selectedPad;
+  engine.loadSample(bankPad, processed);
+  sampleMemory.allocate(bank, processed.length);
+  display.setMemory(sampleMemory.getRemainingSeconds(bank));
+  const bankName = ['A', 'B', 'C', 'D'][bank];
+  display.flash('Loaded', bankName + (selectedPad + 1));
 }
 
 async function loadDefaultKit() {

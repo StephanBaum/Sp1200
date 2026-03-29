@@ -73,6 +73,10 @@ export class FadersUI {
   }
 
   _sendValue(index) {
+    if (this.mode === 'truncate') {
+      document.dispatchEvent(new CustomEvent('truncate-fader', { detail: { index, value: this.faderPos[index] } }));
+      return;
+    }
     const val = this.params[this.mode][index];
     if (this.mode === 'volume') {
       this.engine.setParam('volume', index, val);
