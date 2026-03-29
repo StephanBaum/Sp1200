@@ -17,6 +17,8 @@ export function bindPadActions(s) {
             s.faderMode = 'pitch';
             document.dispatchEvent(new CustomEvent('fader-mode-change', { detail: { mode: 'pitch' } }));
             s.display.flash('Multi Pitch', _padLabel(s, pad));
+            s.editParam = s.activeModule ? 'module-func' : null;
+            s.pendingAction = null;
             break;
           case 'multi-level':
             s.engine.send({ type: 'multi-level', pad });
@@ -27,6 +29,8 @@ export function bindPadActions(s) {
             s.faderMode = 'volume';
             document.dispatchEvent(new CustomEvent('fader-mode-change', { detail: { mode: 'volume' } }));
             s.display.flash('Multi Level', _padLabel(s, pad));
+            s.editParam = s.activeModule ? 'module-func' : null;
+            s.pendingAction = null;
             break;
           case 'delete-sound':
             // Screenshot: "Delete: A1" / "Confirm? Y/N"

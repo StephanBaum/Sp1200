@@ -35,16 +35,25 @@ export class SetupHandler {
   _multiPitch(msg) {
     const p = this.processor;
     const src = msg.pad;
+    if (src < 0 || src >= NUM_PADS) return true;
     const slotIdx = p.currentBank * NUM_PADS + src;
     const srcSlot = p.sampleSlots[slotIdx];
-    if (src >= 0 && src < NUM_PADS && srcSlot.sample) {
-      p._multiBackup = p.voices.map(v => ({
+    const sampleRef = srcSlot?.sample || p.voices[src].sample;
+    if (sampleRef) {
+      p._multiBackup = p.voices.map((v, i) => ({
         sample: v.sample,
         pitch: v.pitch,
         velocity: v.velocity,
+        decayRate: v.decayRate,
+        startPoint: v.startPoint,
+        endPoint: v.endPoint,
+        reversed: v.reversed,
+        loopEnabled: v.loopEnabled,
+        loopStart: v.loopStart,
+        loopEnd: v.loopEnd,
       }));
       for (let i = 0; i < NUM_PADS; i++) {
-        p.voices[i].loadSample(srcSlot.sample);
+        p.voices[i].loadSample(sampleRef);
         const semitones = -8 + (i * 15 / 7);
         p.voices[i].setPitch(BASE_PITCH_STEP * Math.pow(2, semitones / 12));
       }
@@ -56,16 +65,27 @@ export class SetupHandler {
   _multiLevel(msg) {
     const p = this.processor;
     const src = msg.pad;
+    if (src < 0 || src >= NUM_PADS) return true;
     const slotIdx = p.currentBank * NUM_PADS + src;
     const srcSlot = p.sampleSlots[slotIdx];
-    if (src >= 0 && src < NUM_PADS && srcSlot.sample) {
-      p._multiBackup = p.voices.map(v => ({
+    const sampleRef = srcSlot?.sample || p.voices[src].sample;
+    if (sampleRef) {
+      p._multiBackup = p.voices.map((v, i) => ({
         sample: v.sample,
         pitch: v.pitch,
         velocity: v.velocity,
+        decayRate: v.decayRate,
+        startPoint: v.startPoint,
+        endPoint: v.endPoint,
+        reversed: v.reversed,
+        loopEnabled: v.loopEnabled,
+        loopStart: v.loopStart,
+        loopEnd: v.loopEnd,
       }));
+      p._multiBackupVolumes = [];
       for (let i = 0; i < NUM_PADS; i++) {
-        p.voices[i].loadSample(srcSlot.sample);
+        p._multiBackupVolumes.push(p.mixer.channels[i].volume);
+        p.voices[i].loadSample(sampleRef);
         p.voices[i].setPitch(BASE_PITCH_STEP);
         p.mixer.setVolume(i, (i + 1) / NUM_PADS);
       }
@@ -81,12 +101,24 @@ export class SetupHandler {
         const bk = p._multiBackup[i];
         if (bk.sample) {
           p.voices[i].loadSample(bk.sample);
+          p.voices[i].startPoint = bk.startPoint;
+          p.voices[i].endPoint = bk.endPoint;
+          p.voices[i].loopEnabled = bk.loopEnabled;
+          p.voices[i].loopStart = bk.loopStart;
+          p.voices[i].loopEnd = bk.loopEnd;
+          p.voices[i].reversed = bk.reversed;
         } else {
           p.voices[i].sample = null;
         }
         p.voices[i].pitch = bk.pitch;
+        p.voices[i].decayRate = bk.decayRate;
+        // Restore volume if multi-level backed it up
+        if (p._multiBackupVolumes) {
+          p.mixer.setVolume(i, p._multiBackupVolumes[i]);
+        }
       }
       p._multiBackup = null;
+      p._multiBackupVolumes = null;
       p.port.postMessage({ type: 'multi-exit' });
     }
     return true;
