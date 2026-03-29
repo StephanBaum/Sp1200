@@ -1,22 +1,6 @@
 import { handleModuleFunction, handleSpecialFunction, executeDiskOp } from './modules.js';
 import { confirmEntry } from './master-control.js';
 
-function _returnToModuleMenu(s) {
-  s.editParam = 'module-func';
-  s.numericBuffer = '';
-  const labels = { 'setup': 'SET UP', 'disk': 'DISK', 'sync': 'SYNC', 'sample': 'SAMPLE' };
-  setTimeout(() => {
-    if (s.activeModule) {
-      if (s.activeModule === 'sample') {
-        s.editParam = 'vu-mode';
-        s.display.setLine1(s.vuPadLabel());
-        document.dispatchEvent(new Event('sample-start-vu'));
-      } else {
-        s.moduleDisplay(labels[s.activeModule] || 'MODULE', 'Enter option #');
-      }
-    }
-  }, 800);
-}
 
 function _padLabel(s, pad) {
   return ['A', 'B', 'C', 'D'][s.currentBank] + ((pad ?? 0) + 1);
@@ -78,7 +62,8 @@ export function bindKeypad(s) {
         } else if (key === '7') {
           s.moduleDisplay('Cancelled', '');
         }
-        _returnToModuleMenu(s);
+        s.editParam = 'module-func';
+        s.numericBuffer = '';
         return;
       }
 
@@ -92,7 +77,8 @@ export function bindKeypad(s) {
           s.engine.send({ type: 'dynamic-buttons', enabled: false });
           s.moduleDisplay('Dyn Buttons', 'NO - Off');
         }
-        _returnToModuleMenu(s);
+        s.editParam = 'module-func';
+        s.numericBuffer = '';
         return;
       }
 
@@ -285,7 +271,8 @@ export function bindKeypad(s) {
         s._truncEnd = null;
         s._truncLoop = null;
         s._truncSampleLen = null;
-        _returnToModuleMenu(s);
+        s.editParam = 'module-func';
+        s.numericBuffer = '';
         return;
       }
 
@@ -315,7 +302,8 @@ export function bindKeypad(s) {
         } else if (key === '7') {
           s.moduleDisplay('Cancelled', '');
         }
-        _returnToModuleMenu(s);
+        s.editParam = 'module-func';
+        s.numericBuffer = '';
         return;
       }
 
@@ -326,7 +314,8 @@ export function bindKeypad(s) {
         } else if (key === '7') {
           s.moduleDisplay('Cancelled', '');
         }
-        _returnToModuleMenu(s);
+        s.editParam = 'module-func';
+        s.numericBuffer = '';
         return;
       }
 
@@ -337,7 +326,8 @@ export function bindKeypad(s) {
         } else if (key === '7') {
           s.moduleDisplay('Cancelled', '');
         }
-        _returnToModuleMenu(s);
+        s.editParam = 'module-func';
+        s.numericBuffer = '';
         return;
       }
 
@@ -349,7 +339,8 @@ export function bindKeypad(s) {
           s.engine.send({ type: 'dynamic-alloc', enabled: false });
           s.moduleDisplay('Dyn Alloc', 'Disabled');
         }
-        _returnToModuleMenu(s);
+        s.editParam = 'module-func';
+        s.numericBuffer = '';
         return;
       }
 
