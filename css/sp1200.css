@@ -119,6 +119,9 @@ body {
   white-space: pre;
   line-height: 1.4;
   overflow: hidden;
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
 
 /* ── Fader overlays — track on faceplate, cap is fader.png rotated 90° ── */
