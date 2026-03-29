@@ -20,7 +20,11 @@ export function bindTransport(s) {
     } else if (s.playing) {
       // Already playing — toggle recording on/off (overdub)
       s.recording = !s.recording;
-      if (s.recording) s.engine.record();
+      if (s.recording) {
+        s.engine.record();
+      } else {
+        s.engine.send({ type: 'transport', action: 'record-off' });
+      }
       document.getElementById('btn-record').classList.toggle('active', s.recording);
       s.led('led-record', s.recording);
     } else {

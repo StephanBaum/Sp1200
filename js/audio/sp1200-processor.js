@@ -471,6 +471,11 @@ class SP1200Processor extends AudioWorkletProcessor {
         }
         break;
 
+      case 'record-off':
+        this.isRecording = false;
+        this._justRecorded.clear();
+        break;
+
       case 'stop':
         this.isPlaying = false;
         this.isRecording = false;
