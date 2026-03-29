@@ -157,10 +157,23 @@ export class FileSystemStorage {
     if (!dir) throw new Error('No folder selected');
 
     let projDir;
-    try {
-      projDir = await dir.getDirectoryHandle(name);
-    } catch {
-      throw new Error('Project not found: ' + name);
+
+    // First: check if current directory IS the project (has project.json)
+    if (name === '.' || name === 'project.json') {
+      projDir = dir;
+    } else {
+      // Try as subdirectory
+      try {
+        projDir = await dir.getDirectoryHandle(name);
+      } catch {
+        // Maybe we're already inside the project folder
+        try {
+          await dir.getFileHandle('project.json');
+          projDir = dir; // current dir has project.json, use it
+        } catch {
+          throw new Error('Project not found: ' + name);
+        }
+      }
     }
 
     // Read manifest

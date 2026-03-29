@@ -458,10 +458,10 @@ async function _loadDiskList(s) {
 
 export async function executeDiskOp(s, op, filename) {
   // Strip trailing / for directory names
-  const cleanName = filename.replace(/\/$/, '');
+  let cleanName = filename.replace(/\/$/, '');
 
   try {
-    // If selected item is a directory, navigate into it
+    // If selected item is a directory, navigate into it or detect project
     const items = s.fsStorage.getFileList();
     const selected = items.find(f => f.name === filename);
     if (selected?.kind === 'directory') {
@@ -470,20 +470,32 @@ export async function executeDiskOp(s, op, filename) {
       } else {
         await s.fsStorage.enterDirectory(cleanName);
       }
-      // Refresh the file list
+      // Check if we entered a project folder (contains project.json)
       const newItems = s.fsStorage.getFileList();
-      s.diskFiles = newItems.map(f => f.name);
-      s.diskFileIndex = 0;
-      s.diskCurrentFile = s.diskFiles[0] || '';
-      const path = s.fsStorage.currentPath || s.fsStorage.dirHandle.name;
-      s.moduleDisplay(s.diskCurrentFile || 'Empty', path.substring(0, 16));
-      return;
+      const hasProject = newItems.some(f => f.name === 'project.json');
+      if (hasProject && (op === 'load-all' || op === 'load-sequences' || op === 'load-sounds' || op === 'cat-sequences' || op === 'cat-sounds')) {
+        // This is a project folder — execute the operation on it directly
+        filename = '.';
+      } else {
+        // Just browsing — show file list
+        s.diskFiles = newItems.map(f => f.name);
+        s.diskFileIndex = 0;
+        s.diskCurrentFile = s.diskFiles[0] || '';
+        const path = s.fsStorage.currentPath || s.fsStorage.dirHandle.name;
+        s.moduleDisplay(s.diskCurrentFile || 'Empty', path.substring(0, 16));
+        return;
+      }
+    }
+
+    // If user selected project.json directly, treat as loading current dir
+    if (filename === 'project.json') {
+      filename = '.';
     }
 
     switch (op) {
       case 'load-all': {
         s.moduleDisplay('Loading...', cleanName);
-        const project = await s.fsStorage.loadProject(cleanName);
+        const project = await s.fsStorage.loadProject(filename);
         // Load samples into engine
         for (const slot of project.slots) {
           if (slot.buffer) {
@@ -571,7 +583,7 @@ export async function executeDiskOp(s, op, filename) {
 
       case 'load-sequences': {
         s.moduleDisplay('Loading Seqs...', cleanName);
-        const project = await s.fsStorage.loadProject(cleanName);
+        const project = await s.fsStorage.loadProject(filename);
         if (project?.patterns) {
           s.engine.send({ type: 'load-patterns', patterns: project.patterns });
           s.display.flash('Seq Loaded', cleanName);
@@ -583,7 +595,7 @@ export async function executeDiskOp(s, op, filename) {
 
       case 'load-sounds': {
         s.moduleDisplay('Loading Snds...', cleanName);
-        const project = await s.fsStorage.loadProject(cleanName);
+        const project = await s.fsStorage.loadProject(filename);
         if (project?.slots) {
           for (const slot of project.slots) {
             if (slot.buffer) {
@@ -600,7 +612,7 @@ export async function executeDiskOp(s, op, filename) {
       case 'cat-sequences':
       case 'cat-sounds': {
         try {
-          const project = await s.fsStorage.loadProject(cleanName);
+          const project = await s.fsStorage.loadProject(filename);
           const sndCount = project?.slots?.filter(s => s.sampleFile)?.length || 0;
           const seqCount = project?.patterns?.filter(p => p.tracks?.some(t => t.events?.length > 0))?.length || 0;
           s.moduleDisplay(cleanName, sndCount + ' Snd ' + seqCount + ' Seq');
