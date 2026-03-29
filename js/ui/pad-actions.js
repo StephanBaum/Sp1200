@@ -6,7 +6,7 @@ export function bindPadActions(s) {
   document.querySelectorAll('.pad').forEach(el => {
     el.addEventListener('mousedown', () => {
       const pad = parseInt(el.dataset.pad, 10);
-      if ((s.editParam === 'select-pad' || s.editParam === 'channel-assign-num' || s.editParam === 'decay-tune-select' || s.editParam === 'truncate-edit') && s.pendingAction) {
+      if (s.pendingAction && (s.editParam === 'select-pad' || s.editParam === 'channel-assign-num' || s.editParam === 'decay-tune-select' || s.editParam === 'truncate-edit' || s.editParam === 'delete-confirm' || s.editParam === 'reverse-confirm')) {
         switch (s.pendingAction) {
           case 'multi-pitch':
             s.engine.send({ type: 'multi-pitch', pad });
@@ -33,10 +33,9 @@ export function bindPadActions(s) {
             s.pendingAction = null;
             break;
           case 'delete-sound':
-            // Screenshot: "Delete: A1" / "Confirm? Y/N"
             s._pendingPad = pad;
             s.editParam = 'delete-confirm';
-            s.pendingAction = null;
+            s.pendingAction = 'delete-sound';
             s.moduleDisplay('Delete: ' + _padLabel(s, pad), 'Confirm? Y/N');
             break;
           case 'decay-tune': {
@@ -84,7 +83,7 @@ export function bindPadActions(s) {
           case 'reverse-sound':
             s._pendingPad = pad;
             s.editParam = 'reverse-confirm';
-            s.pendingAction = null;
+            s.pendingAction = 'reverse-sound';
             s.moduleDisplay('Reverse ' + _padLabel(s, pad), 'YES/NO');
             break;
           case 'assign-voice':
