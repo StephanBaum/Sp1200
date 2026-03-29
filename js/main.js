@@ -73,16 +73,12 @@ async function init() {
   midi.state = state;
   midi.init();
 
-  // Acquire mic stream at startup (permission persists across refreshes)
-  // System audio (getDisplayMedia) requires a prompt every time — user can
-  // switch to it via Sample module option 8 ("System Audio")
+  // Try to acquire mic at startup (silent — permission may persist across refreshes)
+  // If no mic or denied, user can use Sample option 8 for system audio
   if (!micStream) {
-    try {
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log('Mic stream acquired');
-    } catch (e) {
-      console.warn('No mic available:', e.message);
-    }
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => { micStream = stream; console.log('Mic stream acquired'); })
+      .catch(() => console.log('No mic — use Sample opt 8 for system audio'));
   }
 
   // Listen for system audio switch request
@@ -404,13 +400,9 @@ async function startVUMonitoring() {
     await engine.resume();
 
     if (!micStream) {
-      try {
-        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      } catch (micErr) {
-        console.warn('No audio source:', micErr.message);
-        display.setLine2('No audio src');
-        return;
-      }
+      // No stream yet — show hint, don't block
+      display.setLine2('Press 8: Sys Aud');
+      return;
     }
     const ctx = engine.context;
     if (ctx.state === 'suspended') await ctx.resume();
@@ -467,13 +459,9 @@ async function startForceRecording() {
     await engine.resume();
 
     if (!micStream) {
-      try {
-        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      } catch (micErr) {
-        console.error('No audio source for recording:', micErr.message);
-        document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false, error: 'No audio' } }));
-        return;
-      }
+      display.flash('No Audio Src', 'Press 8: Sys Aud');
+      document.dispatchEvent(new CustomEvent('sample-done', { detail: { success: false, error: 'No audio source' } }));
+      return;
     }
     const ctx = engine.context;
     if (ctx.state === 'suspended') await ctx.resume();
