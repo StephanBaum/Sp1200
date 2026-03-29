@@ -231,8 +231,8 @@ async function init() {
     // Sample module: slider 1 controls threshold or sample length
     if (state.editParam === 'threshold') {
       state.sampleThreshold = slider1;
-      display.setLine1('Arm Slider #1');
-      display.showVU(slider1); // show threshold level as VU marker
+      display.setLine1('Threshold  #1');
+      // Don't touch line 2 — live VU is updating it via the monitoring loop
       return;
     }
     if (state.editParam === 'sample-length') {
@@ -358,7 +358,7 @@ async function init() {
     const initVal = 0.75;
     if (knob.id === 'knob-gain') engine.setParam('gain', 0, initVal);
     if (knob.id === 'knob-mix-vol') engine.setParam('mix-volume', 0, initVal);
-    if (knob.id === 'knob-metro-vol') engine.send({ type: 'set-metronome-vol', vol: initVal });
+    if (knob.id === 'knob-metro-vol') engine.send({ type: 'set-metronome-vol', vol: 0.25 });
     const names = { 'knob-gain': 'GAIN', 'knob-mix-vol': 'MIX VOL', 'knob-metro-vol': 'METRO' };
     knob.addEventListener('mousedown', (e) => { dragging = true; startY = e.clientY; startAngle = angle; e.preventDefault(); });
     document.addEventListener('mousemove', (e) => {
@@ -466,7 +466,10 @@ async function startVUMonitoring() {
       }
       const rms = Math.sqrt(sum / dataArray.length);
       const level = Math.min(1, rms * 4);
-      display.showVU(level);
+      // Show threshold marker when in threshold mode or when armed
+      const showThreshold = (state?.editParam === 'threshold' || sampleArmed)
+        ? (state?.sampleThreshold || 0.05) : undefined;
+      display.showVU(level, showThreshold);
 
       if (sampleArmed && level > (state?.sampleThreshold || 0.05)) {
         sampleArmed = false;

@@ -11,7 +11,7 @@ export class SP1200State {
     this.segmentLength = 2; // bars, default 2, max 99
     this.timeSig = '4/4';
     this.bpm = 120;
-    this.metronomeOn = false;
+    this.metronomeOn = true;
     this.stepProgramMode = false;
     this.swingAmount = 50;
     this.quantizeIndex = 3; // index into quantize arrays, default 1/16

@@ -164,9 +164,16 @@ export function bindPadActions(s) {
           s.engine.trigger(repeatPad, 100, s.currentBank);
         }, Math.max(30, msPerStep));
       } else if (s.activeModule === 'sample' && !s.pendingAction) {
-        // In sample module: tap pad to select it as sample target
+        // In sample module: tap pad to select it, then return to VU
         s.selectedSamplePad = pad;
-        s.display.flash('Sample \u2192 ' + _padLabel(s, pad), '');
+        s.moduleDisplay('Sample \u2192 ' + _padLabel(s, pad), '');
+        setTimeout(() => {
+          if (s.activeModule === 'sample') {
+            s.editParam = 'vu-mode';
+            s.display.setLine1(s.vuPadLabel());
+            document.dispatchEvent(new Event('sample-start-vu'));
+          }
+        }, 800);
       } else if (s.activeModule && !s.pendingAction) {
         // Pad clicked while module active but no pending action — stay in module, don't exit
       }

@@ -202,10 +202,10 @@ export function handleModuleFunction(s, funcNum) {
         s.moduleDisplay('Input Gain ' + s.gainLabel(), 'Use < and >');
         break;
 
-      case 4: // Threshold — full VU display, slider 1 sets threshold level
+      case 4: // Threshold — live VU with threshold marker, slider 1 adjusts
         s.editParam = 'threshold';
         s.display.lock();
-        s.display.setLine1('Arm Slider #1');
+        s.display.setLine1('Threshold  #1');
         document.dispatchEvent(new Event('sample-start-vu'));
         break;
 

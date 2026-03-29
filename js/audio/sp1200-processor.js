@@ -67,9 +67,9 @@ class SP1200Processor extends AudioWorkletProcessor {
     // Auto-repeat: when pattern ends, loop back
     this.autoRepeat = true;
 
-    // Metronome
-    this.metronomeEnabled = false;
-    this.metronomeVolume = 0.7;
+    // Metronome — on by default, volume low
+    this.metronomeEnabled = true;
+    this.metronomeVolume = 0.25;
     this.metronomeClick = new MetronomeClick();
 
     // Setup module state

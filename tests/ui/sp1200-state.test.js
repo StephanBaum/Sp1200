@@ -74,7 +74,7 @@ describe('SP1200State', () => {
     expect(state.multiMode).toBeNull();
     expect(state.stepProgramMode).toBe(false);
     expect(state.eraseMode).toBe(false);
-    expect(state.metronomeOn).toBe(false);
+    expect(state.metronomeOn).toBe(true);
     expect(state.faderMode).toBe('volume');
     expect(state.timeSig).toBe('4/4');
   });

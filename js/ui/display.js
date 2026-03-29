@@ -211,12 +211,12 @@ export class DisplayUI {
   }
 
   // ── VU meter for sampling ──────────────────────────────────────────────
-  showVU(level) {
+  showVU(level, threshold) {
     const n = Math.round(level * 16);
     // Peak hold: track max level, hold then decay
     if (level > (this._vuPeak || 0)) {
       this._vuPeak = level;
-      this._vuPeakHold = 30; // hold for ~30 frames
+      this._vuPeakHold = 30;
     }
     if (this._vuPeakHold > 0) {
       this._vuPeakHold--;
@@ -225,11 +225,20 @@ export class DisplayUI {
     }
     const peakPos = Math.round((this._vuPeak || 0) * 15);
     let bar = '\u2588'.repeat(n) + '\u2591'.repeat(16 - n);
-    // Place peak hold marker if it's beyond the current level
+    // Place peak hold marker
     if ((this._vuPeak || 0) > 0 && peakPos >= n && peakPos < 16) {
       const chars = bar.split('');
-      chars[peakPos] = '\u2758'; // ❘ thin vertical bar as peak marker
+      chars[peakPos] = '\u2758';
       bar = chars.join('');
+    }
+    // Place threshold marker if provided
+    if (threshold != null && threshold > 0) {
+      const threshPos = Math.round(threshold * 15);
+      if (threshPos >= 0 && threshPos < 16) {
+        const chars = bar.split('');
+        chars[threshPos] = '\u2502'; // │ box drawing vertical line as threshold
+        bar = chars.join('');
+      }
     }
     this.setLine2(bar);
   }
