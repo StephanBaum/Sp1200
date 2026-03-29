@@ -6,7 +6,7 @@ export function bindPadActions(s) {
   document.querySelectorAll('.pad').forEach(el => {
     el.addEventListener('mousedown', () => {
       const pad = parseInt(el.dataset.pad, 10);
-      if ((s.editParam === 'select-pad' || s.editParam === 'channel-assign-num') && s.pendingAction) {
+      if ((s.editParam === 'select-pad' || s.editParam === 'channel-assign-num' || s.editParam === 'decay-tune-select') && s.pendingAction) {
         switch (s.pendingAction) {
           case 'multi-pitch':
             s.engine.send({ type: 'multi-pitch', pad });
@@ -39,17 +39,18 @@ export function bindPadActions(s) {
             s.pendingAction = null;
             s.moduleDisplay('Delete: ' + _padLabel(s, pad), 'Confirm? Y/N');
             break;
-          case 'decay-tune':
-            // Screenshot: "A7     TUNED" / "1=Tune  2=Decay"
+          case 'decay-tune': {
             s._pendingPad = pad;
-            s.editParam = 'decay-tune-select';
-            s.pendingAction = null;
             const mode = s.padModes?.[pad] || 'tune';
             s.moduleDisplay(
               _padLabel(s, pad) + (mode === 'tune' ? '      TUNED' : '    DECAYED'),
               '1=Tune  2=Decay'
             );
+            // Stay in select mode — tap pads to view, type 1/2 to change
+            s.editParam = 'decay-tune-select';
+            s.pendingAction = 'decay-tune';
             break;
+          }
           case 'truncate':
             // Screenshot: "Truncate A1" then sample points
             s._pendingPad = pad;

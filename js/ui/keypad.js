@@ -129,16 +129,14 @@ export function bindKeypad(s) {
           s.engine.send({ type: 'set-pad-mode', pad: s._pendingPad, mode: 'tune' });
           if (!s.padModes) s.padModes = new Array(8).fill('tune');
           s.padModes[s._pendingPad] = 'tune';
-          s.moduleDisplay(_padLabel(s, s._pendingPad) + '      TUNED', 'Select next pad');
+          s.moduleDisplay(_padLabel(s, s._pendingPad) + '      TUNED', '1=Tune  2=Decay');
         } else if (key === '2') {
           s.engine.send({ type: 'set-pad-mode', pad: s._pendingPad, mode: 'decay' });
           if (!s.padModes) s.padModes = new Array(8).fill('tune');
           s.padModes[s._pendingPad] = 'decay';
-          s.moduleDisplay(_padLabel(s, s._pendingPad) + '    DECAYED', 'Select next pad');
+          s.moduleDisplay(_padLabel(s, s._pendingPad) + '    DECAYED', '1=Tune  2=Decay');
         }
-        // Return to select-pad so user can pick another pad
-        s.editParam = 'select-pad';
-        s.pendingAction = 'decay-tune';
+        // Stay — tap another pad to view/change, or Enter to exit
         return;
       }
 
