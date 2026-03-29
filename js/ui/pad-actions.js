@@ -142,11 +142,6 @@ export function bindPadActions(s) {
           s.editParam = s.activeModule ? 'module-func' : null;
         }
         if (s.pendingAction && s.editParam !== 'select-pad') s.pendingAction = null;
-      } else if (s.activeModule === 'sample' && !s.pendingAction) {
-        // In sample module: tap pad to select it as sample target
-        s.selectedSamplePad = pad;
-        const label = _padLabel(s, pad);
-        s.display.flash('Sample → ' + label, '');
       } else if (s.eraseMode && s.playing) {
         // Start continuous erase — events removed as playhead passes
         s.engine.send({ type: 'erase-track-start', pad });
@@ -164,9 +159,12 @@ export function bindPadActions(s) {
           if (!s.tapRepeatHeld) { clearInterval(s._repeatInterval); s._repeatInterval = null; return; }
           s.engine.trigger(repeatPad, 100, s.currentBank);
         }, Math.max(30, msPerStep));
+      } else if (s.activeModule === 'sample' && !s.pendingAction) {
+        // In sample module: tap pad to select it as sample target
+        s.selectedSamplePad = pad;
+        s.display.flash('Sample \u2192 ' + _padLabel(s, pad), '');
       } else if (s.activeModule && !s.pendingAction) {
         // Pad clicked while module active but no pending action — stay in module, don't exit
-        // Only exit module by pressing the module button again
       }
     });
   });

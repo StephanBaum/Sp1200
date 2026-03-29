@@ -667,8 +667,8 @@ class SP1200Processor extends AudioWorkletProcessor {
       this.metronomeClick.trigger(beatInBar === 0);
     }
 
-    // Post tick position — only on beat boundaries to reduce message volume
-    const pos = this.clock.getPosition(clockTick);
+    // Post tick position — use patternTick so bar/beat wraps at segment length
+    const pos = this.clock.getPosition(this.patternTick);
     if (pos.sixteenth === 0 || this.patternTick === 0) {
       this.port.postMessage({
         type: 'tick',

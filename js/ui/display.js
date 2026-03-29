@@ -104,10 +104,20 @@ export class DisplayUI {
     barsEl.style.display = 'flex';
     this.line1El.style.display = 'none';
     this.line2El.style.display = 'none';
-    // Update bar heights
+    // Reset bar styles (may have been set by showTuneLevels) and update heights
+    const barsRow = barsEl.querySelector('.lcd-bars-row');
+    const labels = barsEl.querySelector('.lcd-bars-labels');
+    this._resetBarStyles(barsRow, labels);
     for (let i = 0; i < 8; i++) {
       const bar = document.getElementById('bar-' + i);
-      if (bar) bar.style.height = Math.round(values[i] * 100) + '%';
+      if (bar) {
+        bar.style.position = '';
+        bar.style.width = '';
+        bar.style.left = '';
+        bar.style.bottom = '';
+        bar.style.top = '';
+        bar.style.height = Math.round(values[i] * 100) + '%';
+      }
     }
     // Auto-hide bars after 2 seconds of no updates
     clearTimeout(this._barTimer);
