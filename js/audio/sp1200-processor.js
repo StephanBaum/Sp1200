@@ -554,25 +554,24 @@ class SP1200Processor extends AudioWorkletProcessor {
     if (pad < 0 || pad >= NUM_PADS) return;
     const voice = this.voices[pad];
 
-    if (fromSequencer && eventParams) {
-      // Load sample from recorded slot (may be a different bank)
-      if (eventParams.slot !== null) {
-        const s = this.sampleSlots[eventParams.slot];
-        if (s?.sample) {
-          voice.sample = s.sample;
-          voice.startPoint = s.startPoint;
-          voice.endPoint = s.endPoint;
-          voice.loopEnabled = s.loopEnabled;
-          voice.loopStart = s.loopStart;
-          voice.loopEnd = s.loopEnd;
-          voice.reversed = s.reversed;
-        }
+    if (fromSequencer) {
+      // Load sample from recorded slot, or current bank if no per-note slot
+      const slotIdx = eventParams?.slot ?? (this.currentBank * NUM_PADS + pad);
+      const s = this.sampleSlots[slotIdx];
+      if (s?.sample) {
+        voice.sample = s.sample;
+        voice.startPoint = s.startPoint;
+        voice.endPoint = s.endPoint;
+        voice.loopEnabled = s.loopEnabled;
+        voice.loopStart = s.loopStart;
+        voice.loopEnd = s.loopEnd;
+        voice.reversed = s.reversed;
       }
       // Apply per-note params and lock so faders don't overwrite
-      if (eventParams.pitch !== null) voice.pitch = eventParams.pitch;
-      if (eventParams.decay !== null) voice.decayRate = eventParams.decay;
-      if (eventParams.mixVolume !== null) this.mixer.setVolume(pad, eventParams.mixVolume);
-      voice.perNoteLock = true;
+      if (eventParams?.pitch != null) voice.pitch = eventParams.pitch;
+      if (eventParams?.decay != null) voice.decayRate = eventParams.decay;
+      if (eventParams?.mixVolume != null) this.mixer.setVolume(pad, eventParams.mixVolume);
+      voice.perNoteLock = !!(eventParams?.pitch != null || eventParams?.decay != null || eventParams?.mixVolume != null);
     } else {
       // Manual trigger — unlock so faders work normally
       voice.perNoteLock = false;

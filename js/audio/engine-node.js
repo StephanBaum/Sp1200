@@ -16,7 +16,11 @@ export class SP1200Engine {
   play() { this._ensureRunning(); this.send({ type: 'transport', action: 'play' }); }
   stop() { this.send({ type: 'transport', action: 'stop' }); }
   record() { this._ensureRunning(); this.send({ type: 'transport', action: 'record' }); }
-  _ensureRunning() { if (this.context?.state === 'suspended') this.context.resume(); }
+  _ensureRunning() {
+    if (this.context?.state === 'suspended') {
+      this.context.resume().catch(() => {});
+    }
+  }
   setBpm(bpm) { this.send({ type: 'set-bpm', bpm }); }
   setSwing(amount) { this.send({ type: 'set-swing', amount }); }
   setQuantize(grid) { this.send({ type: 'set-quantize', grid }); }
