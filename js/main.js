@@ -449,8 +449,18 @@ async function startVUMonitoring() {
       gainNode.connect(micAnalyser);
     }
 
+    // Show hint if no audio source
+    if (!micStream) {
+      display.setLine2('Press 8: Sys Aud');
+    }
+
     const dataArray = micAnalyser ? new Uint8Array(micAnalyser.frequencyBinCount) : null;
     function drawVU() {
+      // Stop VU when leaving sample module
+      if (state?.activeModule !== 'sample') {
+        if (vuAnimFrame) { cancelAnimationFrame(vuAnimFrame); vuAnimFrame = null; }
+        return;
+      }
       vuAnimFrame = requestAnimationFrame(drawVU);
       let level = 0;
       if (micAnalyser && dataArray) {
