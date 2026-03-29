@@ -93,25 +93,20 @@ export class KeyboardUI {
         return;
       }
 
-      // ── Programming buttons: X C V B N M , . / → prog 1-9 ────
-      const progKeys = ['x', 'c', 'v', 'b', 'n', 'm'];
-      const progIdx = progKeys.indexOf(key);
-      if (progIdx !== -1 && !e.ctrlKey && !e.altKey && !e.shiftKey && !e.repeat) {
+      // ── Programming buttons: X C V B N M , . → prog 2-9 ─────
+      // (prog-1 = Song/Segment is already on Tab key)
+      const progKeys = { 'x': 2, 'c': 3, 'v': 4, 'b': 5, 'n': 6, 'm': 7 };
+      if (progKeys[key] && !e.ctrlKey && !e.altKey && !e.shiftKey && !e.repeat) {
         e.preventDefault();
-        document.getElementById('prog-' + (progIdx + 1))?.click();
+        document.getElementById('prog-' + progKeys[key])?.click();
         return;
       }
       if (key === ',' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.repeat) {
         e.preventDefault();
-        document.getElementById('prog-7')?.click();
-        return;
-      }
-      if (key === '.' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.repeat) {
-        e.preventDefault();
         document.getElementById('prog-8')?.click();
         return;
       }
-      if (key === '/' && !e.ctrlKey && !e.altKey && !e.repeat) {
+      if (key === '.' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.repeat) {
         e.preventDefault();
         document.getElementById('prog-9')?.click();
         return;
