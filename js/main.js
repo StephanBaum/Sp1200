@@ -92,11 +92,23 @@ async function init() {
       micStream.getVideoTracks().forEach(t => t.stop());
       console.log('System audio stream acquired');
       display.flash('System Audio', 'Connected');
+      // Return to VU mode (Sample function 1) after brief flash
+      setTimeout(() => {
+        if (state?.activeModule === 'sample') {
+          state.editParam = 'vu-mode';
+          document.dispatchEvent(new Event('sample-start-vu'));
+        }
+      }, 800);
     } catch (err) {
       console.warn('System audio denied:', err.message);
       display.flash('Denied', 'Using mic');
-      // Re-acquire mic
       try { micStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (_) {}
+      setTimeout(() => {
+        if (state?.activeModule === 'sample') {
+          state.editParam = 'vu-mode';
+          document.dispatchEvent(new Event('sample-start-vu'));
+        }
+      }, 800);
     }
   });
 
