@@ -33,13 +33,14 @@ export function confirmEntry(s) {
       case 'segment':
       case 'pattern':
         s.display.unlock();
-        if (val >= 0 && val <= 99) {
-          s.currentSegment = val;
-          s.engine.selectPattern(s.currentSegment);
-          s.display.setPattern(s.currentSegment);
-          s.display.flash('Seg ' + String(val + 1).padStart(2, '0'), 'Selected');
+        if (val >= 1 && val <= 99) {
+          const idx = val - 1; // user types 1-indexed, internal is 0-indexed
+          s.currentSegment = idx;
+          s.engine.selectPattern(idx);
+          s.display.setPattern(idx);
+          s.display.flash('Seg ' + String(val).padStart(2, '0'), 'Selected');
         } else {
-          s.display.flash('Invalid Seg', '0-99 only');
+          s.display.flash('Invalid Seg', '1-99 only');
         }
         break;
 
@@ -126,11 +127,12 @@ export function confirmEntry(s) {
         break;
 
       default:
-        // No active edit param — treat as segment selection
-        if (val >= 0 && val <= 99) {
-          s.currentSegment = val;
-          s.engine.selectPattern(s.currentSegment);
-          s.display.setPattern(s.currentSegment);
+        // No active edit param — treat as segment selection (1-indexed input)
+        if (val >= 1 && val <= 99) {
+          const idx = val - 1;
+          s.currentSegment = idx;
+          s.engine.selectPattern(idx);
+          s.display.setPattern(idx);
         }
         break;
     }
